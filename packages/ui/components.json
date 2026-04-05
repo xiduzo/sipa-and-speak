@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-lyra",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@sip-and-speak/ui/components",
+    "utils": "@sip-and-speak/ui/lib/utils",
+    "hooks": "@sip-and-speak/ui/hooks",
+    "lib": "@sip-and-speak/ui/lib",
+    "ui": "@sip-and-speak/ui/components"
+  },
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {}
+}

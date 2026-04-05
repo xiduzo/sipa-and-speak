@@ -1,0 +1,3 @@
+{
+  "extends": "@sip-and-speak/config/tsconfig.base.json"
+}
