@@ -1,4 +1,9 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
+import { profileRouter } from "./profile";
+import { matchingRouter } from "./matching";
+import { venueRouter } from "./venue";
+import { meetupRouter } from "./meetup";
+import { chatRouter } from "./chat";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -10,5 +15,10 @@ export const appRouter = router({
       user: ctx.session.user,
     };
   }),
+  profile: profileRouter,
+  matching: matchingRouter,
+  venue: venueRouter,
+  meetup: meetupRouter,
+  chat: chatRouter,
 });
 export type AppRouter = typeof appRouter;

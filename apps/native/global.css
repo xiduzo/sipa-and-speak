@@ -3,3 +3,48 @@
 @import "heroui-native/styles";
 
 @source './node_modules/heroui-native/lib';
+
+/* ── Barista Blend Design Tokens (Native) ── */
+
+:root {
+  /* Primary – Burnt Orange #D85C27 */
+  --color-brand-primary: #D85C27;
+  --color-brand-primary-foreground: #FFFFFF;
+
+  /* Secondary – Teal #008080 */
+  --color-brand-secondary: #008080;
+  --color-brand-secondary-foreground: #FFFFFF;
+
+  /* Tertiary – Coffee Brown #5D4037 */
+  --color-brand-tertiary: #5D4037;
+  --color-brand-tertiary-foreground: #F5E6DA;
+
+  /* Neutral – Warm Gray #6F605B */
+  --color-brand-neutral: #6F605B;
+  --color-brand-neutral-foreground: #FFFFFF;
+
+  /* Surfaces */
+  --color-brand-background: #FFF8F3;
+  --color-brand-foreground: #2C1810;
+  --color-brand-muted: #F5E6DA;
+  --color-brand-muted-foreground: #6F605B;
+  --color-brand-border: #E8D5C4;
+  --color-brand-accent: #D4A574;
+}
+
+@theme inline {
+  --color-brand-primary: var(--color-brand-primary);
+  --color-brand-primary-foreground: var(--color-brand-primary-foreground);
+  --color-brand-secondary: var(--color-brand-secondary);
+  --color-brand-secondary-foreground: var(--color-brand-secondary-foreground);
+  --color-brand-tertiary: var(--color-brand-tertiary);
+  --color-brand-tertiary-foreground: var(--color-brand-tertiary-foreground);
+  --color-brand-neutral: var(--color-brand-neutral);
+  --color-brand-neutral-foreground: var(--color-brand-neutral-foreground);
+  --color-brand-background: var(--color-brand-background);
+  --color-brand-foreground: var(--color-brand-foreground);
+  --color-brand-muted: var(--color-brand-muted);
+  --color-brand-muted-foreground: var(--color-brand-muted-foreground);
+  --color-brand-border: var(--color-brand-border);
+  --color-brand-accent: var(--color-brand-accent);
+}

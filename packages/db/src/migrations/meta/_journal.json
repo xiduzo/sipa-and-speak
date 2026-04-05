@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1775392991908,
+      "tag": "0000_lazy_arclight",
+      "breakpoints": true
+    }
+  ]
+}

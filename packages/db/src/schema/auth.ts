@@ -1,5 +1,14 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import {
+  languageProfile,
+  userLanguage,
+  userInterest,
+  meetup,
+  conversation,
+  message,
+  messageReadStatus,
+} from "./sip-and-speak";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -73,9 +82,21 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ one, many }) => ({
   sessions: many(session),
   accounts: many(account),
+  languageProfile: one(languageProfile, {
+    fields: [user.id],
+    references: [languageProfile.userId],
+  }),
+  languages: many(userLanguage),
+  interests: many(userInterest),
+  proposedMeetups: many(meetup, { relationName: "meetupProposer" }),
+  receivedMeetups: many(meetup, { relationName: "meetupReceiver" }),
+  conversationsAsUser1: many(conversation, { relationName: "conversationUser1" }),
+  conversationsAsUser2: many(conversation, { relationName: "conversationUser2" }),
+  sentMessages: many(message),
+  messageReadStatuses: many(messageReadStatus),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({

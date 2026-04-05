@@ -5,6 +5,7 @@ import * as schema from "@sip-and-speak/db/schema/auth";
 import { env } from "@sip-and-speak/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { emailOTP } from "better-auth/plugins";
 
 import { polarClient } from "./lib/payments";
 
@@ -25,7 +26,7 @@ export function createAuth() {
         : []),
     ],
     emailAndPassword: {
-      enabled: true,
+      enabled: false,
     },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
@@ -56,6 +57,12 @@ export function createAuth() {
         ],
       }),
       expo(),
+      emailOTP({
+        async sendVerificationOTP({ email, otp, type }) {
+          // TODO: Replace with real email provider (Resend, SendGrid, etc.)
+          console.log(`[OTP] ${type} → ${email}: ${otp}`);
+        },
+      }),
     ],
   });
 }
