@@ -14,6 +14,7 @@ import {
   computeInterestScore,
   computeProximityScore,
   computeCompositeScore,
+  computeBridgeRuleEligibility,
   MAX_RADIUS_KM,
 } from "./matching.scoring";
 
@@ -23,6 +24,7 @@ export {
   computeInterestScore,
   computeProximityScore,
   computeCompositeScore,
+  computeBridgeRuleEligibility,
   MAX_RADIUS_KM,
 };
 
@@ -156,6 +158,14 @@ export const matchingRouter = router({
           partnerSpoken,
           partnerLearning,
         );
+        const bridgeEligible = computeBridgeRuleEligibility(
+          partnerSpoken,
+          partnerLearning,
+        );
+
+        // Skip candidates that pass neither language rule nor bridge rule
+        if (langScore === 0 && !bridgeEligible) continue;
+
         const intScore = computeInterestScore(myInterestNames, partnerInterests);
 
         let distanceKm: number | null = null;
@@ -175,8 +185,10 @@ export const matchingRouter = router({
           proxScore = computeProximityScore(distanceKm);
         }
 
+        // Bridge-only candidates get a base language score of 0.5 so they appear in ranked results
+        const effectiveLangScore = langScore > 0 ? langScore : 0.5;
         const score = computeCompositeScore(
-          langScore,
+          effectiveLangScore,
           intScore,
           proxScore,
           input.filter,
