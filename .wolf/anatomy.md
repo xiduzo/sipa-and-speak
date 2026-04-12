@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T18:41:41.129Z
-> Files: 188 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T20:20:55.183Z
+> Files: 201 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -9,6 +9,14 @@
 - `updated-task-37.md` — Parent Feature (~610 tok)
 - `updated-task-38.md` — Parent Feature (~616 tok)
 - `updated-task-39.md` — Parent Feature (~547 tok)
+- `updated-task-40.md` — Parent Feature (~540 tok)
+- `updated-task-41-body.md` — Parent Feature (~346 tok)
+- `updated-task-42-body.md` — Parent Feature (~348 tok)
+- `updated-task-43-body.md` — Parent Feature (~346 tok)
+- `updated-task-44-body.md` — Parent Feature (~287 tok)
+- `updated-task-45-body.md` — Parent Feature (~328 tok)
+- `updated-task-46-body.md` — Parent Feature (~220 tok)
+- `updated-task-47-body.md` — Parent Feature (~240 tok)
 
 ## ./
 
@@ -281,7 +289,7 @@
 ## apps/native/app/
 
 - `_layout.tsx` — unstable_settings (~926 tok)
-- `enrolment.tsx` — OTP_RESEND_COOLDOWN (~2699 tok)
+- `enrolment.tsx` — Unified enrolment (students + alumni): email + OTP + resend + registry error handling (~2699 tok)
 - `index.tsx` — LANGUAGES — uses useRouter, useState, useMutation (~4321 tok)
 
 ## apps/native/components/
@@ -312,7 +320,7 @@
 
 ## apps/server/src/
 
-- `index.ts` — API routes: GET (1 endpoints) (~379 tok)
+- `index.ts` — API routes: POST, GET (3 endpoints) (~722 tok)
 
 ## apps/web/
 
@@ -334,7 +342,7 @@
 - `header.tsx` — Header (~219 tok)
 - `loader.tsx` — Loader (~62 tok)
 - `mode-toggle.tsx` — ModeToggle (~329 tok)
-- `sign-in-form.tsx` — OTP_RESEND_COOLDOWN — renders form (~2537 tok)
+- `sign-in-form.tsx` — Unified sign-in (students + alumni): email + OTP + resend + registry error handling (~2537 tok)
 - `sign-up-form.tsx` — SignUpForm — renders form — uses useNavigate, useForm (~1375 tok)
 - `theme-provider.tsx` — ThemeProvider (~93 tok)
 - `user-menu.tsx` — UserMenu — uses useNavigate (~481 tok)
@@ -390,11 +398,13 @@
 
 ## packages/auth/src/
 
+- `alumni-registry.ts` — Static TU/e alumni registry. (~308 tok)
 - `domain-validation.ts` — Exports TUE_DOMAINS, validateTueDomain, TUE_DOMAIN_ERROR (~114 tok)
-- `index.ts` — ", "exp://192.168.*.*:*/**", "http://localhost:8081"] (~543 tok)
+- `index.ts` — ", "exp://192.168.*.*:*/**", "http://localhost:8081"] (~673 tok)
 
 ## packages/auth/src/__tests__/
 
+- `alumni-registry.test.ts` — Declares entry (~577 tok)
 - `domain-validation.test.ts` (~477 tok)
 
 ## packages/auth/src/lib/

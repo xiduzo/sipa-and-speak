@@ -18,6 +18,10 @@
 - **Navigation (native):** Only `app/index.tsx` and `app/_layout.tsx` exist. The `(drawer)` folder referenced in `_layout.tsx` does not yet exist — the app routes to `index.tsx` as the root.
 - **Better-Auth emailOTP flow:** `sendVerificationOTP` callback is called AFTER OTP is stored in DB. Throwing an error in the callback returns the error to the client but leaves a dead OTP that expires naturally.
 
+## User Preferences
+
+- **Favour unified flows over separate screens for the same UX pattern.** When two user types (e.g. student vs alumni) share the same form + OTP flow, handle the distinction server-side (middleware / validation) rather than duplicating UI. Keep separate screens only when the UX genuinely diverges.
+
 ## Do-Not-Repeat
 
 <!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
