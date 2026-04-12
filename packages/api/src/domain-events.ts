@@ -15,10 +15,17 @@ export interface ProfileCompletedEvent {
   completedAt: Date;
 }
 
+export interface SuggestionListRequestedEvent {
+  userId: string;
+  resultCount: number;
+  requestedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
   ProfileCompleted: [ProfileCompletedEvent];
+  SuggestionListRequested: [SuggestionListRequestedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

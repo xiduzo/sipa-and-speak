@@ -2,6 +2,31 @@
 
 export const MAX_RADIUS_KM = 50;
 
+/** Hard cap on suggestion list results. */
+export const SUGGESTION_LIST_LIMIT = 10;
+
+/**
+ * Sort candidates by score descending and return at most `limit` items.
+ * Exported for unit testing.
+ */
+export function applySuggestionCap<T extends { score: number }>(
+  candidates: T[],
+  limit: number = SUGGESTION_LIST_LIMIT,
+): T[] {
+  return [...candidates].sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+/**
+ * Exclude candidates that have already received a match request from the user.
+ * Exported for unit testing.
+ */
+export function excludeRequestedCandidates<T extends { userId: string }>(
+  candidates: T[],
+  requestedIds: Set<string>,
+): T[] {
+  return candidates.filter((c) => !requestedIds.has(c.userId));
+}
+
 /** Haversine distance in km between two lat/lng points */
 export function haversineDistance(
   lat1: number,
