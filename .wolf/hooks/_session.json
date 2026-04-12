@@ -1,0 +1,48 @@
+{
+  "session_id": "session-2026-04-12-2000",
+  "started": "2026-04-12T18:00:29.496Z",
+  "files_read": {
+    "/Users/sander/personal/sip-and-speak/docs/steering/TECH.md": {
+      "count": 1,
+      "tokens": 1106,
+      "first_read": "2026-04-12T18:01:09.130Z"
+    },
+    "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts": {
+      "count": 1,
+      "tokens": 532,
+      "first_read": "2026-04-12T18:02:06.158Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/components/sign-up.tsx": {
+      "count": 1,
+      "tokens": 1680,
+      "first_read": "2026-04-12T18:02:06.515Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/app/index.tsx": {
+      "count": 1,
+      "tokens": 4321,
+      "first_read": "2026-04-12T18:02:06.952Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/components/sign-in.tsx": {
+      "count": 1,
+      "tokens": 1376,
+      "first_read": "2026-04-12T18:02:15.221Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx": {
+      "count": 1,
+      "tokens": 731,
+      "first_read": "2026-04-12T18:02:15.540Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/lib/auth-client.ts": {
+      "count": 1,
+      "tokens": 174,
+      "first_read": "2026-04-12T18:02:15.917Z"
+    }
+  },
+  "files_written": [],
+  "edit_counts": {},
+  "anatomy_hits": 7,
+  "anatomy_misses": 0,
+  "repeated_reads_warned": 0,
+  "cerebrum_warnings": 0,
+  "stop_count": 0
+}

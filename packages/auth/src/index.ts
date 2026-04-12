@@ -7,6 +7,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { emailOTP } from "better-auth/plugins";
 
+import { validateTueDomain, TUE_DOMAIN_ERROR } from "./domain-validation";
 import { polarClient } from "./lib/payments";
 
 export function createAuth() {
@@ -58,7 +59,11 @@ export function createAuth() {
       }),
       expo(),
       emailOTP({
+        expiresIn: 600, // 10 minutes
         async sendVerificationOTP({ email, otp, type }) {
+          if (!validateTueDomain(email)) {
+            throw new Error(TUE_DOMAIN_ERROR);
+          }
           // TODO: Replace with real email provider (Resend, SendGrid, etc.)
           console.log(`[OTP] ${type} → ${email}: ${otp}`);
         },
