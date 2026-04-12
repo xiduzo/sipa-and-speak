@@ -47,7 +47,7 @@ const upsertProfileInput = z.object({
   longitude: z.number().optional(),
   spokenLanguages: z.array(spokenLanguageSchema).min(1),
   learningLanguages: z.array(learningLanguageSchema).min(1),
-  interests: z.array(interestEnum),
+  interests: z.array(interestEnum).min(1, "Select at least one interest"),
 });
 
 const partialProfileInput = z.object({
@@ -387,6 +387,39 @@ export const profileRouter = router({
         );
 
       domainEvents.emit("LanguageProfileUpdated", { userId, changedAt: new Date() });
+
+      return { success: true };
+    }),
+
+  toggleInterest: protectedProcedure
+    .input(z.object({ interest: interestEnum }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const existing = await db
+        .select()
+        .from(userInterest)
+        .where(
+          and(
+            eq(userInterest.userId, userId),
+            eq(userInterest.interest, input.interest),
+          ),
+        );
+
+      if (existing.length > 0) {
+        await db
+          .delete(userInterest)
+          .where(
+            and(
+              eq(userInterest.userId, userId),
+              eq(userInterest.interest, input.interest),
+            ),
+          );
+      } else {
+        await db.insert(userInterest).values({ userId, interest: input.interest });
+      }
+
+      domainEvents.emit("InterestProfileUpdated", { userId, changedAt: new Date() });
 
       return { success: true };
     }),

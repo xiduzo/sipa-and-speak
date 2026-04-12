@@ -21,6 +21,16 @@ const LANGUAGES = [
   "Russian",
 ] as const;
 
+const INTERESTS = [
+  { value: "modern_art", label: "Modern Art" },
+  { value: "tech_coding", label: "Tech & Coding" },
+  { value: "jazz_music", label: "Jazz Music" },
+  { value: "culinary_arts", label: "Culinary Arts" },
+  { value: "sustainability", label: "Sustainability" },
+  { value: "cinephile", label: "Cinephile" },
+  { value: "cosmology", label: "Cosmology" },
+] as const;
+
 const SPOKEN_PROFICIENCY = [
   { value: "beginner", label: "Beginner" },
   { value: "intermediate", label: "Intermediate" },
@@ -58,11 +68,20 @@ export default function EditProfileScreen() {
     },
   });
 
+  const toggleInterestMutation = useMutation({
+    ...trpc.profile.toggleInterest.mutationOptions(),
+    onSuccess: () => queryClient.invalidateQueries(),
+    onError: () => {
+      toast.show({ variant: "danger", label: "Failed to update interest." });
+    },
+  });
+
   const languages = profileQuery.data?.languages ?? [];
   const spokenLanguages = languages.filter((l) => l.type === "spoken");
   const learningLanguages = languages.filter((l) => l.type === "learning");
+  const savedInterests = profileQuery.data?.interests ?? [];
 
-  const isMutating = upsertMutation.isPending || removeMutation.isPending;
+  const isMutating = upsertMutation.isPending || removeMutation.isPending || toggleInterestMutation.isPending;
 
   const availableForSpoken = LANGUAGES.filter(
     (l) =>
@@ -76,7 +95,6 @@ export default function EditProfileScreen() {
   );
 
   function handleAdd(lang: string, type: LanguageType) {
-    setError(null);
     upsertMutation.mutate({ language: lang, type, proficiency: "beginner" });
     setAddingType(null);
   }
@@ -265,6 +283,48 @@ export default function EditProfileScreen() {
                 </Button>
               )
             )}
+          </View>
+
+          {/* Interests */}
+          <View>
+            <Text className="text-foreground text-xl font-bold mb-1">Interests</Text>
+            <Text className="text-muted-foreground text-sm mb-3">
+              Select at least one interest to be eligible for matching.
+            </Text>
+
+            {savedInterests.length === 0 && (
+              <View className="bg-destructive/10 border border-destructive rounded-lg p-3 mb-3">
+                <Text className="text-destructive text-sm">
+                  No interests selected — select at least one to enter the matching pool.
+                </Text>
+              </View>
+            )}
+
+            <View className="flex-row flex-wrap gap-2">
+              {INTERESTS.map((item) => {
+                const selected = savedInterests.some((i) => i.interest === item.value);
+                return (
+                  <Pressable
+                    key={item.value}
+                    onPress={() => toggleInterestMutation.mutate({ interest: item.value })}
+                    disabled={toggleInterestMutation.isPending}
+                    className={`px-4 py-2 rounded-full border ${
+                      selected
+                        ? "bg-primary border-primary"
+                        : "bg-background border-border"
+                    }`}
+                  >
+                    <Text
+                      className={
+                        selected ? "text-primary-foreground font-medium" : "text-foreground"
+                      }
+                    >
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
 
           {isMutating && (

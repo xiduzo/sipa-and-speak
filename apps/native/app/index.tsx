@@ -150,6 +150,10 @@ export default function OnboardingScreen() {
       setValidationError("Please select at least one language to learn.");
       return;
     }
+    if (step === 3 && interests.length === 0) {
+      setValidationError("Please select at least one interest.");
+      return;
+    }
     setValidationError(null);
     setStep((s) => Math.min(s + 1, TOTAL_STEPS));
   }
@@ -166,6 +170,10 @@ export default function OnboardingScreen() {
     }
     if (learningLanguages.length === 0) {
       setValidationError("Please select at least one language to learn.");
+      return;
+    }
+    if (interests.length === 0) {
+      setValidationError("Please select at least one interest to enter the matching pool.");
       return;
     }
     setValidationError(null);
