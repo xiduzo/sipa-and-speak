@@ -5,8 +5,14 @@ export interface LanguageProfileUpdatedEvent {
   changedAt: Date;
 }
 
+export interface InterestProfileUpdatedEvent {
+  userId: string;
+  changedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
+  InterestProfileUpdated: [InterestProfileUpdatedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

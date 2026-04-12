@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T21:29:40.626Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T21:38:33.703Z
 > Files: 206 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
@@ -295,9 +295,9 @@
 ## apps/native/app/
 
 - `_layout.tsx` — unstable_settings (~926 tok)
-- `edit-profile.tsx` — LANGUAGES (~3029 tok)
+- `edit-profile.tsx` — LANGUAGES (~3722 tok)
 - `enrolment.tsx` — Unified enrolment (students + alumni): email + OTP + resend + registry error handling (~2699 tok)
-- `index.tsx` — LANGUAGES (~5386 tok)
+- `index.tsx` — LANGUAGES (~5467 tok)
 
 ## apps/native/components/
 
@@ -386,7 +386,7 @@
 ## packages/api/src/
 
 - `context.ts` — Exports CreateContextOptions, createContext, Context (~126 tok)
-- `domain-events.ts` — Exports LanguageProfileUpdatedEvent, domainEvents (~227 tok)
+- `domain-events.ts` — Exports LanguageProfileUpdatedEvent, InterestProfileUpdatedEvent, domainEvents (~268 tok)
 - `index.ts` — tRPC router (~156 tok)
 
 ## packages/api/src/routers/
@@ -395,7 +395,7 @@
 - `index.ts` — tRPC router: 2 procedures (~198 tok)
 - `matching.ts` — Haversine distance in km between two lat/lng points (~2987 tok)
 - `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~2170 tok)
-- `profile.ts` — Zod schemas: interestEnum, proficiencyEnum, spokenLanguageSchema, learningProficiencyEnum + 3 more (~3296 tok)
+- `profile.ts` — Zod schemas: interestEnum, proficiencyEnum, spokenLanguageSchema, learningProficiencyEnum + 3 more (~3562 tok)
 - `venue.ts` — tRPC router: 2 procedures (~825 tok)
 
 ## packages/auth/
