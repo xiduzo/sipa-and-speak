@@ -47,7 +47,7 @@ function AuthGuard() {
     const onEnrolmentScreen = segments[0] === "enrolment";
     const onReviewScreen = segments[0] === "review-profile";
 
-    const onOnboardingScreen = segments[0] === undefined || segments[0] === "index";
+    const onOnboardingScreen = segments[0] === undefined;
 
     if (!session && !onEnrolmentScreen) {
       router.replace("/enrolment");
@@ -77,6 +77,7 @@ function StackLayout() {
       <Stack.Screen name="schedule/[partnerId]" options={{ title: "Schedule Meet-Up" }} />
       <Stack.Screen name="chat/[conversationId]" options={{ title: "Chat" }} />
       <Stack.Screen name="map" options={{ title: "Campus Map" }} />
+      <Stack.Screen name="suggestions" options={{ title: "Suggestions" }} />
       <Stack.Screen name="modal" options={{ title: "Modal", presentation: "modal" }} />
     </Stack>
   );
