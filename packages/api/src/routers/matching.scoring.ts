@@ -68,6 +68,25 @@ export function computeProximityScore(
   return 1 - Math.min(distanceKm / maxRadius, 1);
 }
 
+const BRIDGE_OFFERED_LANGUAGE = "Dutch";
+const BRIDGE_TARGET_LANGUAGES = ["Dutch", "English"];
+
+/**
+ * Dutch/English bridge rule eligibility.
+ * A candidate qualifies if they offer Dutch AND target at least one of Dutch or English.
+ * Supports the platform launch context where Dutch/English are primary lingua francas.
+ */
+export function computeBridgeRuleEligibility(
+  candidateSpoken: string[],
+  candidateLearning: string[],
+): boolean {
+  const offersDutch = candidateSpoken.includes(BRIDGE_OFFERED_LANGUAGE);
+  const targetsBridgeLanguage = candidateLearning.some((lang) =>
+    BRIDGE_TARGET_LANGUAGES.includes(lang),
+  );
+  return offersDutch && targetsBridgeLanguage;
+}
+
 /**
  * Composite matching score.
  * Default weights: language 0.5, interest 0.3, proximity 0.2.

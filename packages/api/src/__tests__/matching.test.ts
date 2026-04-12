@@ -1,6 +1,9 @@
 import { describe, expect, it } from "bun:test";
 
-import { computeLanguageScore } from "../routers/matching.scoring";
+import {
+  computeLanguageScore,
+  computeBridgeRuleEligibility,
+} from "../routers/matching.scoring";
 
 describe("computeLanguageScore", () => {
   describe("Bidirectional language compatibility filter", () => {
@@ -59,6 +62,48 @@ describe("computeLanguageScore", () => {
       // partnerSpeaksWhatUserLearns: English ∈ [English, German] ✓
       // partnerLearnsWhatUserSpeaks: French ∈ [Dutch, French] ✓
       expect(score).toBe(1.0);
+    });
+  });
+});
+
+describe("computeBridgeRuleEligibility", () => {
+  describe("Dutch/English bridge matching rule", () => {
+    it("Bridge-eligible candidate is included in suggestion results", () => {
+      // Candidate offers Dutch and is learning English
+      const eligible = computeBridgeRuleEligibility(["Dutch"], ["English"]);
+      expect(eligible).toBe(true);
+    });
+
+    it("Candidate offering Dutch targeting only an unrelated language is excluded", () => {
+      // Candidate offers Dutch but learns only Japanese
+      const eligible = computeBridgeRuleEligibility(["Dutch"], ["Japanese"]);
+      expect(eligible).toBe(false);
+    });
+
+    it("Candidate not offering Dutch is excluded by bridge rule", () => {
+      // Candidate offers English and learns Dutch — does not offer Dutch
+      const eligible = computeBridgeRuleEligibility(["English"], ["Dutch"]);
+      expect(eligible).toBe(false);
+    });
+
+    it("Candidate offering Dutch targeting Dutch is bridge-eligible", () => {
+      // Dutch native targeting Dutch (heritage learner edge case)
+      const eligible = computeBridgeRuleEligibility(["Dutch"], ["Dutch"]);
+      expect(eligible).toBe(true);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("empty candidate language arrays return false", () => {
+      expect(computeBridgeRuleEligibility([], [])).toBe(false);
+    });
+
+    it("candidate offering Dutch with multiple learning languages qualifies if Dutch or English is included", () => {
+      const eligible = computeBridgeRuleEligibility(
+        ["Dutch", "German"],
+        ["Japanese", "English"],
+      );
+      expect(eligible).toBe(true);
     });
   });
 });
