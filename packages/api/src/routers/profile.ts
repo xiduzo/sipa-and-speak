@@ -1,4 +1,5 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "@sip-and-speak/db";
 import {
@@ -7,6 +8,7 @@ import {
   userInterest,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { protectedProcedure, router } from "../index";
+import { domainEvents } from "../domain-events";
 
 const interestEnum = z.enum([
   "modern_art",
@@ -30,8 +32,11 @@ const spokenLanguageSchema = z.object({
   proficiency: proficiencyEnum,
 });
 
+const learningProficiencyEnum = z.enum(["beginner", "intermediate", "advanced"]);
+
 const learningLanguageSchema = z.object({
   language: z.string(),
+  proficiency: learningProficiencyEnum.optional(),
 });
 
 const upsertProfileInput = z.object({
@@ -55,6 +60,26 @@ const partialProfileInput = z.object({
   learningLanguages: z.array(learningLanguageSchema).optional(),
   interests: z.array(interestEnum).optional(),
 });
+
+function assertNoNativeSpokenLearningConflict(
+  spokenLanguages: { language: string; proficiency: string }[],
+  learningLanguages: { language: string }[],
+) {
+  const nativeSpeakerSet = new Set(
+    spokenLanguages
+      .filter((l) => l.proficiency === "native")
+      .map((l) => l.language),
+  );
+  const conflicts = learningLanguages
+    .filter((l) => nativeSpeakerSet.has(l.language))
+    .map((l) => l.language);
+  if (conflicts.length > 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Cannot add native-spoken language(s) as learning: ${conflicts.join(", ")}`,
+    });
+  }
+}
 
 export const profileRouter = router({
   getMyProfile: protectedProcedure.query(async ({ ctx }) => {
@@ -85,6 +110,8 @@ export const profileRouter = router({
     .input(upsertProfileInput)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+
+      assertNoNativeSpokenLearningConflict(input.spokenLanguages, input.learningLanguages);
 
       await db.transaction(async (tx) => {
         // Upsert language profile
@@ -132,7 +159,7 @@ export const profileRouter = router({
             userId,
             language: l.language,
             type: "learning" as const,
-            proficiency: null,
+            proficiency: l.proficiency ?? null,
           })),
         ];
 
@@ -155,6 +182,8 @@ export const profileRouter = router({
         }
       });
 
+      domainEvents.emit("LanguageProfileUpdated", { userId, changedAt: new Date() });
+
       return { success: true };
     }),
 
@@ -162,6 +191,10 @@ export const profileRouter = router({
     .input(partialProfileInput)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+
+      if (input.spokenLanguages && input.learningLanguages) {
+        assertNoNativeSpokenLearningConflict(input.spokenLanguages, input.learningLanguages);
+      }
 
       await db.transaction(async (tx) => {
         // Upsert language profile (without setting onboardingComplete)
@@ -207,7 +240,7 @@ export const profileRouter = router({
               userId,
               language: l.language,
               type: "learning" as const,
-              proficiency: null,
+              proficiency: l.proficiency ?? null,
             })),
           ];
 
@@ -233,6 +266,10 @@ export const profileRouter = router({
         }
       });
 
+      if (input.spokenLanguages || input.learningLanguages) {
+        domainEvents.emit("LanguageProfileUpdated", { userId, changedAt: new Date() });
+      }
+
       return { success: true };
     }),
 
@@ -246,4 +283,111 @@ export const profileRouter = router({
 
     return { complete: profile?.onboardingComplete ?? false };
   }),
+
+  upsertLanguage: protectedProcedure
+    .input(
+      z.object({
+        language: z.string(),
+        type: z.enum(["spoken", "learning"]),
+        proficiency: z
+          .enum(["beginner", "intermediate", "advanced", "native"])
+          .optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      if (input.type === "learning") {
+        // Reject if the language is already native-spoken
+        const nativeRow = await db
+          .select()
+          .from(userLanguage)
+          .where(
+            and(
+              eq(userLanguage.userId, userId),
+              eq(userLanguage.language, input.language),
+              eq(userLanguage.type, "spoken"),
+            ),
+          );
+        if (nativeRow.some((r) => r.proficiency === "native")) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `You already speak ${input.language} natively. Remove it from spoken first.`,
+          });
+        }
+      }
+
+      if (input.type === "spoken" && input.proficiency === "native") {
+        // Auto-remove from learning to enforce the constraint
+        await db
+          .delete(userLanguage)
+          .where(
+            and(
+              eq(userLanguage.userId, userId),
+              eq(userLanguage.language, input.language),
+              eq(userLanguage.type, "learning"),
+            ),
+          );
+      }
+
+      const existing = await db
+        .select()
+        .from(userLanguage)
+        .where(
+          and(
+            eq(userLanguage.userId, userId),
+            eq(userLanguage.language, input.language),
+            eq(userLanguage.type, input.type),
+          ),
+        );
+
+      if (existing.length > 0) {
+        await db
+          .update(userLanguage)
+          .set({ proficiency: input.proficiency ?? null })
+          .where(
+            and(
+              eq(userLanguage.userId, userId),
+              eq(userLanguage.language, input.language),
+              eq(userLanguage.type, input.type),
+            ),
+          );
+      } else {
+        await db.insert(userLanguage).values({
+          userId,
+          language: input.language,
+          type: input.type,
+          proficiency: input.proficiency ?? null,
+        });
+      }
+
+      domainEvents.emit("LanguageProfileUpdated", { userId, changedAt: new Date() });
+
+      return { success: true };
+    }),
+
+  removeLanguage: protectedProcedure
+    .input(
+      z.object({
+        language: z.string(),
+        type: z.enum(["spoken", "learning"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      await db
+        .delete(userLanguage)
+        .where(
+          and(
+            eq(userLanguage.userId, userId),
+            eq(userLanguage.language, input.language),
+            eq(userLanguage.type, input.type),
+          ),
+        );
+
+      domainEvents.emit("LanguageProfileUpdated", { userId, changedAt: new Date() });
+
+      return { success: true };
+    }),
 });

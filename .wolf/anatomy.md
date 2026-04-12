@@ -1,10 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T20:20:55.183Z
-> Files: 201 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T21:29:40.626Z
+> Files: 206 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
+- `task-50-final.md` — Parent Feature (~363 tok)
 - `updated-task-36.md` — Parent Feature (~640 tok)
 - `updated-task-37.md` — Parent Feature (~610 tok)
 - `updated-task-38.md` — Parent Feature (~616 tok)
@@ -17,6 +18,11 @@
 - `updated-task-45-body.md` — Parent Feature (~328 tok)
 - `updated-task-46-body.md` — Parent Feature (~220 tok)
 - `updated-task-47-body.md` — Parent Feature (~240 tok)
+- `updated-task-48.md` — Parent Feature (~300 tok)
+- `updated-task-49.md` — Parent Feature (~313 tok)
+- `updated-task-50.md` — Parent Feature (~371 tok)
+- `updated-task-51.md` — Parent Feature (~281 tok)
+- `updated-task-52.md` — Parent Feature (~319 tok)
 
 ## ./
 
@@ -289,8 +295,9 @@
 ## apps/native/app/
 
 - `_layout.tsx` — unstable_settings (~926 tok)
+- `edit-profile.tsx` — LANGUAGES (~3029 tok)
 - `enrolment.tsx` — Unified enrolment (students + alumni): email + OTP + resend + registry error handling (~2699 tok)
-- `index.tsx` — LANGUAGES — uses useRouter, useState, useMutation (~4321 tok)
+- `index.tsx` — LANGUAGES (~5386 tok)
 
 ## apps/native/components/
 
@@ -379,6 +386,7 @@
 ## packages/api/src/
 
 - `context.ts` — Exports CreateContextOptions, createContext, Context (~126 tok)
+- `domain-events.ts` — Exports LanguageProfileUpdatedEvent, domainEvents (~227 tok)
 - `index.ts` — tRPC router (~156 tok)
 
 ## packages/api/src/routers/
@@ -387,7 +395,7 @@
 - `index.ts` — tRPC router: 2 procedures (~198 tok)
 - `matching.ts` — Haversine distance in km between two lat/lng points (~2987 tok)
 - `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~2170 tok)
-- `profile.ts` — tRPC router: 4 procedures (~2038 tok)
+- `profile.ts` — Zod schemas: interestEnum, proficiencyEnum, spokenLanguageSchema, learningProficiencyEnum + 3 more (~3296 tok)
 - `venue.ts` — tRPC router: 2 procedures (~825 tok)
 
 ## packages/auth/
