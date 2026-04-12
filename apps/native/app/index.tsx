@@ -74,10 +74,10 @@ export default function OnboardingScreen() {
   const onboardingStatus = useQuery(trpc.profile.getOnboardingStatus.queryOptions());
 
   useEffect(() => {
-    if (onboardingStatus.data?.complete) {
+    if (onboardingStatus.data?.hasProfile) {
       router.replace("/edit-profile");
     }
-  }, [onboardingStatus.data?.complete]);
+  }, [onboardingStatus.data?.hasProfile]);
 
   const [step, setStep] = useState(1);
   const [spokenLanguages, setSpokenLanguages] = useState<SpokenLanguage[]>([]);
