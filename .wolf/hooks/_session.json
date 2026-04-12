@@ -36,11 +36,117 @@
       "count": 1,
       "tokens": 174,
       "first_read": "2026-04-12T18:02:15.917Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/server/src/index.ts": {
+      "count": 1,
+      "tokens": 257,
+      "first_read": "2026-04-12T18:03:43.597Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/web/src/lib/auth-client.ts": {
+      "count": 1,
+      "tokens": 98,
+      "first_read": "2026-04-12T18:04:08.961Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-in-form.tsx": {
+      "count": 1,
+      "tokens": 1132,
+      "first_read": "2026-04-12T18:04:09.296Z"
+    },
+    "/Users/sander/personal/sip-and-speak/packages/auth/package.json": {
+      "count": 1,
+      "tokens": 482,
+      "first_read": "2026-04-12T18:06:39.842Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-up-form.tsx": {
+      "count": 1,
+      "tokens": 1375,
+      "first_read": "2026-04-12T18:09:56.872Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/web/src/routes/login.tsx": {
+      "count": 1,
+      "tokens": 153,
+      "first_read": "2026-04-12T18:10:00.659Z"
     }
   },
-  "files_written": [],
-  "edit_counts": {},
-  "anatomy_hits": 7,
+  "files_written": [
+    {
+      "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/domain-validation.ts",
+      "action": "create",
+      "tokens": 114,
+      "at": "2026-04-12T18:07:11.171Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/__tests__/domain-validation.test.ts",
+      "action": "create",
+      "tokens": 477,
+      "at": "2026-04-12T18:07:21.071Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/packages/auth/package.json",
+      "action": "edit",
+      "tokens": 12,
+      "at": "2026-04-12T18:07:23.677Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts",
+      "action": "edit",
+      "tokens": 153,
+      "at": "2026-04-12T18:07:35.718Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts",
+      "action": "edit",
+      "tokens": 106,
+      "at": "2026-04-12T18:07:39.809Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+      "action": "create",
+      "tokens": 2712,
+      "at": "2026-04-12T18:09:04.261Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+      "action": "edit",
+      "tokens": 82,
+      "at": "2026-04-12T18:09:08.216Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+      "action": "create",
+      "tokens": 2700,
+      "at": "2026-04-12T18:09:49.774Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-in-form.tsx",
+      "action": "create",
+      "tokens": 2538,
+      "at": "2026-04-12T18:10:38.456Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/web/src/routes/login.tsx",
+      "action": "create",
+      "tokens": 72,
+      "at": "2026-04-12T18:10:41.768Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+      "action": "edit",
+      "tokens": 5,
+      "at": "2026-04-12T18:12:27.760Z"
+    }
+  ],
+  "edit_counts": {
+    "packages/auth/src/domain-validation.ts": 1,
+    "packages/auth/src/__tests__/domain-validation.test.ts": 1,
+    "packages/auth/package.json": 1,
+    "packages/auth/src/index.ts": 2,
+    "apps/native/app/enrolment.tsx": 3,
+    "apps/native/app/_layout.tsx": 1,
+    "apps/web/src/components/sign-in-form.tsx": 1,
+    "apps/web/src/routes/login.tsx": 1
+  },
+  "anatomy_hits": 13,
   "anatomy_misses": 0,
   "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,

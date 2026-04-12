@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T16:00:01.421Z
-> Files: 181 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T18:12:27.754Z
+> Files: 184 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -273,7 +273,8 @@
 
 ## apps/native/app/
 
-- `_layout.tsx` — unstable_settings — uses useEffect (~731 tok)
+- `_layout.tsx` — unstable_settings (~761 tok)
+- `enrolment.tsx` — OTP_RESEND_COOLDOWN (~2700 tok)
 - `index.tsx` — LANGUAGES — uses useRouter, useState, useMutation (~4321 tok)
 
 ## apps/native/components/
@@ -326,7 +327,7 @@
 - `header.tsx` — Header (~219 tok)
 - `loader.tsx` — Loader (~62 tok)
 - `mode-toggle.tsx` — ModeToggle (~329 tok)
-- `sign-in-form.tsx` — SignInForm — renders form — uses useNavigate, useForm (~1132 tok)
+- `sign-in-form.tsx` — OTP_RESEND_COOLDOWN — renders form (~2538 tok)
 - `sign-up-form.tsx` — SignUpForm — renders form — uses useNavigate, useForm (~1375 tok)
 - `theme-provider.tsx` — ThemeProvider (~93 tok)
 - `user-menu.tsx` — UserMenu — uses useNavigate (~481 tok)
@@ -340,7 +341,7 @@
 - `__root.tsx` — Route (~438 tok)
 - `dashboard.tsx` — Route — uses useQuery (~421 tok)
 - `index.tsx` — Route — uses useQuery (~511 tok)
-- `login.tsx` — Route — uses useState (~153 tok)
+- `login.tsx` — Route (~72 tok)
 - `success.tsx` — Route (~142 tok)
 
 ## apps/web/src/utils/
@@ -377,12 +378,17 @@
 ## packages/auth/
 
 - `.gitignore` — Git ignore rules (~104 tok)
-- `package.json` — Node.js package manifest (~167 tok)
+- `package.json` — Node.js package manifest (~175 tok)
 - `tsconfig.json` — TypeScript configuration (~60 tok)
 
 ## packages/auth/src/
 
-- `index.ts` — ", "exp://192.168.*.*:*/**", "http://localhost:8081"] (~532 tok)
+- `domain-validation.ts` — Exports TUE_DOMAINS, validateTueDomain, TUE_DOMAIN_ERROR (~114 tok)
+- `index.ts` — ", "exp://192.168.*.*:*/**", "http://localhost:8081"] (~593 tok)
+
+## packages/auth/src/__tests__/
+
+- `domain-validation.test.ts` (~477 tok)
 
 ## packages/auth/src/lib/
 
