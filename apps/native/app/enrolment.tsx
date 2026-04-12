@@ -111,7 +111,7 @@ export default function EnrolmentScreen() {
     onSubmit: async ({ value }) => {
       setOtpServerError(null);
 
-      const result = await authClient.emailOtp.verifyEmail({
+      const result = await authClient.signIn.emailOtp({
         email,
         otp: value.otp.trim(),
       });
