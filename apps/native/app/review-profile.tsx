@@ -28,7 +28,7 @@ export default function ReviewProfileScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries();
       toast.show({ variant: "success", label: "You're in the matching pool!" });
-      router.replace("/edit-profile");
+      router.replace("/suggestions");
     },
     onError: (e) => {
       toast.show({

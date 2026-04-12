@@ -53,7 +53,7 @@ function AuthGuard() {
       router.replace("/enrolment");
     } else if (session && onEnrolmentScreen) {
       if (onboardingQuery.data?.complete) {
-        router.replace("/edit-profile");
+        router.replace("/suggestions");
       } else {
         router.replace("/");
       }
