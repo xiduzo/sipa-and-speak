@@ -2,6 +2,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { createContext } from "@sip-and-speak/api/context";
 import { appRouter } from "@sip-and-speak/api/routers/index";
 import { auth } from "@sip-and-speak/auth";
+import { validateTueDomain, TUE_DOMAIN_ERROR } from "@sip-and-speak/auth/domain-validation";
 import { env } from "@sip-and-speak/env/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -19,6 +20,15 @@ app.use(
     credentials: true,
   }),
 );
+
+app.use("/api/auth/email-otp/send-verification-otp", async (c, next) => {
+  if (c.req.method !== "POST") return next();
+  const body = await c.req.raw.clone().json().catch(() => ({})) as { email?: string };
+  if (!validateTueDomain(body.email ?? "")) {
+    return c.json({ message: TUE_DOMAIN_ERROR }, 400);
+  }
+  return next();
+});
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
