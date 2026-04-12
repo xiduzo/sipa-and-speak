@@ -13,6 +13,8 @@ import Loader from "./loader";
 
 const OTP_RESEND_COOLDOWN = 60;
 
+const TUE_STUDENT_DOMAINS = ["@student.tue.nl", "@tue.nl"] as const;
+
 const emailSchema = z.object({
   email: z
     .string()
@@ -30,12 +32,41 @@ const otpSchema = z.object({
     .regex(/^\d+$/, "Code must contain only digits"),
 });
 
+function isTueStudentEmail(email: string): boolean {
+  const lower = email.toLowerCase().trim();
+  return TUE_STUDENT_DOMAINS.some((domain) => lower.endsWith(domain));
+}
+
 function isExpiredOtpError(message: string): boolean {
   return message.toLowerCase().includes("expir");
 }
 
-export default function SignInForm() {
-  const navigate = useNavigate({ from: "/login" });
+function isRegistryUnavailableError(error: {
+  message?: string;
+  status?: number;
+}): boolean {
+  if (error.status === 503) return true;
+  return (error.message ?? "").toLowerCase().includes("temporarily unavailable");
+}
+
+async function sendOtpWithRetry(email: string) {
+  const firstAttempt = await authClient.emailOtp.sendVerificationOtp({
+    email,
+    type: "sign-in",
+  });
+
+  if (!firstAttempt.error) return firstAttempt;
+
+  // Retry once on transient service-unavailable errors (task #45)
+  if (isRegistryUnavailableError(firstAttempt.error)) {
+    return authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
+  }
+
+  return firstAttempt;
+}
+
+export default function AlumniSignInForm() {
+  const navigate = useNavigate({ from: "/alumni-login" });
   const { isPending } = authClient.useSession();
 
   const [step, setStep] = useState<"email" | "otp">("email");
@@ -80,14 +111,26 @@ export default function SignInForm() {
       setEmailServerError(null);
       const trimmedEmail = value.email.trim();
 
-      const result = await authClient.emailOtp.sendVerificationOtp({
-        email: trimmedEmail,
-        type: "sign-in",
-      });
+      // Client-side guard: TU/e student/staff emails should use the student path (task #42)
+      if (isTueStudentEmail(trimmedEmail)) {
+        setEmailServerError(
+          "This looks like an active TU/e institutional email. Please use the student sign-in path instead.",
+        );
+        return;
+      }
+
+      const result = await sendOtpWithRetry(trimmedEmail);
 
       if (result.error) {
+        if (isRegistryUnavailableError(result.error)) {
+          setEmailServerError(
+            "The alumni registry is temporarily unavailable. Please try again in a moment.",
+          );
+          return;
+        }
         setEmailServerError(
-          result.error.message ?? "Failed to send code. Please try again.",
+          result.error.message ??
+            "Your email address was not found in the TU/e alumni registry. Please check your address or contact alumni@tue.nl for help.",
         );
         return;
       }
@@ -128,13 +171,14 @@ export default function SignInForm() {
     if (resendCooldown > 0) return;
     setOtpServerError(null);
 
-    const result = await authClient.emailOtp.sendVerificationOtp({
-      email,
-      type: "sign-in",
-    });
+    const result = await sendOtpWithRetry(email);
 
     if (result.error) {
-      toast.error(result.error.message ?? "Failed to resend code");
+      toast.error(
+        isRegistryUnavailableError(result.error)
+          ? "The alumni registry is temporarily unavailable. Please try again shortly."
+          : (result.error.message ?? "Failed to resend code"),
+      );
       return;
     }
 
@@ -243,9 +287,9 @@ export default function SignInForm() {
 
   return (
     <div className="mx-auto w-full mt-10 max-w-md p-6">
-      <h1 className="mb-2 text-center text-3xl font-bold">Welcome to Sip&Speak</h1>
+      <h1 className="mb-2 text-center text-3xl font-bold">TU/e Alumni</h1>
       <p className="mb-6 text-center text-muted-foreground text-sm">
-        Enter your TU/e institutional email address to enrol or sign in
+        Enter your alumni email address to enrol or sign in
       </p>
 
       {emailServerError && (
@@ -263,7 +307,7 @@ export default function SignInForm() {
         <emailForm.Field name="email">
           {(field) => (
             <div className="space-y-2">
-              <Label htmlFor={field.name}>TU/e email address</Label>
+              <Label htmlFor={field.name}>Alumni email address</Label>
               <Input
                 id={field.name}
                 name={field.name}
@@ -275,7 +319,7 @@ export default function SignInForm() {
                   setEmailServerError(null);
                   field.handleChange(e.target.value);
                 }}
-                placeholder="s.janssen@student.tue.nl"
+                placeholder="j.doe@alumni.tue.nl"
               />
               {field.state.meta.errors.map((error) => (
                 <p key={error?.message} className="text-sm text-red-500">
@@ -307,10 +351,10 @@ export default function SignInForm() {
       <div className="mt-4">
         <Button
           variant="ghost"
-          onClick={() => navigate({ to: "/alumni-login" })}
+          onClick={() => navigate({ to: "/login" })}
           className="w-full"
         >
-          TU/e alumni? Enrol here instead
+          Active TU/e student? Sign in here instead
         </Button>
       </div>
     </div>

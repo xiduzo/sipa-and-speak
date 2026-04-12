@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuccessRouteImport } from './routes/success'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AlumniLoginRouteImport } from './routes/alumni-login'
 import { Route as IndexRouteImport } from './routes/index'
 
 const SuccessRoute = SuccessRouteImport.update({
@@ -29,6 +30,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AlumniLoginRoute = AlumniLoginRouteImport.update({
+  id: '/alumni-login',
+  path: '/alumni-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,12 +43,14 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/alumni-login': typeof AlumniLoginRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/alumni-login': typeof AlumniLoginRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/success': typeof SuccessRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/alumni-login': typeof AlumniLoginRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/success'
+  fullPaths: '/' | '/alumni-login' | '/dashboard' | '/login' | '/success'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/success'
-  id: '__root__' | '/' | '/dashboard' | '/login' | '/success'
+  to: '/' | '/alumni-login' | '/dashboard' | '/login' | '/success'
+  id: '__root__' | '/' | '/alumni-login' | '/dashboard' | '/login' | '/success'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlumniLoginRoute: typeof AlumniLoginRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   SuccessRoute: typeof SuccessRoute
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/alumni-login': {
+      id: '/alumni-login'
+      path: '/alumni-login'
+      fullPath: '/alumni-login'
+      preLoaderRoute: typeof AlumniLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlumniLoginRoute: AlumniLoginRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   SuccessRoute: SuccessRoute,

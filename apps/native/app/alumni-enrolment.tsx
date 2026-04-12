@@ -19,6 +19,8 @@ import { queryClient } from "@/utils/trpc";
 
 const OTP_RESEND_COOLDOWN = 60;
 
+const TUE_STUDENT_DOMAINS = ["@student.tue.nl", "@tue.nl"] as const;
+
 const emailSchema = z.object({
   email: z
     .string()
@@ -36,12 +38,40 @@ const otpSchema = z.object({
     .regex(/^\d+$/, "Code must contain only digits"),
 });
 
-function isExpiredOtpError(message: string): boolean {
-  const lower = message.toLowerCase();
-  return lower.includes("expir");
+function isTueStudentEmail(email: string): boolean {
+  const lower = email.toLowerCase().trim();
+  return TUE_STUDENT_DOMAINS.some((domain) => lower.endsWith(domain));
 }
 
-export default function EnrolmentScreen() {
+function isExpiredOtpError(message: string): boolean {
+  return message.toLowerCase().includes("expir");
+}
+
+function isRegistryUnavailableError(error: {
+  message?: string;
+  status?: number;
+}): boolean {
+  if (error.status === 503) return true;
+  return (error.message ?? "").toLowerCase().includes("temporarily unavailable");
+}
+
+async function sendOtpWithRetry(email: string) {
+  const firstAttempt = await authClient.emailOtp.sendVerificationOtp({
+    email,
+    type: "sign-in",
+  });
+
+  if (!firstAttempt.error) return firstAttempt;
+
+  // Retry once on transient service-unavailable errors (task #45)
+  if (isRegistryUnavailableError(firstAttempt.error)) {
+    return authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
+  }
+
+  return firstAttempt;
+}
+
+export default function AlumniEnrolmentScreen() {
   const router = useRouter();
   const { toast } = useToast();
 
@@ -87,14 +117,26 @@ export default function EnrolmentScreen() {
       setEmailServerError(null);
       const trimmedEmail = value.email.trim();
 
-      const result = await authClient.emailOtp.sendVerificationOtp({
-        email: trimmedEmail,
-        type: "sign-in",
-      });
+      // Client-side guard: TU/e student/staff emails should use the student path (task #42)
+      if (isTueStudentEmail(trimmedEmail)) {
+        setEmailServerError(
+          "This looks like an active TU/e institutional email. Please use the student enrolment path instead.",
+        );
+        return;
+      }
+
+      const result = await sendOtpWithRetry(trimmedEmail);
 
       if (result.error) {
+        if (isRegistryUnavailableError(result.error)) {
+          setEmailServerError(
+            "The alumni registry is temporarily unavailable. Please try again in a moment.",
+          );
+          return;
+        }
         setEmailServerError(
-          result.error.message ?? "Failed to send code. Please try again.",
+          result.error.message ??
+            "Your email address was not found in the TU/e alumni registry. Please check your address or contact alumni@tue.nl for help.",
         );
         return;
       }
@@ -135,15 +177,14 @@ export default function EnrolmentScreen() {
     if (resendCooldown > 0) return;
     setOtpServerError(null);
 
-    const result = await authClient.emailOtp.sendVerificationOtp({
-      email,
-      type: "sign-in",
-    });
+    const result = await sendOtpWithRetry(email);
 
     if (result.error) {
       toast.show({
         variant: "danger",
-        label: result.error.message ?? "Failed to resend code",
+        label: isRegistryUnavailableError(result.error)
+          ? "The alumni registry is temporarily unavailable. Please try again shortly."
+          : (result.error.message ?? "Failed to resend code"),
       });
       return;
     }
@@ -249,9 +290,11 @@ export default function EnrolmentScreen() {
 
   return (
     <Surface variant="secondary" className="p-4 rounded-lg">
-      <Text className="text-foreground font-medium mb-1">Enrol with TU/e</Text>
+      <Text className="text-foreground font-medium mb-1">
+        Enrol as TU/e Alumni
+      </Text>
       <Text className="text-muted-foreground text-sm mb-4">
-        Enter your TU/e institutional email address to get started
+        Enter your alumni email address to get started
       </Text>
 
       <emailForm.Subscribe
@@ -269,7 +312,7 @@ export default function EnrolmentScreen() {
               <emailForm.Field name="email">
                 {(field) => (
                   <TextField>
-                    <Label>TU/e email address</Label>
+                    <Label>Alumni email address</Label>
                     <Input
                       value={field.state.value}
                       onBlur={field.handleBlur}
@@ -277,7 +320,7 @@ export default function EnrolmentScreen() {
                         setEmailServerError(null);
                         field.handleChange(v);
                       }}
-                      placeholder="s.janssen@student.tue.nl"
+                      placeholder="j.doe@alumni.tue.nl"
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoComplete="email"
@@ -309,9 +352,11 @@ export default function EnrolmentScreen() {
 
               <Button
                 variant="ghost"
-                onPress={() => router.replace("/alumni-enrolment")}
+                onPress={() => router.replace("/enrolment")}
               >
-                <Button.Label>TU/e alumni? Enrol here instead</Button.Label>
+                <Button.Label>
+                  Active TU/e student? Enrol here instead
+                </Button.Label>
               </Button>
             </View>
           </>
