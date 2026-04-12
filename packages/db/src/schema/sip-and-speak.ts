@@ -185,6 +185,35 @@ export const messageReadStatus = pgTable(
 );
 
 
+export const matchRequest = pgTable(
+  "match_request",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    requesterId: text("requester_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    receiverId: text("receiver_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    status: text("status", {
+      enum: ["pending", "accepted", "declined"],
+    })
+      .notNull()
+      .default("pending"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("match_request_requesterId_idx").on(table.requesterId),
+    index("match_request_receiverId_idx").on(table.receiverId),
+  ],
+);
+
 // --- Relations ---
 
 export const languageProfileRelations = relations(languageProfile, ({ one }) => ({

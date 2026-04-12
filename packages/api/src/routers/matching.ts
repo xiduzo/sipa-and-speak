@@ -5,9 +5,11 @@ import {
   languageProfile,
   userLanguage,
   userInterest,
+  matchRequest,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
+import { domainEvents } from "../domain-events";
 import {
   haversineDistance,
   computeLanguageScore,
@@ -15,7 +17,10 @@ import {
   computeProximityScore,
   computeCompositeScore,
   computeBridgeRuleEligibility,
+  applySuggestionCap,
+  excludeRequestedCandidates,
   MAX_RADIUS_KM,
+  SUGGESTION_LIST_LIMIT,
 } from "./matching.scoring";
 
 export {
@@ -25,7 +30,10 @@ export {
   computeProximityScore,
   computeCompositeScore,
   computeBridgeRuleEligibility,
+  applySuggestionCap,
+  excludeRequestedCandidates,
   MAX_RADIUS_KM,
+  SUGGESTION_LIST_LIMIT,
 };
 
 // --- Router ---
@@ -36,8 +44,6 @@ export const matchingRouter = router({
       z.object({
         filter: z.enum(["near_you", "language"]).optional(),
         filterLanguage: z.string().optional(),
-        cursor: z.string().optional(),
-        limit: z.number().int().min(1).max(50).default(20),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -66,6 +72,13 @@ export const matchingRouter = router({
         .map((l) => l.language);
       const myInterestNames = myInterests.map((i) => i.interest);
 
+      // Fetch candidates the Student has already sent a match request to
+      const sentRequests = await db
+        .select({ receiverId: matchRequest.receiverId })
+        .from(matchRequest)
+        .where(eq(matchRequest.requesterId, userId));
+      const requestedIds = new Set(sentRequests.map((r) => r.receiverId));
+
       // Fetch all other users who have completed onboarding
       const otherProfiles = await db
         .select()
@@ -78,7 +91,7 @@ export const matchingRouter = router({
         );
 
       if (otherProfiles.length === 0) {
-        return { partners: [], nextCursor: undefined };
+        return [];
       }
 
       const otherUserIds = otherProfiles.map((p) => p.userId);
@@ -117,24 +130,22 @@ export const matchingRouter = router({
         interestByUser.set(i.userId, arr);
       }
 
-      // Score each candidate
       type ScoredPartner = {
         userId: string;
         name: string;
-        image: string | null;
-        bio: string | null;
-        university: string | null;
-        age: number | null;
-        distance: number | null;
-        spokenLanguages: { language: string; proficiency: string | null }[];
-        learningLanguages: string[];
-        interests: string[];
+        photoUrl: string | null;
+        offeredLanguages: string[];
+        targetedLanguages: string[];
+        conversationTopics: string[];
         score: number;
       };
 
       const scored: ScoredPartner[] = [];
 
       for (const profile of otherProfiles) {
+        // Exclude candidates already requested
+        if (requestedIds.has(profile.userId)) continue;
+
         const langs = langByUser.get(profile.userId) ?? [];
         const interests = interestByUser.get(profile.userId) ?? [];
         const userInfo = userMap.get(profile.userId);
@@ -168,7 +179,6 @@ export const matchingRouter = router({
 
         const intScore = computeInterestScore(myInterestNames, partnerInterests);
 
-        let distanceKm: number | null = null;
         let proxScore = 0;
         if (
           myProfile?.latitude != null &&
@@ -176,7 +186,7 @@ export const matchingRouter = router({
           profile.latitude != null &&
           profile.longitude != null
         ) {
-          distanceKm = haversineDistance(
+          const distanceKm = haversineDistance(
             myProfile.latitude,
             myProfile.longitude,
             profile.latitude,
@@ -185,7 +195,7 @@ export const matchingRouter = router({
           proxScore = computeProximityScore(distanceKm);
         }
 
-        // Bridge-only candidates get a base language score of 0.5 so they appear in ranked results
+        // Bridge-only candidates get a base language score of 0.5 so they rank alongside partial matches
         const effectiveLangScore = langScore > 0 ? langScore : 0.5;
         const score = computeCompositeScore(
           effectiveLangScore,
@@ -197,32 +207,26 @@ export const matchingRouter = router({
         scored.push({
           userId: profile.userId,
           name: userInfo?.name ?? "Unknown",
-          image: userInfo?.image ?? null,
-          bio: profile.bio,
-          university: profile.university,
-          age: profile.age,
-          distance: distanceKm != null ? Math.round(distanceKm * 10) / 10 : null,
-          spokenLanguages: langs
-            .filter((l) => l.type === "spoken")
-            .map((l) => ({ language: l.language, proficiency: l.proficiency })),
-          learningLanguages: partnerLearning,
-          interests: partnerInterests,
+          photoUrl: userInfo?.image ?? null,
+          offeredLanguages: partnerSpoken,
+          targetedLanguages: partnerLearning,
+          conversationTopics: partnerInterests,
           score,
         });
       }
 
-      // Sort by score descending
+      // Sort by score descending, then hard-cap at 10
       scored.sort((a, b) => b.score - a.score);
+      const suggestions = scored.slice(0, SUGGESTION_LIST_LIMIT);
 
-      // Cursor-based pagination (cursor = index offset as string)
-      const startIndex = input.cursor ? parseInt(input.cursor, 10) : 0;
-      const page = scored.slice(startIndex, startIndex + input.limit);
-      const nextCursor =
-        startIndex + input.limit < scored.length
-          ? String(startIndex + input.limit)
-          : undefined;
+      // Emit domain event (fire-and-forget)
+      domainEvents.emit("SuggestionListRequested", {
+        userId,
+        resultCount: suggestions.length,
+        requestedAt: new Date(),
+      });
 
-      return { partners: page, nextCursor };
+      return suggestions;
     }),
 
   getPartnerProfile: protectedProcedure
