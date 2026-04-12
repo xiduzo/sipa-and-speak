@@ -1,29 +1,12 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T21:41:56.136Z
-> Files: 207 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T22:28:43.924Z
+> Files: 192 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
-- `pr-body-10.md` — Summary (~688 tok)
-- `task-50-final.md` — Parent Feature (~363 tok)
-- `updated-task-36.md` — Parent Feature (~640 tok)
-- `updated-task-37.md` — Parent Feature (~610 tok)
-- `updated-task-38.md` — Parent Feature (~616 tok)
-- `updated-task-39.md` — Parent Feature (~547 tok)
-- `updated-task-40.md` — Parent Feature (~540 tok)
-- `updated-task-41-body.md` — Parent Feature (~346 tok)
-- `updated-task-42-body.md` — Parent Feature (~348 tok)
-- `updated-task-43-body.md` — Parent Feature (~346 tok)
-- `updated-task-44-body.md` — Parent Feature (~287 tok)
-- `updated-task-45-body.md` — Parent Feature (~328 tok)
-- `updated-task-46-body.md` — Parent Feature (~220 tok)
-- `updated-task-47-body.md` — Parent Feature (~240 tok)
-- `updated-task-48.md` — Parent Feature (~300 tok)
-- `updated-task-49.md` — Parent Feature (~313 tok)
-- `updated-task-50.md` — Parent Feature (~371 tok)
-- `updated-task-51.md` — Parent Feature (~281 tok)
-- `updated-task-52.md` — Parent Feature (~319 tok)
+- `pr-body-11.md` — Summary (~721 tok)
+- `verify-56-body.md` — Parent Feature (~615 tok)
 
 ## ./
 
@@ -145,7 +128,7 @@
 ## .claude/
 
 - `settings.json` (~441 tok)
-- `settings.local.json` (~342 tok)
+- `settings.local.json` (~794 tok)
 
 ## .claude/rules/
 
@@ -154,6 +137,7 @@
 ## .github/
 
 - `.DS_Store` (~1640 tok)
+- `pull_request_template.md` — Summary (~91 tok)
 
 ## .github/ISSUE_TEMPLATE/
 
@@ -291,14 +275,15 @@
 
 ## apps/native/.expo/types/
 
-- `router.d.ts` — Exports __routes (~1260 tok)
+- `router.d.ts` — Exports __routes (~587 tok)
 
 ## apps/native/app/
 
-- `_layout.tsx` — unstable_settings (~926 tok)
-- `edit-profile.tsx` — LANGUAGES (~3722 tok)
-- `enrolment.tsx` — Unified enrolment (students + alumni): email + OTP + resend + registry error handling (~2699 tok)
-- `index.tsx` — LANGUAGES (~5467 tok)
+- `_layout.tsx` — unstable_settings (~1137 tok)
+- `edit-profile.tsx` — LANGUAGES — uses useRouter, useQuery, useMutation (~3810 tok)
+- `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)
+- `index.tsx` — LANGUAGES (~5399 tok)
+- `review-profile.tsx` — INTERESTS_LABEL (~2394 tok)
 
 ## apps/native/components/
 
@@ -350,7 +335,7 @@
 - `header.tsx` — Header (~219 tok)
 - `loader.tsx` — Loader (~62 tok)
 - `mode-toggle.tsx` — ModeToggle (~329 tok)
-- `sign-in-form.tsx` — Unified sign-in (students + alumni): email + OTP + resend + registry error handling (~2537 tok)
+- `sign-in-form.tsx` — OTP_RESEND_COOLDOWN — renders form — uses useNavigate, useState, useEffect, useForm (~2537 tok)
 - `sign-up-form.tsx` — SignUpForm — renders form — uses useNavigate, useForm (~1375 tok)
 - `theme-provider.tsx` — ThemeProvider (~93 tok)
 - `user-menu.tsx` — UserMenu — uses useNavigate (~481 tok)
@@ -387,7 +372,7 @@
 ## packages/api/src/
 
 - `context.ts` — Exports CreateContextOptions, createContext, Context (~126 tok)
-- `domain-events.ts` — Exports LanguageProfileUpdatedEvent, InterestProfileUpdatedEvent, domainEvents (~268 tok)
+- `domain-events.ts` — Exports LanguageProfileUpdatedEvent, InterestProfileUpdatedEvent, ProfileCompletedEvent, domainEvents (~305 tok)
 - `index.ts` — tRPC router (~156 tok)
 
 ## packages/api/src/routers/
@@ -396,7 +381,7 @@
 - `index.ts` — tRPC router: 2 procedures (~198 tok)
 - `matching.ts` — Haversine distance in km between two lat/lng points (~2987 tok)
 - `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~2170 tok)
-- `profile.ts` — Zod schemas: interestEnum, proficiencyEnum, spokenLanguageSchema, learningProficiencyEnum + 3 more (~3562 tok)
+- `profile.ts` — tRPC router: 8 procedures. New: submitProfile (validates completeness, sets onboardingComplete, emits ProfileCompleted); syncMatchingEligibility helper auto-updates onboardingComplete after every language/interest edit (~4900 tok)
 - `venue.ts` — tRPC router: 2 procedures (~825 tok)
 
 ## packages/auth/
@@ -407,7 +392,7 @@
 
 ## packages/auth/src/
 
-- `alumni-registry.ts` — Static TU/e alumni registry. (~308 tok)
+- `alumni-registry.ts` — Static TU/e alumni registry. (~305 tok)
 - `domain-validation.ts` — Exports TUE_DOMAINS, validateTueDomain, TUE_DOMAIN_ERROR (~114 tok)
 - `index.ts` — ", "exp://192.168.*.*:*/**", "http://localhost:8081"] (~673 tok)
 

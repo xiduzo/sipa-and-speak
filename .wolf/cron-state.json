@@ -1,5 +1,5 @@
 {
-  "last_heartbeat": "2026-04-12T21:40:24.108Z",
+  "last_heartbeat": "2026-04-12T22:10:24.117Z",
   "engine_status": "running",
   "execution_log": [
     {
@@ -37,6 +37,18 @@
       "status": "success",
       "timestamp": "2026-04-12T16:00:01.424Z",
       "duration_ms": 576
+    },
+    {
+      "task_id": "anatomy-rescan",
+      "status": "success",
+      "timestamp": "2026-04-12T22:00:00.708Z",
+      "duration_ms": 81
+    },
+    {
+      "task_id": "token-audit",
+      "status": "success",
+      "timestamp": "2026-04-12T22:00:00.711Z",
+      "duration_ms": 2
     }
   ],
   "dead_letter_queue": [],

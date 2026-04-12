@@ -706,6 +706,118 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-12T21:39:15.046Z"
+    },
+    {
+      "id": "bug-044",
+      "timestamp": "2026-04-12T21:54:02.743Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/profile.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call | Also: await syncMatchingEligibility(userId);",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 4,
+      "last_seen": "2026-04-12T21:54:24.449Z"
+    },
+    {
+      "id": "bug-045",
+      "timestamp": "2026-04-12T21:54:11.610Z",
+      "error_message": "Null/undefined access in ",
+      "file": "packages/api/src/routers/profile.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T21:54:11.610Z"
+    },
+    {
+      "id": "bug-046",
+      "timestamp": "2026-04-12T21:54:29.449Z",
+      "error_message": "Wrong condition in logic",
+      "file": "apps/native/app/index.tsx",
+      "root_cause": "Condition was: if (onboardingStatus.data?.complete)",
+      "fix": "Changed to: if (onboardingStatus.data?.hasProfile)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T21:54:29.449Z"
+    },
+    {
+      "id": "bug-047",
+      "timestamp": "2026-04-12T21:54:59.481Z",
+      "error_message": "CSS fix: title",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "title: \"Edit Profile\" → \"Review Profile\"",
+      "fix": "Changed title: \"Edit Profile\" → \"Review Profile\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T21:54:59.482Z"
+    },
+    {
+      "id": "bug-048",
+      "timestamp": "2026-04-12T22:05:41.267Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/app/review-profile.tsx",
+      "root_cause": "Had \"@/utils/trpc\"",
+      "fix": "Changed to \"@/lib/auth-client\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T22:05:41.267Z"
+    },
+    {
+      "id": "bug-049",
+      "timestamp": "2026-04-12T22:12:50.048Z",
+      "error_message": "Null/undefined access in ",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T22:12:50.048Z"
+    },
+    {
+      "id": "bug-050",
+      "timestamp": "2026-04-12T22:15:44.919Z",
+      "error_message": "Wrong condition in logic",
+      "file": "apps/native/app/index.tsx",
+      "root_cause": "Condition was: if (onboardingStatus.data?.hasProfile)",
+      "fix": "Changed to: if (onboardingStatus.data?.complete)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T22:15:44.919Z"
     }
   ]
 }

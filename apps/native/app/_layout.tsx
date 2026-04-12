@@ -11,7 +11,7 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -22,7 +22,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import { authClient } from "@/lib/auth-client";
 import { AppThemeProvider } from "@/contexts/app-theme-context";
-import { queryClient } from "@/utils/trpc";
+import { queryClient, trpc } from "@/utils/trpc";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,21 +31,36 @@ export const unstable_settings = {
 };
 
 function AuthGuard() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending: sessionPending } = authClient.useSession();
   const router = useRouter();
   const segments = useSegments();
 
+  const onboardingQuery = useQuery({
+    ...trpc.profile.getOnboardingStatus.queryOptions(),
+    enabled: !!session,
+  });
+
   useEffect(() => {
-    if (isPending) return;
+    if (sessionPending) return;
+    if (session && onboardingQuery.isPending) return;
 
     const onEnrolmentScreen = segments[0] === "enrolment";
+    const onReviewScreen = segments[0] === "review-profile";
+
+    const onOnboardingScreen = segments[0] === undefined || segments[0] === "index";
 
     if (!session && !onEnrolmentScreen) {
       router.replace("/enrolment");
     } else if (session && onEnrolmentScreen) {
+      if (onboardingQuery.data?.complete) {
+        router.replace("/edit-profile");
+      } else {
+        router.replace("/");
+      }
+    } else if (session && !onboardingQuery.data?.complete && !onOnboardingScreen && !onReviewScreen) {
       router.replace("/");
     }
-  }, [session, isPending, segments]);
+  }, [session, sessionPending, onboardingQuery.data, onboardingQuery.isPending, segments]);
 
   return null;
 }

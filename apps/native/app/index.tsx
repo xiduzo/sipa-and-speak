@@ -74,10 +74,10 @@ export default function OnboardingScreen() {
   const onboardingStatus = useQuery(trpc.profile.getOnboardingStatus.queryOptions());
 
   useEffect(() => {
-    if (onboardingStatus.data?.hasProfile) {
+    if (onboardingStatus.data?.complete) {
       router.replace("/edit-profile");
     }
-  }, [onboardingStatus.data?.hasProfile]);
+  }, [onboardingStatus.data?.complete]);
 
   const [step, setStep] = useState(1);
   const [spokenLanguages, setSpokenLanguages] = useState<SpokenLanguage[]>([]);
@@ -103,20 +103,15 @@ export default function OnboardingScreen() {
     setSpokenLanguages((prev) =>
       prev.map((l) => (l.language === lang ? { ...l, proficiency } : l)),
     );
-    if (proficiency === "native") {
-      // Auto-remove from learning to enforce native-spoken ↔ learning constraint
-      setLearningLanguages((prev) => prev.filter((l) => l.language !== lang));
-    }
+    setLearningLanguages((prev) => prev.filter((l) => l.language !== lang));
   }
 
   function toggleLearningLanguage(lang: string) {
     setValidationError(null);
-    const isNativeSpoken = spokenLanguages.some(
-      (l) => l.language === lang && l.proficiency === "native",
-    );
-    if (isNativeSpoken) {
+    const alreadySpoken = spokenLanguages.some((l) => l.language === lang);
+    if (alreadySpoken) {
       setValidationError(
-        `You already speak ${lang} natively. It cannot also be a learning language.`,
+        `You already speak ${lang}. It cannot also be a learning language.`,
       );
       return;
     }
@@ -189,7 +184,7 @@ export default function OnboardingScreen() {
       });
       await queryClient.refetchQueries();
       toast.show({ variant: "success", label: "Profile saved!" });
-      router.replace("/edit-profile");
+      router.replace("/review-profile");
     } catch {
       toast.show({ variant: "danger", label: "Failed to save profile." });
     }
@@ -209,7 +204,7 @@ export default function OnboardingScreen() {
       await partialMutation.mutateAsync(input as Parameters<typeof partialMutation.mutateAsync>[0]);
       await queryClient.refetchQueries();
       toast.show({ variant: "default", label: "You can complete your profile later." });
-      router.replace("/edit-profile");
+      router.replace("/review-profile");
     } catch {
       toast.show({ variant: "danger", label: "Failed to save." });
     }
@@ -311,18 +306,16 @@ export default function OnboardingScreen() {
         <View className="flex-row flex-wrap gap-2 mb-4">
           {LANGUAGES.map((lang) => {
             const selected = learningLanguages.find((l) => l.language === lang);
-            const isNativeSpoken = spokenLanguages.some(
-              (l) => l.language === lang && l.proficiency === "native",
-            );
+            const alreadySpoken = spokenLanguages.some((l) => l.language === lang);
             return (
               <Pressable
                 key={lang}
                 onPress={() => toggleLearningLanguage(lang)}
-                disabled={isNativeSpoken}
+                disabled={alreadySpoken}
                 className={`px-4 py-2 rounded-full border ${
                   selected
                     ? "bg-primary border-primary"
-                    : isNativeSpoken
+                    : alreadySpoken
                       ? "bg-muted border-muted opacity-40"
                       : "bg-background border-border"
                 }`}

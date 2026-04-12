@@ -3,6 +3,8 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
+| 00:03 | Implemented feature #11 tasks #56–59: profile review screen, completeness validation, incomplete-section CTAs, submitProfile mutation, ProfileCompleted event, auto-restore via syncMatchingEligibility | apps/native/app/review-profile.tsx, edit-profile.tsx, _layout.tsx, index.tsx, packages/api/src/routers/profile.ts, domain-events.ts | PR #166 opened | ~4200 |
+
 | 20:14 | Implemented all feature #7 tasks (TU/e email OTP enrolment) | packages/auth/src/domain-validation.ts, packages/auth/src/index.ts, apps/native/app/enrolment.tsx, apps/web/src/components/sign-in-form.tsx | 6 tasks marked implemented on branch task/35-tue-email-otp-enrolment | ~8000 |
 
 ## Session: 2026-04-11 17:07
@@ -253,3 +255,53 @@
 | 23:41 | Edited ../../../../tmp/pr-body-10.md | 2→4 lines | ~12 |
 | 23:42 | Session end: 11 writes across 5 files (domain-events.ts, profile.ts, edit-profile.tsx, index.tsx, pr-body-10.md) | 8 reads | ~17001 tok |
 | 23:43 | Session end: 11 writes across 5 files (domain-events.ts, profile.ts, edit-profile.tsx, index.tsx, pr-body-10.md) | 8 reads | ~17001 tok |
+
+## Session: 2026-04-12 23:45
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-12 23:51
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 23:53 | Edited packages/api/src/domain-events.ts | expanded (+6 lines) | ~102 |
+| 23:54 | Edited packages/api/src/routers/profile.ts | modified syncMatchingEligibility() | ~230 |
+| 23:54 | Edited packages/api/src/routers/profile.ts | added 3 condition(s) | ~515 |
+| 23:54 | Edited packages/api/src/routers/profile.ts | 6→7 lines | ~60 |
+| 23:54 | Edited packages/api/src/routers/profile.ts | 6→7 lines | ~60 |
+| 23:54 | Edited packages/api/src/routers/profile.ts | 5→6 lines | ~50 |
+| 23:54 | Edited apps/native/app/index.tsx | modified if() | ~44 |
+| 23:54 | Created apps/native/app/review-profile.tsx | — | ~2299 |
+| 23:54 | Edited apps/native/app/_layout.tsx | 1→2 lines | ~46 |
+| 23:55 | Edited apps/native/app/edit-profile.tsx | added 1 import(s) | ~106 |
+| 23:55 | Edited apps/native/app/edit-profile.tsx | modified EditProfileScreen() | ~52 |
+| 23:55 | Edited apps/native/app/edit-profile.tsx | expanded (+6 lines) | ~156 |
+| 00:01 | Created ../../../../tmp/verify-56-body.md | — | ~656 |
+| 00:02 | Created ../../../../tmp/pr-body-11.md | — | ~769 |
+| 00:04 | Session end: 14 writes across 8 files (domain-events.ts, profile.ts, index.tsx, review-profile.tsx, _layout.tsx) | 10 reads | ~18487 tok |
+
+## Session: 2026-04-12 00:05
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 00:05 | Edited apps/native/app/review-profile.tsx | added 1 import(s) | ~43 |
+| 00:05 | Edited apps/native/app/review-profile.tsx | CSS: fetchOptions, onSuccess | ~206 |
+| 00:05 | added sign-out button to review-profile screen | apps/native/app/review-profile.tsx | done | ~200 |
+| 00:05 | Session end: 2 writes across 1 files (review-profile.tsx) | 2 reads | ~2722 tok |
+| 00:12 | Edited apps/native/app/_layout.tsx | 3→3 lines | ~47 |
+| 00:12 | Edited apps/native/app/_layout.tsx | inline fix | ~20 |
+| 00:12 | Edited apps/native/app/_layout.tsx | added optional chaining | ~292 |
+| 00:12 | added onboarding gate in AuthGuard — redirects to review-profile when onboardingComplete=false | apps/native/app/_layout.tsx | done | ~300 |
+| 00:12 | Session end: 5 writes across 2 files (review-profile.tsx, _layout.tsx) | 4 reads | ~8930 tok |
+| 00:15 | Edited apps/native/app/index.tsx | modified if() | ~43 |
+| 00:15 | Session end: 6 writes across 3 files (review-profile.tsx, _layout.tsx, index.tsx) | 5 reads | ~14441 tok |
+| 00:19 | Edited apps/native/app/_layout.tsx | added 1 condition(s) | ~149 |
+| 00:19 | Session end: 7 writes across 3 files (review-profile.tsx, _layout.tsx, index.tsx) | 5 reads | ~14788 tok |
+| 00:25 | Edited apps/native/app/_layout.tsx | modified if() | ~138 |
+| 00:25 | Edited apps/native/app/index.tsx | modified handleSkip() | ~270 |
+| 00:26 | Session end: 9 writes across 3 files (review-profile.tsx, _layout.tsx, index.tsx) | 5 reads | ~15195 tok |
+| 00:28 | Edited apps/native/app/index.tsx | modified toggleLearningLanguage() | ~90 |
+| 00:28 | Edited apps/native/app/index.tsx | 15→13 lines | ~162 |
+| 00:28 | Edited apps/native/app/index.tsx | 4→1 lines | ~22 |
+| 00:28 | Session end: 12 writes across 3 files (review-profile.tsx, _layout.tsx, index.tsx) | 5 reads | ~15470 tok |

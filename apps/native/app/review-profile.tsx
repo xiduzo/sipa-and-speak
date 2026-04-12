@@ -4,6 +4,7 @@ import { Button, Spinner, useToast } from "heroui-native";
 import { ScrollView, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
+import { authClient } from "@/lib/auth-client";
 import { queryClient, trpc } from "@/utils/trpc";
 
 const INTERESTS_LABEL: Record<string, string> = {
@@ -197,6 +198,15 @@ export default function ReviewProfileScreen() {
               ) : (
                 <Button.Label>Submit — Enter Matching Pool</Button.Label>
               )}
+            </Button>
+          </View>
+
+          <View>
+            <Button
+              variant="ghost"
+              onPress={() => authClient.signOut({ fetchOptions: { onSuccess: () => router.replace("/") } })}
+            >
+              <Button.Label>Sign out</Button.Label>
             </Button>
           </View>
 
