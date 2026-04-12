@@ -303,16 +303,6 @@ export default function SignInForm() {
           )}
         </emailForm.Subscribe>
       </form>
-
-      <div className="mt-4">
-        <Button
-          variant="ghost"
-          onClick={() => navigate({ to: "/alumni-login" })}
-          className="w-full"
-        >
-          TU/e alumni? Enrol here instead
-        </Button>
-      </div>
     </div>
   );
 }

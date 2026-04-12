@@ -306,13 +306,6 @@ export default function EnrolmentScreen() {
                   <Button.Label>Continue</Button.Label>
                 )}
               </Button>
-
-              <Button
-                variant="ghost"
-                onPress={() => router.replace("/alumni-enrolment")}
-              >
-                <Button.Label>TU/e alumni? Enrol here instead</Button.Label>
-              </Button>
             </View>
           </>
         )}
