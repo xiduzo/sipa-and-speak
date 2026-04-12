@@ -5,9 +5,9 @@
  */
 export const ALUMNI_REGISTRY: readonly string[] = [
   // Sample alumni entries — replace with actual verified alumni emails
-  "j.doe@alumni.tue.nl",
-  "a.smith@alumni.tue.nl",
-  "m.van.den.berg@alumni.tue.nl",
+  "j.doe@gmail.com",
+  "a.smith@gmail.com",
+  "m.van.den.berg@gmail.com",
 ];
 
 /**

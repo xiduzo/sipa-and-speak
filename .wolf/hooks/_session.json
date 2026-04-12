@@ -1,88 +1,39 @@
 {
-  "session_id": "session-2026-04-12-2031",
-  "started": "2026-04-12T18:31:32.355Z",
+  "session_id": "session-2026-04-12-2219",
+  "started": "2026-04-12T20:19:55.118Z",
   "files_read": {
-    "/Users/sander/personal/sip-and-speak/.claude/skills/wtf.verify-task/references/qa-verdict-guide.md": {
+    "/tmp/updated-task-46-body.md": {
       "count": 1,
       "tokens": 0,
-      "first_read": "2026-04-12T18:33:04.113Z"
+      "first_read": "2026-04-12T20:20:14.609Z"
     },
-    "/Users/sander/personal/sip-and-speak/.wtf/workflow/skills/references/gh-setup.md": {
-      "count": 1,
-      "tokens": 1424,
-      "first_read": "2026-04-12T18:33:04.190Z"
-    },
-    "/Users/sander/personal/sip-and-speak/packages/auth/src/__tests__/domain-validation.test.ts": {
-      "count": 1,
-      "tokens": 477,
-      "first_read": "2026-04-12T18:33:47.146Z"
-    },
-    "/tmp/updated-task-36.md": {
+    "/tmp/updated-task-47-body.md": {
       "count": 1,
       "tokens": 0,
-      "first_read": "2026-04-12T18:35:28.485Z"
-    },
-    "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts": {
-      "count": 1,
-      "tokens": 543,
-      "first_read": "2026-04-12T18:36:18.835Z"
-    },
-    "/Users/sander/personal/sip-and-speak/apps/server/src/index.ts": {
-      "count": 1,
-      "tokens": 379,
-      "first_read": "2026-04-12T18:36:23.333Z"
-    },
-    "/tmp/updated-task-37.md": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-12T18:37:38.611Z"
-    },
-    "/tmp/updated-task-38.md": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-12T18:40:24.863Z"
-    },
-    "/tmp/updated-task-39.md": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-12T18:41:36.135Z"
+      "first_read": "2026-04-12T20:20:50.113Z"
     }
   },
   "files_written": [
     {
-      "file": "/tmp/updated-task-36.md",
+      "file": "/tmp/updated-task-46-body.md",
       "action": "edit",
-      "tokens": 180,
-      "at": "2026-04-12T18:35:34.484Z"
+      "tokens": 167,
+      "at": "2026-04-12T20:20:19.321Z"
     },
     {
-      "file": "/tmp/updated-task-37.md",
+      "file": "/tmp/updated-task-47-body.md",
       "action": "edit",
-      "tokens": 197,
-      "at": "2026-04-12T18:37:44.501Z"
-    },
-    {
-      "file": "/tmp/updated-task-38.md",
-      "action": "edit",
-      "tokens": 163,
-      "at": "2026-04-12T18:40:29.885Z"
-    },
-    {
-      "file": "/tmp/updated-task-39.md",
-      "action": "edit",
-      "tokens": 137,
-      "at": "2026-04-12T18:41:41.136Z"
+      "tokens": 225,
+      "at": "2026-04-12T20:20:55.190Z"
     }
   ],
   "edit_counts": {
-    "../../../../tmp/updated-task-36.md": 1,
-    "../../../../tmp/updated-task-37.md": 1,
-    "../../../../tmp/updated-task-38.md": 1,
-    "../../../../tmp/updated-task-39.md": 1
+    "../../../../tmp/updated-task-46-body.md": 1,
+    "../../../../tmp/updated-task-47-body.md": 1
   },
-  "anatomy_hits": 4,
-  "anatomy_misses": 5,
+  "anatomy_hits": 0,
+  "anatomy_misses": 2,
   "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 2
+  "stop_count": 1
 }

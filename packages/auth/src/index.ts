@@ -18,6 +18,19 @@ export function createAuth() {
 
       schema: schema,
     }),
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            try {
+              await polarClient.customers.create({ email: user.email, name: user.name ?? undefined });
+            } catch (e) {
+              console.error("[polar] customer creation failed for", user.email, e instanceof Error ? e.message : e);
+            }
+          },
+        },
+      },
+    },
     trustedOrigins: [
       env.CORS_ORIGIN,
       "sip-and-speak://",
@@ -40,7 +53,7 @@ export function createAuth() {
     plugins: [
       polar({
         client: polarClient,
-        createCustomerOnSignUp: true,
+        createCustomerOnSignUp: false, // handled in databaseHooks with error catching
         enableCustomerPortal: true,
         use: [
           checkout({
