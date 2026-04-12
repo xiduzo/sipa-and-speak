@@ -23,6 +23,8 @@
 <!-- Mistakes made and corrected. Each entry prevents the same mistake recurring. -->
 <!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
 - [2026-04-12] Do not use `form.setFieldMeta()` for server-side errors in TanStack Form — this method doesn't exist. Use `useState` for server-side error state instead.
+- [2026-04-12] Better-Auth `sendVerificationOTP` callback runs as a **background task** after the 200 response is already sent. Throwing inside it logs an error but does NOT gate the request. Domain validation MUST be done in a Hono middleware BEFORE the `app.on('/api/auth/*')` handler.
+- [2026-04-12] For Better-Auth email OTP **sign-in** flow: use `authClient.signIn.emailOtp({ email, otp })` — NOT `authClient.emailOtp.verifyEmail()`. The `verifyEmail` method is only for `type: "email-verification"` (changing email). Using it for sign-in always returns 400.
 - [2026-04-12] Do not use `variant="light"` or `variant="bordered"` in heroui-native Button — these are not in `ButtonVariant`. Use `"ghost"` for secondary/tertiary actions.
 
 ## Decision Log

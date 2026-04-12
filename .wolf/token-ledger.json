@@ -2,16 +2,399 @@
   "version": 1,
   "created_at": "2026-04-10T10:02:44.507Z",
   "lifetime": {
-    "total_tokens_estimated": 0,
-    "total_reads": 0,
-    "total_writes": 0,
-    "total_sessions": 4,
-    "anatomy_hits": 0,
+    "total_tokens_estimated": 47823,
+    "total_reads": 28,
+    "total_writes": 36,
+    "total_sessions": 5,
+    "anatomy_hits": 28,
     "anatomy_misses": 0,
-    "repeated_reads_blocked": 0,
-    "estimated_savings_vs_bare_cli": 0
+    "repeated_reads_blocked": 3,
+    "estimated_savings_vs_bare_cli": 7379
   },
-  "sessions": [],
+  "sessions": [
+    {
+      "id": "session-2026-04-12-2000",
+      "started": "2026-04-12T18:00:29.496Z",
+      "ended": "2026-04-12T18:24:17.206Z",
+      "reads": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/docs/steering/TECH.md",
+          "tokens_estimated": 1106,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts",
+          "tokens_estimated": 532,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/components/sign-up.tsx",
+          "tokens_estimated": 1680,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/index.tsx",
+          "tokens_estimated": 4321,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/components/sign-in.tsx",
+          "tokens_estimated": 1376,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 761,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/lib/auth-client.ts",
+          "tokens_estimated": 174,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/index.ts",
+          "tokens_estimated": 257,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/lib/auth-client.ts",
+          "tokens_estimated": 98,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-in-form.tsx",
+          "tokens_estimated": 1132,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/package.json",
+          "tokens_estimated": 482,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-up-form.tsx",
+          "tokens_estimated": 1375,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/routes/login.tsx",
+          "tokens_estimated": 153,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/docs/steering/QA.md",
+          "tokens_estimated": 958,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/domain-validation.ts",
+          "tokens_estimated": 114,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/__tests__/domain-validation.test.ts",
+          "tokens_estimated": 477,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/package.json",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts",
+          "tokens_estimated": 153,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts",
+          "tokens_estimated": 106,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+          "tokens_estimated": 2712,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 82,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+          "tokens_estimated": 2700,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-in-form.tsx",
+          "tokens_estimated": 2538,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/routes/login.tsx",
+          "tokens_estimated": 72,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 171,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 143,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 37,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+          "tokens_estimated": 32,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-in-form.tsx",
+          "tokens_estimated": 32,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 14405,
+        "output_tokens_estimated": 9386,
+        "reads_count": 14,
+        "writes_count": 16,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 14
+      }
+    },
+    {
+      "id": "session-2026-04-12-2000",
+      "started": "2026-04-12T18:00:29.496Z",
+      "ended": "2026-04-12T18:30:58.712Z",
+      "reads": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/docs/steering/TECH.md",
+          "tokens_estimated": 1106,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts",
+          "tokens_estimated": 532,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/components/sign-up.tsx",
+          "tokens_estimated": 1680,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/index.tsx",
+          "tokens_estimated": 4321,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/components/sign-in.tsx",
+          "tokens_estimated": 1376,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 761,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/lib/auth-client.ts",
+          "tokens_estimated": 174,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/index.ts",
+          "tokens_estimated": 257,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/lib/auth-client.ts",
+          "tokens_estimated": 98,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-in-form.tsx",
+          "tokens_estimated": 1132,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/package.json",
+          "tokens_estimated": 482,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-up-form.tsx",
+          "tokens_estimated": 1375,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/routes/login.tsx",
+          "tokens_estimated": 153,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/docs/steering/QA.md",
+          "tokens_estimated": 958,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/domain-validation.ts",
+          "tokens_estimated": 114,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/__tests__/domain-validation.test.ts",
+          "tokens_estimated": 477,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/package.json",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts",
+          "tokens_estimated": 153,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts",
+          "tokens_estimated": 106,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+          "tokens_estimated": 2712,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 82,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+          "tokens_estimated": 2700,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-in-form.tsx",
+          "tokens_estimated": 2538,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/routes/login.tsx",
+          "tokens_estimated": 72,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 171,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 143,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 37,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/enrolment.tsx",
+          "tokens_estimated": 32,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/web/src/components/sign-in-form.tsx",
+          "tokens_estimated": 32,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/index.ts",
+          "tokens_estimated": 53,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/index.ts",
+          "tokens_estimated": 116,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts",
+          "tokens_estimated": 59,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/auth/src/index.ts",
+          "tokens_estimated": 13,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 14405,
+        "output_tokens_estimated": 9627,
+        "reads_count": 14,
+        "writes_count": 20,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 14
+      }
+    }
+  ],
   "daemon_usage": [],
   "waste_flags": [],
   "optimization_report": {
