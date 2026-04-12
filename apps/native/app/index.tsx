@@ -1,7 +1,7 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Button, Card, Spinner, useToast } from "heroui-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -35,11 +35,23 @@ const PROFICIENCY_LEVELS = [
 ] as const;
 
 type Proficiency = "beginner" | "intermediate" | "advanced" | "native";
+type LearningProficiency = "beginner" | "intermediate" | "advanced";
 
 interface SpokenLanguage {
   language: string;
   proficiency: Proficiency;
 }
+
+interface LearningLanguage {
+  language: string;
+  proficiency: LearningProficiency;
+}
+
+const LEARNING_PROFICIENCY_LEVELS = [
+  { value: "beginner" as LearningProficiency, label: "Beginner" },
+  { value: "intermediate" as LearningProficiency, label: "Intermediate" },
+  { value: "advanced" as LearningProficiency, label: "Advanced" },
+] as const;
 
 const INTERESTS = [
   { value: "modern_art", label: "Modern Art" },
@@ -59,9 +71,17 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { toast } = useToast();
 
+  const onboardingStatus = useQuery(trpc.profile.getOnboardingStatus.queryOptions());
+
+  useEffect(() => {
+    if (onboardingStatus.data?.complete) {
+      router.replace("/edit-profile");
+    }
+  }, [onboardingStatus.data?.complete]);
+
   const [step, setStep] = useState(1);
   const [spokenLanguages, setSpokenLanguages] = useState<SpokenLanguage[]>([]);
-  const [learningLanguages, setLearningLanguages] = useState<string[]>([]);
+  const [learningLanguages, setLearningLanguages] = useState<LearningLanguage[]>([]);
   const [interests, setInterests] = useState<InterestValue[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -83,12 +103,33 @@ export default function OnboardingScreen() {
     setSpokenLanguages((prev) =>
       prev.map((l) => (l.language === lang ? { ...l, proficiency } : l)),
     );
+    if (proficiency === "native") {
+      // Auto-remove from learning to enforce native-spoken ↔ learning constraint
+      setLearningLanguages((prev) => prev.filter((l) => l.language !== lang));
+    }
   }
 
   function toggleLearningLanguage(lang: string) {
     setValidationError(null);
+    const isNativeSpoken = spokenLanguages.some(
+      (l) => l.language === lang && l.proficiency === "native",
+    );
+    if (isNativeSpoken) {
+      setValidationError(
+        `You already speak ${lang} natively. It cannot also be a learning language.`,
+      );
+      return;
+    }
+    setLearningLanguages((prev) => {
+      const exists = prev.find((l) => l.language === lang);
+      if (exists) return prev.filter((l) => l.language !== lang);
+      return [...prev, { language: lang, proficiency: "beginner" }];
+    });
+  }
+
+  function setLearningProficiency(lang: string, proficiency: LearningProficiency) {
     setLearningLanguages((prev) =>
-      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang],
+      prev.map((l) => (l.language === lang ? { ...l, proficiency } : l)),
     );
   }
 
@@ -132,12 +173,15 @@ export default function OnboardingScreen() {
     try {
       await upsertMutation.mutateAsync({
         spokenLanguages,
-        learningLanguages: learningLanguages.map((l) => ({ language: l })),
+        learningLanguages: learningLanguages.map((l) => ({
+          language: l.language,
+          proficiency: l.proficiency,
+        })),
         interests: interests as InterestValue[],
       });
       await queryClient.refetchQueries();
       toast.show({ variant: "success", label: "Profile saved!" });
-      router.replace("/(drawer)/(tabs)");
+      router.replace("/edit-profile");
     } catch {
       toast.show({ variant: "danger", label: "Failed to save profile." });
     }
@@ -148,13 +192,16 @@ export default function OnboardingScreen() {
       const input: Record<string, unknown> = {};
       if (spokenLanguages.length > 0) input.spokenLanguages = spokenLanguages;
       if (learningLanguages.length > 0)
-        input.learningLanguages = learningLanguages.map((l) => ({ language: l }));
+        input.learningLanguages = learningLanguages.map((l) => ({
+          language: l.language,
+          proficiency: l.proficiency,
+        }));
       if (interests.length > 0) input.interests = interests;
 
       await partialMutation.mutateAsync(input as Parameters<typeof partialMutation.mutateAsync>[0]);
       await queryClient.refetchQueries();
       toast.show({ variant: "default", label: "You can complete your profile later." });
-      router.replace("/(drawer)/(tabs)");
+      router.replace("/edit-profile");
     } catch {
       toast.show({ variant: "danger", label: "Failed to save." });
     }
@@ -253,21 +300,31 @@ export default function OnboardingScreen() {
         <Text className="text-muted-foreground mb-4">
           Pick the languages you'd like to practice with a partner.
         </Text>
-        <View className="flex-row flex-wrap gap-2">
+        <View className="flex-row flex-wrap gap-2 mb-4">
           {LANGUAGES.map((lang) => {
-            const selected = learningLanguages.includes(lang);
+            const selected = learningLanguages.find((l) => l.language === lang);
+            const isNativeSpoken = spokenLanguages.some(
+              (l) => l.language === lang && l.proficiency === "native",
+            );
             return (
               <Pressable
                 key={lang}
                 onPress={() => toggleLearningLanguage(lang)}
+                disabled={isNativeSpoken}
                 className={`px-4 py-2 rounded-full border ${
                   selected
                     ? "bg-primary border-primary"
-                    : "bg-background border-border"
+                    : isNativeSpoken
+                      ? "bg-muted border-muted opacity-40"
+                      : "bg-background border-border"
                 }`}
               >
                 <Text
-                  className={selected ? "text-primary-foreground font-medium" : "text-foreground"}
+                  className={
+                    selected
+                      ? "text-primary-foreground font-medium"
+                      : "text-foreground"
+                  }
                 >
                   {lang}
                 </Text>
@@ -275,6 +332,40 @@ export default function OnboardingScreen() {
             );
           })}
         </View>
+
+        {learningLanguages.length > 0 && (
+          <View className="gap-3">
+            <Text className="text-foreground font-semibold">Set proficiency:</Text>
+            {learningLanguages.map((ll) => (
+              <Card key={ll.language} className="p-3">
+                <Text className="text-foreground font-medium mb-2">{ll.language}</Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {LEARNING_PROFICIENCY_LEVELS.map((level) => (
+                    <Pressable
+                      key={level.value}
+                      onPress={() => setLearningProficiency(ll.language, level.value)}
+                      className={`px-3 py-1.5 rounded-full border ${
+                        ll.proficiency === level.value
+                          ? "bg-primary border-primary"
+                          : "bg-background border-border"
+                      }`}
+                    >
+                      <Text
+                        className={
+                          ll.proficiency === level.value
+                            ? "text-primary-foreground text-sm"
+                            : "text-foreground text-sm"
+                        }
+                      >
+                        {level.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </Card>
+            ))}
+          </View>
+        )}
       </View>
     );
   }
@@ -347,9 +438,11 @@ export default function OnboardingScreen() {
             <Text className="text-muted-foreground text-sm">None selected</Text>
           ) : (
             <View className="flex-row flex-wrap gap-2">
-              {learningLanguages.map((lang) => (
-                <View key={lang} className="bg-muted px-3 py-1 rounded-full">
-                  <Text className="text-foreground text-sm">{lang}</Text>
+              {learningLanguages.map((ll) => (
+                <View key={ll.language} className="bg-muted px-3 py-1 rounded-full">
+                  <Text className="text-foreground text-sm">
+                    {ll.language} · {ll.proficiency}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -374,6 +467,16 @@ export default function OnboardingScreen() {
           )}
         </Card>
       </View>
+    );
+  }
+
+  if (onboardingStatus.isPending) {
+    return (
+      <Container isScrollable={false}>
+        <View className="flex-1 items-center justify-center">
+          <Spinner />
+        </View>
+      </Container>
     );
   }
 
@@ -402,7 +505,7 @@ export default function OnboardingScreen() {
               <>
                 <View className="flex-row gap-3">
                   {step > 1 && (
-                    <Button variant="bordered" onPress={handleBack} className="flex-1">
+                    <Button variant="outline" onPress={handleBack} className="flex-1">
                       <Button.Label>Back</Button.Label>
                     </Button>
                   )}
@@ -410,7 +513,7 @@ export default function OnboardingScreen() {
                     <Button.Label>Next</Button.Label>
                   </Button>
                 </View>
-                <Button variant="light" onPress={handleSkip} isDisabled={isSaving}>
+                <Button variant="ghost" onPress={handleSkip} isDisabled={isSaving}>
                   {isSaving ? (
                     <Spinner size="sm" color="default" />
                   ) : (
@@ -421,7 +524,7 @@ export default function OnboardingScreen() {
             ) : (
               <>
                 <View className="flex-row gap-3">
-                  <Button variant="bordered" onPress={handleBack} className="flex-1">
+                  <Button variant="outline" onPress={handleBack} className="flex-1">
                     <Button.Label>Back</Button.Label>
                   </Button>
                   <Button onPress={handleSave} isDisabled={isSaving} className="flex-1">
@@ -432,7 +535,7 @@ export default function OnboardingScreen() {
                     )}
                   </Button>
                 </View>
-                <Button variant="light" onPress={handleSkip} isDisabled={isSaving}>
+                <Button variant="ghost" onPress={handleSkip} isDisabled={isSaving}>
                   {isSaving ? (
                     <Spinner size="sm" color="default" />
                   ) : (
