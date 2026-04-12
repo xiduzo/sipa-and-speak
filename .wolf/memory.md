@@ -158,3 +158,66 @@
 | 22:20 | Edited ../../../../tmp/updated-task-47-body.md | expanded (+7 lines) | ~210 |
 | 22:22 | QA verified all 7 tasks from feature #8 (issues #41–#47) on native app; fixed bug-028: server returned TUE_DOMAIN_ERROR for alumni rejections instead of ALUMNI_REGISTRY_ERROR; all tasks labeled 'verified' | apps/server/src/index.ts, .wolf/anatomy.md, .wolf/buglog.json | ✅ #41 ✅ #42 ⚠️ #43 ✅ #44 ⚠️ #45 ✅ #46 ✅ #47 | ~600 |
 | 22:22 | Session end: 2 writes across 2 files (updated-task-46-body.md, updated-task-47-body.md) | 2 reads | ~392 tok |
+| 22:24 | Session end: 2 writes across 2 files (updated-task-46-body.md, updated-task-47-body.md) | 2 reads | ~392 tok |
+| 22:25 | Session end: 2 writes across 2 files (updated-task-46-body.md, updated-task-47-body.md) | 2 reads | ~392 tok |
+
+## Session: 2026-04-12 22:25
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 22:28 | Edited packages/api/src/routers/profile.ts | added 1 import(s) | ~89 |
+| 22:28 | Edited packages/api/src/routers/profile.ts | 3→6 lines | ~58 |
+| 22:28 | Edited packages/api/src/routers/profile.ts | added 1 condition(s) | ~186 |
+| 22:28 | Edited packages/api/src/routers/profile.ts | 6→8 lines | ~82 |
+| 22:28 | Edited packages/api/src/routers/profile.ts | added nullish coalescing | ~132 |
+| 22:28 | Edited packages/api/src/routers/profile.ts | added 1 condition(s) | ~105 |
+| 22:28 | Edited packages/api/src/routers/profile.ts | 6→6 lines | ~64 |
+| 22:29 | Edited packages/api/src/routers/profile.ts | added 4 condition(s) | ~914 |
+| 22:29 | Edited apps/native/app/index.tsx | expanded (+12 lines) | ~162 |
+| 22:29 | Edited apps/native/app/index.tsx | 2→2 lines | ~48 |
+| 22:29 | Edited apps/native/app/index.tsx | CSS: language | ~345 |
+| 22:29 | Edited apps/native/app/index.tsx | CSS: proficiency | ~76 |
+| 22:29 | Edited apps/native/app/index.tsx | CSS: proficiency | ~54 |
+| 22:29 | Edited apps/native/app/index.tsx | CSS: proficiency | ~841 |
+| 22:29 | Edited apps/native/app/index.tsx | 11→13 lines | ~156 |
+| 22:29 | Edited apps/native/app/index.tsx | "bordered" → "outline" | ~5 |
+| 22:29 | Edited apps/native/app/index.tsx | "light" → "ghost" | ~5 |
+| 22:30 | Implemented feature #9 (language profile tasks #48-#52) | packages/api/src/routers/profile.ts, apps/native/app/index.tsx | Added learning proficiency selection, native-spoken↔learning conflict validation, upsertLanguage/removeLanguage API procedures | ~300 tokens |
+| 22:30 | Session end: 17 writes across 2 files (profile.ts, index.tsx) | 5 reads | ~12370 tok |
+| 22:34 | Session end: 17 writes across 2 files (profile.ts, index.tsx) | 9 reads | ~13358 tok |
+| 22:44 | Created ../../../../tmp/updated-task-48.md | — | ~320 |
+| 22:44 | Created ../../../../tmp/updated-task-49.md | — | ~334 |
+| 22:44 | Created ../../../../tmp/updated-task-51.md | — | ~299 |
+| 22:44 | Created ../../../../tmp/updated-task-52.md | — | ~340 |
+| 22:44 | Created ../../../../tmp/updated-task-50.md | — | ~395 |
+| 22:45 | Session end: 22 writes across 7 files (profile.ts, index.tsx, updated-task-48.md, updated-task-49.md, updated-task-51.md) | 14 reads | ~15167 tok |
+| 23:18 | Created packages/api/src/domain-events.ts | — | ~227 |
+| 23:18 | Edited packages/api/src/routers/profile.ts | added 1 import(s) | ~30 |
+| 23:18 | Edited packages/api/src/routers/profile.ts | modified if() | ~110 |
+| 23:19 | Edited packages/api/src/routers/profile.ts | added 1 condition(s) | ~190 |
+| 23:19 | Edited packages/api/src/routers/profile.ts | 13→15 lines | ~103 |
+| 23:19 | Edited packages/api/src/routers/profile.ts | 13→15 lines | ~108 |
+| 23:20 | Created apps/native/app/edit-profile.tsx | — | ~3300 |
+| 23:20 | Edited apps/native/app/index.tsx | "/(drawer)/(tabs)" → "/edit-profile" | ~9 |
+| 23:20 | Edited apps/native/app/edit-profile.tsx | 3→3 lines | ~42 |
+| 23:20 | Created ../../../../tmp/task-50-final.md | — | ~387 |
+| 22:45 | Implemented domain events + edit-profile screen for task #50 | packages/api/src/domain-events.ts, packages/api/src/routers/profile.ts, apps/native/app/edit-profile.tsx, apps/native/app/index.tsx | All feature #9 tasks now verified and labeled | ~250 tokens |
+| 23:21 | Session end: 32 writes across 10 files (profile.ts, index.tsx, updated-task-48.md, updated-task-49.md, updated-task-51.md) | 17 reads | ~20984 tok |
+| 23:26 | Edited apps/native/app/index.tsx | 4→4 lines | ~61 |
+| 23:26 | Edited apps/native/app/index.tsx | added optional chaining | ~110 |
+| 23:26 | Edited apps/native/app/index.tsx | added 1 condition(s) | ~110 |
+| 23:26 | Session end: 35 writes across 10 files (profile.ts, index.tsx, updated-task-48.md, updated-task-49.md, updated-task-51.md) | 17 reads | ~22268 tok |
+| 23:28 | Session end: 35 writes across 10 files (profile.ts, index.tsx, updated-task-48.md, updated-task-49.md, updated-task-51.md) | 19 reads | ~24490 tok |
+
+## Session: 2026-04-12 23:28
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 23:29 | Edited apps/native/app/edit-profile.tsx | 6→10 lines | ~102 |
+| 23:29 | Edited apps/native/app/edit-profile.tsx | modified handleAdd() | ~53 |
+| 23:29 | Edited apps/native/app/edit-profile.tsx | reduced (-10 lines) | ~144 |
+| 23:29 | Edited apps/native/app/edit-profile.tsx | 2→1 lines | ~22 |
+| 23:29 | Edited apps/native/app/edit-profile.tsx | removed 7 lines | ~6 |
+| 23:29 | Edited apps/native/app/edit-profile.tsx | modified handleUpdateProficiency() | ~34 |
+| 23:29 | Session end: 6 writes across 1 files (edit-profile.tsx) | 1 reads | ~3662 tok |
+| 23:31 | Session end: 6 writes across 1 files (edit-profile.tsx) | 1 reads | ~3662 tok |
