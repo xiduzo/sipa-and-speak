@@ -33,6 +33,7 @@ function StackLayout() {
   return (
     <Stack screenOptions={{}}>
       <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+      <Stack.Screen name="enrolment" options={{ title: "Enrol with TU/e", headerBackVisible: false }} />
       <Stack.Screen name="onboarding" options={{ title: "Set Up Your Profile", headerBackVisible: false }} />
       <Stack.Screen name="edit-profile" options={{ title: "Edit Profile" }} />
       <Stack.Screen name="partner/[id]" options={{ title: "Partner Profile" }} />
