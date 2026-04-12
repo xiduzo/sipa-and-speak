@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "bugs": [
+    {
+      "id": "bug-001",
+      "timestamp": "2026-04-12T18:09:08.217Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Had \"onboarding\"",
+      "fix": "Changed to \"enrolment\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T18:09:08.217Z"
+    },
+    {
+      "id": "bug-002",
+      "timestamp": "2026-04-12T18:12:27.761Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/app/enrolment.tsx",
+      "root_cause": "Had \"light\"",
+      "fix": "Changed to \"ghost\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T18:12:27.761Z"
+    }
+  ]
+}

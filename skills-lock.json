@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "skills": {
+    "wtf.create-pr": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "d4fdb9590f64fa1370e3c8b08ee2e4c603e04a8807f09769dee5e22d2e235a7f"
+    },
+    "wtf.design-task": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "e19655c9048273030e9862a41a633f199b2c066364feda2bc044c77b070715ee"
+    },
+    "wtf.epic-to-features": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "1d7622e0cd39e8cd48867aa5ef8ab15d4d8201bf7f5fb77f5e475b93011d7ff9"
+    },
+    "wtf.feature-to-tasks": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "c06c5697130a73d2d51b8a3e4464aeef463c33d18655a56e781cb390abd6e7f3"
+    },
+    "wtf.implement-task": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "659fe34a8bce644ae83692d9f44f6b807e40139786dd6ef09a7754242f892a0b"
+    },
+    "wtf.refine": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "f0652a7e1c3947e34dd3387f4f3cce7271862f9ce138b61f6fc2be133d9daac8"
+    },
+    "wtf.reflect": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "d47774c5f4907ded09b565b3f804159d51a5106110bb739794fad093050cff3b"
+    },
+    "wtf.report-bug": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "300e78bdbd0ddc13137d5d71ce8d27fc15ceeaa161ca14ad30f36cc78427cdc5"
+    },
+    "wtf.setup": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "f867a9a875ee1f37ad29161abda6b7b4cb998ad39cb3b11cf4e880e40bd73621"
+    },
+    "wtf.steer-design": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "792c46ce557637f666cdaded30b04d57f393cca5d7a5f8134d1af0e71580e18e"
+    },
+    "wtf.steer-qa": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "e2db2f4643656c2a48e240ac270b5934b12d9f3f6ba61885eb65e4b276cfb8eb"
+    },
+    "wtf.steer-tech": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "c2bbfccaa148acc487f214255ace91bdf5334eec0443472faa0df75b4b0b4005"
+    },
+    "wtf.steer-vision": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "357d7302dea9a439b2c83d50c87065203da4ee4644c0a316f8ade84ed7bcf8d5"
+    },
+    "wtf.verify-task": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "68258b23582816d35251d5798eaab5c045232d319b07fb375e4e97dd931dfaee"
+    },
+    "wtf.write-epic": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "04ac80e2874479f5134d271dc503c473e77f34f98ca184d0bc28bbc17023d2c8"
+    },
+    "wtf.write-feature": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "26d58ede63980bf566b37183762b4d61e88947a107d47e17e8462e84c7fd354e"
+    },
+    "wtf.write-task": {
+      "source": "xiduzo/wtf",
+      "sourceType": "github",
+      "computedHash": "c4f593912b891e75ef27adb7ca5308974dc650b45d2481eada3472ba589d2c86"
+    }
+  }
+}

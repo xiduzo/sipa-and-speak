@@ -13,13 +13,14 @@ import {
 } from "@expo-google-fonts/plus-jakarta-sans";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { HeroUINativeProvider } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
+import { authClient } from "@/lib/auth-client";
 import { AppThemeProvider } from "@/contexts/app-theme-context";
 import { queryClient } from "@/utils/trpc";
 
@@ -29,10 +30,31 @@ export const unstable_settings = {
   initialRouteName: "(drawer)",
 };
 
+function AuthGuard() {
+  const { data: session, isPending } = authClient.useSession();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (isPending) return;
+
+    const onEnrolmentScreen = segments[0] === "enrolment";
+
+    if (!session && !onEnrolmentScreen) {
+      router.replace("/enrolment");
+    } else if (session && onEnrolmentScreen) {
+      router.replace("/");
+    }
+  }, [session, isPending, segments]);
+
+  return null;
+}
+
 function StackLayout() {
   return (
     <Stack screenOptions={{}}>
       <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+      <Stack.Screen name="enrolment" options={{ title: "Enrol with TU/e", headerBackVisible: false }} />
       <Stack.Screen name="onboarding" options={{ title: "Set Up Your Profile", headerBackVisible: false }} />
       <Stack.Screen name="edit-profile" options={{ title: "Edit Profile" }} />
       <Stack.Screen name="partner/[id]" options={{ title: "Partner Profile" }} />
@@ -72,6 +94,7 @@ export default function Layout() {
         <KeyboardProvider>
           <AppThemeProvider>
             <HeroUINativeProvider>
+              <AuthGuard />
               <StackLayout />
             </HeroUINativeProvider>
           </AppThemeProvider>

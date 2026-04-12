@@ -58,6 +58,7 @@ export function createAuth() {
       }),
       expo(),
       emailOTP({
+        expiresIn: 600, // 10 minutes
         async sendVerificationOTP({ email, otp, type }) {
           // TODO: Replace with real email provider (Resend, SendGrid, etc.)
           console.log(`[OTP] ${type} → ${email}: ${otp}`);
