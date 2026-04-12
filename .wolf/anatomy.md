@@ -1,10 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T21:38:33.703Z
-> Files: 206 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-12T21:41:56.136Z
+> Files: 207 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
+- `pr-body-10.md` — Summary (~688 tok)
 - `task-50-final.md` — Parent Feature (~363 tok)
 - `updated-task-36.md` — Parent Feature (~640 tok)
 - `updated-task-37.md` — Parent Feature (~610 tok)
