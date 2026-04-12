@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { Button, Card, Spinner, useToast } from "heroui-native";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -47,6 +48,7 @@ const LEARNING_PROFICIENCY = [
 type LanguageType = "spoken" | "learning";
 
 export default function EditProfileScreen() {
+  const router = useRouter();
   const { toast } = useToast();
   const [addingType, setAddingType] = useState<LanguageType | null>(null);
 
@@ -333,6 +335,12 @@ export default function EditProfileScreen() {
               <Text className="text-muted-foreground text-sm">Saving…</Text>
             </View>
           )}
+
+          <View className="mt-4 pt-4 border-t border-border">
+            <Button onPress={() => router.push("/review-profile")}>
+              <Button.Label>Review & Submit Profile</Button.Label>
+            </Button>
+          </View>
 
         </View>
       </ScrollView>

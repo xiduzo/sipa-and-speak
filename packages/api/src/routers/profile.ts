@@ -81,6 +81,24 @@ function assertNoNativeSpokenLearningConflict(
   }
 }
 
+async function syncMatchingEligibility(userId: string): Promise<boolean> {
+  const [languages, interests] = await Promise.all([
+    db.select({ type: userLanguage.type }).from(userLanguage).where(eq(userLanguage.userId, userId)),
+    db.select({ id: userInterest.id }).from(userInterest).where(eq(userInterest.userId, userId)).limit(1),
+  ]);
+
+  const hasSpoken = languages.some((l) => l.type === "spoken");
+  const hasLearning = languages.some((l) => l.type === "learning");
+  const isEligible = hasSpoken && hasLearning && interests.length > 0;
+
+  await db
+    .update(languageProfile)
+    .set({ onboardingComplete: isEligible })
+    .where(eq(languageProfile.userId, userId));
+
+  return isEligible;
+}
+
 export const profileRouter = router({
   getMyProfile: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
@@ -281,7 +299,51 @@ export const profileRouter = router({
       columns: { onboardingComplete: true },
     });
 
-    return { complete: profile?.onboardingComplete ?? false };
+    return {
+      complete: profile?.onboardingComplete ?? false,
+      hasProfile: profile !== null,
+    };
+  }),
+
+  submitProfile: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const [languages, interests, existing] = await Promise.all([
+      db.select().from(userLanguage).where(eq(userLanguage.userId, userId)),
+      db.select().from(userInterest).where(eq(userInterest.userId, userId)),
+      db.query.languageProfile.findFirst({
+        where: eq(languageProfile.userId, userId),
+        columns: { onboardingComplete: true },
+      }),
+    ]);
+
+    const hasSpoken = languages.some((l) => l.type === "spoken");
+    const hasLearning = languages.some((l) => l.type === "learning");
+    const hasInterest = interests.length > 0;
+
+    if (!hasSpoken || !hasLearning || !hasInterest) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Profile is incomplete. Add at least one spoken language, one learning language, and one interest.",
+      });
+    }
+
+    const wasAlreadyEligible = existing?.onboardingComplete ?? false;
+
+    if (existing) {
+      await db
+        .update(languageProfile)
+        .set({ onboardingComplete: true })
+        .where(eq(languageProfile.userId, userId));
+    } else {
+      await db.insert(languageProfile).values({ userId, onboardingComplete: true });
+    }
+
+    if (!wasAlreadyEligible) {
+      domainEvents.emit("ProfileCompleted", { userId, completedAt: new Date() });
+    }
+
+    return { success: true };
   }),
 
   upsertLanguage: protectedProcedure
@@ -361,6 +423,7 @@ export const profileRouter = router({
         });
       }
 
+      await syncMatchingEligibility(userId);
       domainEvents.emit("LanguageProfileUpdated", { userId, changedAt: new Date() });
 
       return { success: true };
@@ -386,6 +449,7 @@ export const profileRouter = router({
           ),
         );
 
+      await syncMatchingEligibility(userId);
       domainEvents.emit("LanguageProfileUpdated", { userId, changedAt: new Date() });
 
       return { success: true };
@@ -419,6 +483,7 @@ export const profileRouter = router({
         await db.insert(userInterest).values({ userId, interest: input.interest });
       }
 
+      await syncMatchingEligibility(userId);
       domainEvents.emit("InterestProfileUpdated", { userId, changedAt: new Date() });
 
       return { success: true };

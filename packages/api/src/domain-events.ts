@@ -10,9 +10,15 @@ export interface InterestProfileUpdatedEvent {
   changedAt: Date;
 }
 
+export interface ProfileCompletedEvent {
+  userId: string;
+  completedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
+  ProfileCompleted: [ProfileCompletedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

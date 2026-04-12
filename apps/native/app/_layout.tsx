@@ -57,6 +57,7 @@ function StackLayout() {
       <Stack.Screen name="enrolment" options={{ title: "Enrol with TU/e", headerBackVisible: false }} />
       <Stack.Screen name="onboarding" options={{ title: "Set Up Your Profile", headerBackVisible: false }} />
       <Stack.Screen name="edit-profile" options={{ title: "Edit Profile" }} />
+      <Stack.Screen name="review-profile" options={{ title: "Review Profile" }} />
       <Stack.Screen name="partner/[id]" options={{ title: "Partner Profile" }} />
       <Stack.Screen name="schedule/[partnerId]" options={{ title: "Schedule Meet-Up" }} />
       <Stack.Screen name="chat/[conversationId]" options={{ title: "Chat" }} />
