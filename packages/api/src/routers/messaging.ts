@@ -189,4 +189,20 @@ export const messagingRouter = router({
 
       return { recorded: true as const };
     }),
+
+  /**
+   * #143 — Stub: entry point called by the compose UI.
+   * Access-gate added in #146, validation in #144, persistence in #145.
+   */
+  sendMessage: protectedProcedure
+    .input(
+      z.object({
+        conversationId: z.string(),
+        content: z.string(),
+      }),
+    )
+    .mutation(async () => {
+      // Stub — implementation added incrementally in #144, #146, #145
+      return { id: "" as string, conversationId: "" as string, senderId: "" as string, content: "" as string, createdAt: new Date() };
+    }),
 });
