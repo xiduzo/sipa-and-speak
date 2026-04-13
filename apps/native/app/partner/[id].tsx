@@ -180,6 +180,15 @@ export default function PartnerProfileScreen() {
           )}
         </View>
 
+        {/* #124 — Confirmation feedback */}
+        {sendRequestMutation.isSuccess && (
+          <View testID="confirmation-message" className="bg-primary/10 rounded-xl p-3 mb-3">
+            <Text className="text-primary text-sm text-center">
+              Request sent! We'll let you know when they respond.
+            </Text>
+          </View>
+        )}
+
         {/* #123 — Conflict error */}
         {sendConflictError && (
           <View testID="conflict-error-message" className="bg-danger/10 rounded-xl p-3 mb-3">

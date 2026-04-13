@@ -141,6 +141,33 @@ describe("#121 — Handle removed/unavailable candidate profile gracefully", () 
   });
 });
 
+// ─── #124: Confirmation feedback ───────────────────────────────────────────
+
+describe("#124 — Confirmation feedback on candidate profile", () => {
+  it("shows confirmation message after successfully sending a request", async () => {
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("send-request-button"));
+    fireEvent.press(screen.getByTestId("send-request-button"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("confirmation-message")).toBeTruthy();
+    });
+  });
+
+  it("shows Request Sent indicator instead of Send Request button after success", async () => {
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("send-request-button"));
+    fireEvent.press(screen.getByTestId("send-request-button"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("request-sent-indicator")).toBeTruthy();
+    });
+    expect(screen.queryByTestId("send-request-button")).toBeNull();
+  });
+});
+
 // ─── #122: Send Request on profile screen ──────────────────────────────────
 
 describe("#122 — Send Request on candidate profile screen", () => {
