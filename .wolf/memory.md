@@ -339,3 +339,63 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 12:48 | Edited packages/db/src/schema/sip-and-speak.ts | 9→10 lines | ~39 |
+| 12:48 | Edited packages/db/src/schema/sip-and-speak.ts | expanded (+23 lines) | ~226 |
+| 12:49 | Edited packages/api/src/routers/profile.ts | 10→11 lines | ~84 |
+| 12:49 | Edited packages/api/src/routers/profile.ts | added 1 condition(s) | ~201 |
+| 12:49 | Created apps/server/src/notifications.ts | — | ~928 |
+| 12:49 | Edited apps/server/src/index.ts | 13→17 lines | ~226 |
+| 12:50 | Edited apps/native/app/_layout.tsx | added 3 import(s) | ~89 |
+| 12:50 | Edited apps/native/app/_layout.tsx | CSS: isLoggedIn, token | ~257 |
+| 12:50 | Created apps/native/__tests__/device-token-registration.test.tsx | — | ~1196 |
+| 12:53 | Created apps/native/__tests__/device-token-registration.test.tsx | — | ~991 |
+| 12:54 | Created apps/native/__tests__/device-token-registration.test.tsx | — | ~722 |
+| 12:54 | Edited apps/server/src/notifications.ts | 2→1 lines | ~12 |
+| 12:54 | Edited apps/server/src/notifications.ts | added 1 import(s) | ~21 |
+| 12:55 | Edited ../../../../tmp/task-130-body.md | 2→2 lines | ~63 |
+| 12:56 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic2_loop_progress.md | — | ~829 |
+| $(date +%H:%M) | wtf.loop Epic #2 Phase 4 complete | #124,#125,#126,#130 + Feature #14 PR | PRs #177-#181 merged | ~45k |
+| 12:56 | Session end: 15 writes across 8 files (sip-and-speak.ts, profile.ts, notifications.ts, index.ts, _layout.tsx) | 9 reads | ~15384 tok |
+
+## Session: 2026-04-13 12:56
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:07 | Edited ../../../../tmp/task-127-body.md | 20→20 lines | ~393 |
+| 13:07 | Edited apps/native/__tests__/suggestions.test.tsx | CSS: tasks | ~129 |
+| 13:07 | Edited apps/native/__tests__/suggestions.test.tsx | 5→6 lines | ~88 |
+| 13:08 | Edited apps/native/__tests__/suggestions.test.tsx | expanded (+45 lines) | ~558 |
+| 13:08 | Edited apps/native/app/suggestions.tsx | added 1 import(s) | ~124 |
+| 13:08 | Edited apps/native/app/suggestions.tsx | CSS: onPress | ~140 |
+| 13:08 | Edited apps/native/app/suggestions.tsx | 12→12 lines | ~120 |
+| 13:08 | Edited apps/native/app/suggestions.tsx | modified SuggestionsScreen() | ~59 |
+| 13:08 | Edited apps/native/app/suggestions.tsx | 1→5 lines | ~82 |
+| 13:09 | Edited apps/native/__tests__/partner-profile.test.tsx | CSS: mockSearchParams | ~244 |
+| 13:09 | Edited apps/native/__tests__/partner-profile.test.tsx | CSS: id | ~115 |
+| 13:09 | Edited apps/native/__tests__/partner-profile.test.tsx | expanded (+39 lines) | ~506 |
+| 13:09 | Edited apps/native/app/partner/[id].tsx | inline fix | ~28 |
+| 13:10 | Edited apps/native/app/partner/[id].tsx | expanded (+22 lines) | ~465 |
+| 13:11 | Edited ../../../../tmp/updated-task-body-test-mapping.md | 6→6 lines | ~83 |
+| 13:13 | Edited ../../../../tmp/updated-task-body.md | 7→7 lines | ~57 |
+| 13:13 | Edited ../../../../tmp/updated-task-body.md | 6→7 lines | ~66 |
+| 13:14 | Created ../../../../tmp/pr-body-127.md | — | ~420 |
+| 13:15 | Edited packages/api/src/__tests__/matching.test.ts | 8→8 lines | ~92 |
+| 13:16 | Edited packages/api/src/__tests__/matching.test.ts | expanded (+24 lines) | ~385 |
+| 13:16 | Edited packages/api/src/routers/matching-utils.ts | added 1 condition(s) | ~221 |
+| 13:16 | Edited apps/server/src/notifications.ts | added 2 import(s) | ~116 |
+| 13:17 | Edited apps/server/src/notifications.ts | added optional chaining | ~395 |
+| 13:17 | Edited ../../../../tmp/updated-task-131.md | 6→6 lines | ~84 |
+| 13:18 | Edited ../../../../tmp/updated-task-131.md | 9→9 lines | ~63 |
+| 13:18 | Edited ../../../../tmp/updated-task-131.md | 6→7 lines | ~70 |
+| 13:19 | Created apps/native/__tests__/suggestions.test.tsx | — | ~934 |
+| 13:20 | Edited apps/native/app/suggestions.tsx | added 1 import(s) | ~128 |
+| 13:20 | Edited apps/native/app/suggestions.tsx | added 1 condition(s) | ~252 |
+| 13:20 | Edited apps/native/app/suggestions.tsx | modified if() | ~266 |
+| 13:21 | Edited apps/native/__tests__/suggestions.test.tsx | CSS: CandidateCard | ~48 |
+| 13:23 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic2_loop_progress.md | — | ~932 |
+| 13:23 | Session end: 32 writes across 13 files (task-127-body.md, suggestions.test.tsx, suggestions.tsx, partner-profile.test.tsx, [id].tsx) | 21 reads | ~33813 tok |
+
+## Session: 2026-04-13 13:23
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|

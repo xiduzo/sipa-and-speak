@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-10T10:02:44.507Z",
   "lifetime": {
-    "total_tokens_estimated": 412422,
-    "total_reads": 279,
-    "total_writes": 394,
-    "total_sessions": 25,
-    "anatomy_hits": 220,
-    "anatomy_misses": 59,
-    "repeated_reads_blocked": 51,
-    "estimated_savings_vs_bare_cli": 220244
+    "total_tokens_estimated": 461619,
+    "total_reads": 309,
+    "total_writes": 441,
+    "total_sessions": 27,
+    "anatomy_hits": 240,
+    "anatomy_misses": 69,
+    "repeated_reads_blocked": 71,
+    "estimated_savings_vs_bare_cli": 261082
   },
   "sessions": [
     {
@@ -4282,6 +4282,455 @@
         "writes_count": 16,
         "repeated_reads_blocked": 2,
         "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-13-1204",
+      "started": "2026-04-13T10:04:43.167Z",
+      "ended": "2026-04-13T10:56:22.416Z",
+      "reads": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/index.ts",
+          "tokens_estimated": 722,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts",
+          "tokens_estimated": 355,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/sip-and-speak.ts",
+          "tokens_estimated": 2670,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/index.ts",
+          "tokens_estimated": 17,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 4449,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1151,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/index.ts",
+          "tokens_estimated": 72,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/task-130-body.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic2_loop_progress.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/sip-and-speak.ts",
+          "tokens_estimated": 39,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/sip-and-speak.ts",
+          "tokens_estimated": 226,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 84,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 201,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 928,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/index.ts",
+          "tokens_estimated": 226,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 89,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 257,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/device-token-registration.test.tsx",
+          "tokens_estimated": 1196,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/device-token-registration.test.tsx",
+          "tokens_estimated": 991,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/device-token-registration.test.tsx",
+          "tokens_estimated": 722,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 21,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/task-130-body.md",
+          "tokens_estimated": 68,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic2_loop_progress.md",
+          "tokens_estimated": 888,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 9436,
+        "output_tokens_estimated": 5948,
+        "reads_count": 9,
+        "writes_count": 15,
+        "repeated_reads_blocked": 3,
+        "anatomy_lookups": 7
+      }
+    },
+    {
+      "id": "session-2026-04-13-1256",
+      "started": "2026-04-13T10:56:29.696Z",
+      "ended": "2026-04-13T11:23:07.571Z",
+      "reads": [
+        {
+          "file": "/Users/sander/.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic2_loop_progress.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/index.tsx",
+          "tokens_estimated": 5398,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/partner/[id].tsx",
+          "tokens_estimated": 2585,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1402,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 1937,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/matching.ts",
+          "tokens_estimated": 3827,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/suggestions.test.tsx",
+          "tokens_estimated": 1265,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/partner-profile.test.tsx",
+          "tokens_estimated": 2498,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/components/candidate-card.tsx",
+          "tokens_estimated": 1307,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/.expo/types/router.d.ts",
+          "tokens_estimated": 761,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/candidate-card.test.tsx",
+          "tokens_estimated": 602,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/jest.config.ts",
+          "tokens_estimated": 309,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/jest-setup.ts",
+          "tokens_estimated": 252,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/task-127-body.md",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/updated-task-body-test-mapping.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/updated-task-body.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/sip-and-speak.ts",
+          "tokens_estimated": 2878,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/matching-utils.ts",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/matching.test.ts",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 975,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/updated-task-131.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/tmp/task-127-body.md",
+          "tokens_estimated": 421,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/suggestions.test.tsx",
+          "tokens_estimated": 129,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/suggestions.test.tsx",
+          "tokens_estimated": 88,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/suggestions.test.tsx",
+          "tokens_estimated": 558,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 124,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 140,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 120,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 59,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 82,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/partner-profile.test.tsx",
+          "tokens_estimated": 244,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/partner-profile.test.tsx",
+          "tokens_estimated": 115,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/partner-profile.test.tsx",
+          "tokens_estimated": 506,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/partner/[id].tsx",
+          "tokens_estimated": 28,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/partner/[id].tsx",
+          "tokens_estimated": 465,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/updated-task-body-test-mapping.md",
+          "tokens_estimated": 89,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/updated-task-body.md",
+          "tokens_estimated": 61,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/updated-task-body.md",
+          "tokens_estimated": 70,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/pr-body-127.md",
+          "tokens_estimated": 450,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/matching.test.ts",
+          "tokens_estimated": 92,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/matching.test.ts",
+          "tokens_estimated": 385,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/matching-utils.ts",
+          "tokens_estimated": 221,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 116,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 395,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/updated-task-131.md",
+          "tokens_estimated": 90,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/updated-task-131.md",
+          "tokens_estimated": 68,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/updated-task-131.md",
+          "tokens_estimated": 75,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/suggestions.test.tsx",
+          "tokens_estimated": 934,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 128,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 252,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 266,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/suggestions.test.tsx",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic2_loop_progress.md",
+          "tokens_estimated": 998,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 25996,
+        "output_tokens_estimated": 7817,
+        "reads_count": 21,
+        "writes_count": 32,
+        "repeated_reads_blocked": 17,
+        "anatomy_lookups": 13
       }
     }
   ],

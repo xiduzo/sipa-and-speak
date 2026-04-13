@@ -914,6 +914,246 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-13T10:01:47.226Z"
+    },
+    {
+      "id": "bug-057",
+      "timestamp": "2026-04-13T10:48:43.834Z",
+      "error_message": "Type error",
+      "file": "packages/db/src/schema/sip-and-speak.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T10:48:43.834Z"
+    },
+    {
+      "id": "bug-058",
+      "timestamp": "2026-04-13T10:49:11.265Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/profile.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T10:49:11.265Z"
+    },
+    {
+      "id": "bug-059",
+      "timestamp": "2026-04-13T10:50:04.856Z",
+      "error_message": "Type error",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T10:50:04.856Z"
+    },
+    {
+      "id": "bug-060",
+      "timestamp": "2026-04-13T10:50:11.180Z",
+      "error_message": "Missing guard clause",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "No early return/throw for edge case: !isLoggedIn",
+      "fix": "Added guard clause: if (!isLoggedIn)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T10:50:11.180Z"
+    },
+    {
+      "id": "bug-061",
+      "timestamp": "2026-04-13T10:54:30.993Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/server/src/notifications.ts",
+      "root_cause": "Had \"drizzle-orm\"",
+      "fix": "Changed to \"@sip-and-speak/db\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T10:54:43.664Z"
+    },
+    {
+      "id": "bug-062",
+      "timestamp": "2026-04-13T11:07:31.393Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/task-127-body.md",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 20→20 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T11:07:31.393Z"
+    },
+    {
+      "id": "bug-063",
+      "timestamp": "2026-04-13T11:07:47.901Z",
+      "error_message": "CSS fix: useRouter",
+      "file": "apps/native/__tests__/suggestions.test.tsx",
+      "root_cause": "useRouter: () => ({ push: jest.fn() → () => ({ push: mockPush",
+      "fix": "Changed useRouter: () => ({ push: jest.fn() → () => ({ push: mockPush",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T11:08:03.584Z"
+    },
+    {
+      "id": "bug-064",
+      "timestamp": "2026-04-13T11:08:48.228Z",
+      "error_message": "Type error",
+      "file": "apps/native/app/suggestions.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T11:08:48.228Z"
+    },
+    {
+      "id": "bug-065",
+      "timestamp": "2026-04-13T11:09:22.203Z",
+      "error_message": "CSS fix: useLocalSearchParams",
+      "file": "apps/native/__tests__/partner-profile.test.tsx",
+      "root_cause": "useLocalSearchParams: () => ({ id: \"candidate-123\" → () => mockSearchParams,",
+      "fix": "Changed useLocalSearchParams: () => ({ id: \"candidate-123\" → () => mockSearchParams,",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T11:09:22.203Z"
+    },
+    {
+      "id": "bug-066",
+      "timestamp": "2026-04-13T11:10:05.587Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/native/app/partner/[id].tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 20→42 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T11:10:05.587Z"
+    },
+    {
+      "id": "bug-067",
+      "timestamp": "2026-04-13T11:11:49.527Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/updated-task-body-test-mapping.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→6 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T11:11:49.527Z"
+    },
+    {
+      "id": "bug-068",
+      "timestamp": "2026-04-13T11:17:07.772Z",
+      "error_message": "Null/undefined access in ",
+      "file": "apps/server/src/notifications.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T11:17:07.772Z"
+    },
+    {
+      "id": "bug-069",
+      "timestamp": "2026-04-13T11:17:50.944Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/updated-task-131.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→6 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T11:17:50.944Z"
+    },
+    {
+      "id": "bug-070",
+      "timestamp": "2026-04-13T11:20:16.041Z",
+      "error_message": "Type error",
+      "file": "apps/native/app/suggestions.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T11:20:16.041Z"
+    },
+    {
+      "id": "bug-071",
+      "timestamp": "2026-04-13T11:20:22.760Z",
+      "error_message": "Missing error handling in EnableNotificationsBanner",
+      "file": "apps/native/app/suggestions.tsx",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T11:20:22.760Z"
     }
   ]
 }

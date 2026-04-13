@@ -1,17 +1,23 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T10:03:41.249Z
-> Files: 213 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T11:23:02.287Z
+> Files: 224 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
 - `pr-body-123.md` — Summary (~363 tok)
+- `pr-body-127.md` — Summary (~394 tok)
 - `task-123-body.md` — 🛠 Task: Prevent duplicate match requests to the same candidate (~1174 tok)
 - `task-123-verify.md` — 🛠 Task: Prevent duplicate match requests to the same candidate (~1198 tok)
+- `task-127-body.md` — 🛠 Task: Allow receiver to open requester's profile before deciding (~1158 tok)
+- `task-130-body.md` — 🛠 Task: Send push notification when MatchRequestSent fires (~1242 tok)
+- `updated-task-131.md` — 🛠 Task: Include requester name and language summary in notification payload (~998 tok)
+- `updated-task-body-test-mapping.md` — 🛠 Task: Allow receiver to open requester's profile before deciding (~1185 tok)
+- `updated-task-body.md` — 🛠 Task: Allow receiver to open requester's profile before deciding (~1169 tok)
 
 ## ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/
 
-- `project_epic2_loop_progress.md` — Completed (implemented + verified + PR merged) (~646 tok)
+- `project_epic2_loop_progress.md` — Completed (implemented + verified + PR merged) (~874 tok)
 
 ## ./
 
@@ -296,20 +302,22 @@
 ## apps/native/__tests__/
 
 - `candidate-card.test.tsx` — Tests for task #122 — Send Request action on suggestion card (~602 tok)
-- `partner-profile.test.tsx` — Tests for tasks: (~2174 tok)
+- `device-token-registration.test.tsx` — Tests for task #130 — Push notification when MatchRequestSent fires (~722 tok)
+- `partner-profile.test.tsx` — Tests for tasks: (~2889 tok)
+- `suggestions.test.tsx` — Tests for task #133 — Ensure incoming request appears on home page regardless of notification permis (~958 tok)
 
 ## apps/native/app/
 
-- `_layout.tsx` — unstable_settings — uses useRouter, useQuery, useEffect (~1151 tok)
+- `_layout.tsx` — unstable_settings (~1402 tok)
 - `edit-profile.tsx` — LANGUAGES — uses useRouter, useQuery, useMutation (~3810 tok)
 - `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)
 - `index.tsx` — LANGUAGES (~5398 tok)
 - `review-profile.tsx` — INTERESTS_LABEL — uses useRouter, useQuery, useMutation (~2394 tok)
-- `suggestions.tsx` — APP_SHARE_URL — uses useState, useQuery, useCallback (~854 tok)
+- `suggestions.tsx` — APP_SHARE_URL (~1125 tok)
 
 ## apps/native/app/partner/
 
-- `[id].tsx` — PartnerProfileScreen — uses useRouter, useQuery, useMutation, useEffect (~2232 tok)
+- `[id].tsx` — PartnerProfileScreen (~2585 tok)
 
 ## apps/native/components/
 
@@ -348,7 +356,8 @@
 
 ## apps/server/src/
 
-- `index.ts` — API routes: POST, GET (3 endpoints) (~722 tok)
+- `index.ts` — Wire domain event → push notification handlers on server start (~768 tok)
+- `notifications.ts` — Push notification service — Expo Push Notifications (~1189 tok)
 
 ## apps/web/
 
@@ -415,13 +424,18 @@
 - `domain-events.ts` — Exports LanguageProfileUpdatedEvent, InterestProfileUpdatedEvent, ProfileCompletedEvent, MatchRequestSentEvent, domainEvents (~355 tok)
 - `index.ts` — tRPC router (~156 tok)
 
+## packages/api/src/__tests__/
+
+- `matching.test.ts` — Tests for: (~758 tok)
+
 ## packages/api/src/routers/
 
 - `chat.ts` — tRPC router: 6 procedures (~2592 tok)
 - `index.ts` — tRPC router: 2 procedures (~198 tok)
+- `matching-utils.ts` — Haversine distance in km between two lat/lng points (~1049 tok)
 - `matching.ts` — Haversine distance in km between two lat/lng points (~3827 tok)
 - `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~2170 tok)
-- `profile.ts` — tRPC router: 6 procedures (~4449 tok)
+- `profile.ts` — Zod schemas: interestEnum, proficiencyEnum, spokenLanguageSchema, learningProficiencyEnum + 3 more (~4644 tok)
 - `venue.ts` — tRPC router: 2 procedures (~825 tok)
 
 ## packages/auth/
@@ -477,7 +491,7 @@
 
 - `auth.ts` — Exports user, session, account, verification + 3 more (~1028 tok)
 - `index.ts` (~17 tok)
-- `sip-and-speak.ts` — Exports languageProfile, userLanguage, userInterest, venue + 16 more (~2670 tok)
+- `sip-and-speak.ts` — Exports languageProfile, userLanguage, userInterest, venue + 17 more (~2878 tok)
 
 ## packages/db/src/seed/
 
