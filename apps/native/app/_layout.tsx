@@ -20,6 +20,10 @@ import { HeroUINativeProvider } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
+import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
+import { useMutation } from "@tanstack/react-query";
+
 import { authClient } from "@/lib/auth-client";
 import { AppThemeProvider } from "@/contexts/app-theme-context";
 import { queryClient, trpc } from "@/utils/trpc";
@@ -30,10 +34,32 @@ export const unstable_settings = {
   initialRouteName: "(drawer)",
 };
 
+function useDeviceTokenRegistration(isLoggedIn: boolean) {
+  const registerToken = useMutation(trpc.profile.registerDeviceToken.mutationOptions());
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    async function register() {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") return;
+
+      const tokenData = await Notifications.getExpoPushTokenAsync();
+      const platform = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
+      registerToken.mutate({ token: tokenData.data, platform });
+    }
+
+    void register();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn]);
+}
+
 function AuthGuard() {
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const router = useRouter();
   const segments = useSegments();
+
+  useDeviceTokenRegistration(!!session);
 
   const onboardingQuery = useQuery({
     ...trpc.profile.getOnboardingStatus.queryOptions(),
