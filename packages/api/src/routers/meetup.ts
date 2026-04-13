@@ -5,6 +5,7 @@ import { db } from "@sip-and-speak/db";
 import { meetup, venue, studentMatch } from "@sip-and-speak/db/schema/sip-and-speak";
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
+import { isMeetupInThePast, isRescheduleNoOp } from "./meetup-utils";
 
 /** All bookable half-hour slots from 08:00 to 20:00 */
 const ALL_SLOTS = Array.from({ length: 25 }, (_, i) => {
@@ -712,7 +713,41 @@ export const meetupRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Only confirmed meetups can be rescheduled" });
       }
 
-      // #87 will add: future date check, active location check, no-op check, race condition guard
+      // #87 — Meetup has already occurred
+      if (isMeetupInThePast(existing.date, existing.time)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This meetup has already taken place and cannot be rescheduled" });
+      }
+
+      // #87 — Proposed date/time must be in the future
+      if (isMeetupInThePast(input.date, input.time)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The rescheduled date and time must be in the future" });
+      }
+
+      // #87 — No-op: proposed details identical to current confirmed meetup
+      if (isRescheduleNoOp(
+        { venueId: existing.venueId, date: existing.date, time: existing.time },
+        { venueId: input.venueId, date: input.date, time: input.time },
+      )) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The proposed reschedule is identical to the current meetup. Please change at least one detail." });
+      }
+
+      // #87 — Race condition: another reschedule is already pending
+      if (existing.rescheduleProposerId !== null) {
+        throw new TRPCError({ code: "CONFLICT", message: "A reschedule request is already pending for this meetup. Please wait for your partner to respond." });
+      }
+
+      // #87 — Active location check
+      const [venueRecord] = await db
+        .select({ id: venue.id, isActive: venue.isActive })
+        .from(venue)
+        .where(eq(venue.id, input.venueId))
+        .limit(1);
+      if (!venueRecord) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Location not found" });
+      }
+      if (!venueRecord.isActive) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This location is no longer available. Please choose another." });
+      }
 
       const [updated] = await db
         .update(meetup)
