@@ -45,6 +45,30 @@ beforeEach(() => {
   mockSendMatchRequest.mockClear();
 });
 
+// ─── #124: Confirmation feedback ───────────────────────────────────────────
+
+describe("#124 — Confirmation feedback on suggestion card", () => {
+  it("shows confirmation message after successfully sending a request", async () => {
+    renderWithQuery(<CandidateCard {...defaultProps} />);
+
+    fireEvent.press(screen.getByTestId("send-request-button"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("confirmation-message")).toBeTruthy();
+    });
+  });
+
+  it("updates card to show 'Request Sent' instead of 'Send Request' after success", async () => {
+    renderWithQuery(<CandidateCard {...defaultProps} />);
+
+    fireEvent.press(screen.getByTestId("send-request-button"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Request Sent")).toBeTruthy();
+    });
+  });
+});
+
 describe("#122 — Send Request on suggestion card", () => {
   it("renders a Send Request button", () => {
     renderWithQuery(<CandidateCard {...defaultProps} />);
