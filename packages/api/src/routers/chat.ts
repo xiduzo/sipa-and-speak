@@ -15,14 +15,17 @@ export const chatRouter = router({
   listConversations: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    // Get all conversations the user is part of
+    // Get all open conversations the user is part of (#157 — suspended excluded)
     const conversations = await db
       .select()
       .from(conversation)
       .where(
-        or(
-          eq(conversation.user1Id, userId),
-          eq(conversation.user2Id, userId),
+        and(
+          eq(conversation.status, "open"),
+          or(
+            eq(conversation.user1Id, userId),
+            eq(conversation.user2Id, userId),
+          ),
         ),
       );
 
