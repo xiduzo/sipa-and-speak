@@ -1,0 +1,1 @@
+ALTER TABLE "meetup" ADD COLUMN "round" integer DEFAULT 1 NOT NULL;

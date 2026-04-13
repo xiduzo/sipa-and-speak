@@ -107,4 +107,13 @@ export const venueRouter = router({
       .limit(1);
     return result.length > 0;
   }),
+
+  // Simple active-venue list for the meetup proposal form picker (no coords required)
+  listForPicker: protectedProcedure.query(async () => {
+    return db
+      .select({ id: venue.id, name: venue.name, description: venue.description })
+      .from(venue)
+      .where(eq(venue.isActive, true))
+      .orderBy(venue.name);
+  }),
 });
