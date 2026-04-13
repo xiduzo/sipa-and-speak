@@ -664,3 +664,12 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 23:18 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic4_loop_progress.md | — | ~608 |
+
+| Session end | Feature #27 complete — all 5 tasks merged to main via PRs #229-#234 | apps/native/app/chat/[conversationId].tsx, packages/api/src/routers/chat.ts, messaging-utils.ts | success | ~12000 |
+| 23:19 | Session end: 1 writes across 1 files (project_epic4_loop_progress.md) | 0 reads | ~651 tok |
+
+## Session: 2026-04-13 23:22
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|

@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T20:15:40.404Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T21:18:46.871Z
 > Files: 277 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
@@ -25,7 +25,7 @@
 
 - `MEMORY.md` — Memory Index (~106 tok)
 - `project_epic3_loop_progress.md` — Completed (merged to main) (~838 tok)
-- `project_epic4_loop_progress.md` — Completed (~563 tok)
+- `project_epic4_loop_progress.md` — Completed (~583 tok)
 
 ## ./
 
