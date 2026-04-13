@@ -7,6 +7,14 @@ export function useNotificationTapHandler() {
 
   function handleNotificationResponse(response: Notifications.NotificationResponse) {
     const data = response.notification.request.content.data as Record<string, unknown> | undefined;
+    const type = typeof data?.type === "string" ? data.type : undefined;
+
+    if (type === "match_accepted") {
+      const matchedWithUserId = typeof data?.matchedWithUserId === "string" ? data.matchedWithUserId : undefined;
+      if (matchedWithUserId) router.push(`/schedule/${matchedWithUserId}`);
+      return;
+    }
+
     const matchRequestId = typeof data?.matchRequestId === "string" ? data.matchRequestId : undefined;
     const requesterId = typeof data?.requesterId === "string" ? data.requesterId : undefined;
 
