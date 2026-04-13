@@ -27,6 +27,7 @@ import { useMutation } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
 import { AppThemeProvider } from "@/contexts/app-theme-context";
 import { queryClient, trpc } from "@/utils/trpc";
+import { useNotificationTapHandler } from "@/hooks/use-notification-tap-handler";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -60,6 +61,7 @@ function AuthGuard() {
   const segments = useSegments();
 
   useDeviceTokenRegistration(!!session);
+  useNotificationTapHandler();
 
   const onboardingQuery = useQuery({
     ...trpc.profile.getOnboardingStatus.queryOptions(),
