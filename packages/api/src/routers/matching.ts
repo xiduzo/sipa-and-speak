@@ -238,6 +238,59 @@ export const matchingRouter = router({
       return { partners: page, nextCursor };
     }),
 
+  getIncomingRequests: protectedProcedure
+    .query(async ({ ctx }) => {
+      const receiverId = ctx.session.user.id;
+
+      const pendingRequests = await db
+        .select({
+          matchRequestId: matchRequest.id,
+          requesterId: matchRequest.requesterId,
+          createdAt: matchRequest.createdAt,
+        })
+        .from(matchRequest)
+        .where(
+          and(
+            eq(matchRequest.receiverId, receiverId),
+            eq(matchRequest.status, "pending"),
+          ),
+        );
+
+      if (pendingRequests.length === 0) return [];
+
+      const requesterIds = pendingRequests.map((r) => r.requesterId);
+
+      const [requesterUsers, requesterLanguages] = await Promise.all([
+        db
+          .select({ id: user.id, name: user.name, image: user.image })
+          .from(user)
+          .where(inArray(user.id, requesterIds)),
+        db
+          .select()
+          .from(userLanguage)
+          .where(inArray(userLanguage.userId, requesterIds)),
+      ]);
+
+      return pendingRequests.map((req) => {
+        const userInfo = requesterUsers.find((u) => u.id === req.requesterId);
+        const langs = requesterLanguages.filter((l) => l.userId === req.requesterId);
+
+        return {
+          matchRequestId: req.matchRequestId,
+          requesterId: req.requesterId,
+          requesterName: userInfo?.name ?? "Unknown",
+          requesterPhotoUrl: userInfo?.image ?? null,
+          requesterOfferedLanguages: langs
+            .filter((l) => l.type === "spoken")
+            .map((l) => l.language),
+          requesterTargetedLanguages: langs
+            .filter((l) => l.type === "learning")
+            .map((l) => l.language),
+          createdAt: req.createdAt.toISOString(),
+        };
+      });
+    }),
+
   getPartnerProfile: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
