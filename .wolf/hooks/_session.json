@@ -1,12 +1,95 @@
 {
   "session_id": "session-2026-04-13-1612",
   "started": "2026-04-13T14:12:15.486Z",
-  "files_read": {},
-  "files_written": [],
-  "edit_counts": {},
-  "anatomy_hits": 0,
-  "anatomy_misses": 0,
-  "repeated_reads_warned": 0,
+  "files_read": {
+    "/tmp/task-134-body.md": {
+      "count": 3,
+      "tokens": 0,
+      "first_read": "2026-04-13T14:47:07.716Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/server/src/__tests__/notifications-match-accepted.test.ts": {
+      "count": 1,
+      "tokens": 1445,
+      "first_read": "2026-04-13T14:49:44.094Z"
+    },
+    "/tmp/verify-134-body.md": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-13T15:08:28.712Z"
+    }
+  },
+  "files_written": [
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/server/src/__tests__/notifications-match-accepted.test.ts",
+      "action": "create",
+      "tokens": 1445,
+      "at": "2026-04-13T14:48:53.451Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+      "action": "edit",
+      "tokens": 63,
+      "at": "2026-04-13T14:49:06.602Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+      "action": "edit",
+      "tokens": 678,
+      "at": "2026-04-13T14:49:18.811Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/server/src/__tests__/notifications-match-accepted.test.ts",
+      "action": "create",
+      "tokens": 1303,
+      "at": "2026-04-13T14:49:57.092Z"
+    },
+    {
+      "file": "/tmp/task-134-body.md",
+      "action": "edit",
+      "tokens": 164,
+      "at": "2026-04-13T14:56:20.316Z"
+    },
+    {
+      "file": "/tmp/task-134-body.md",
+      "action": "edit",
+      "tokens": 109,
+      "at": "2026-04-13T14:56:26.299Z"
+    },
+    {
+      "file": "/tmp/task-134-body.md",
+      "action": "edit",
+      "tokens": 69,
+      "at": "2026-04-13T14:56:30.016Z"
+    },
+    {
+      "file": "/tmp/verify-134-body.md",
+      "action": "edit",
+      "tokens": 61,
+      "at": "2026-04-13T15:08:34.255Z"
+    },
+    {
+      "file": "/tmp/verify-134-body.md",
+      "action": "edit",
+      "tokens": 114,
+      "at": "2026-04-13T15:08:39.915Z"
+    },
+    {
+      "file": "/tmp/pr-body-134.md",
+      "action": "create",
+      "tokens": 388,
+      "at": "2026-04-13T15:09:45.751Z"
+    }
+  ],
+  "edit_counts": {
+    "apps/server/src/__tests__/notifications-match-accepted.test.ts": 2,
+    "apps/server/src/notifications.ts": 2,
+    "../../../../tmp/task-134-body.md": 3,
+    "../../../../tmp/verify-134-body.md": 2,
+    "../../../../tmp/pr-body-134.md": 1
+  },
+  "anatomy_hits": 1,
+  "anatomy_misses": 2,
+  "repeated_reads_warned": 2,
   "cerebrum_warnings": 0,
   "stop_count": 0
 }

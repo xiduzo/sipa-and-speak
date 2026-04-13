@@ -1,19 +1,22 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T14:12:00.087Z
-> Files: 227 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T15:09:45.744Z
+> Files: 231 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
 - `pr-body-123.md` — Summary (~363 tok)
 - `pr-body-127.md` — Summary (~394 tok)
+- `pr-body-134.md` — Summary (~339 tok)
 - `task-123-body.md` — 🛠 Task: Prevent duplicate match requests to the same candidate (~1174 tok)
 - `task-123-verify.md` — 🛠 Task: Prevent duplicate match requests to the same candidate (~1198 tok)
 - `task-127-body.md` — 🛠 Task: Allow receiver to open requester's profile before deciding (~1158 tok)
 - `task-130-body.md` — 🛠 Task: Send push notification when MatchRequestSent fires (~1242 tok)
+- `task-134-body.md` — 🛠 Task: Send push notification to requester when MatchRequestAccepted fires (~1132 tok)
 - `updated-task-131.md` — 🛠 Task: Include requester name and language summary in notification payload (~998 tok)
 - `updated-task-body-test-mapping.md` — 🛠 Task: Allow receiver to open requester's profile before deciding (~1185 tok)
 - `updated-task-body.md` — 🛠 Task: Allow receiver to open requester's profile before deciding (~1169 tok)
+- `verify-134-body.md` — 🛠 Task: Send push notification to requester when MatchRequestAccepted fires (~1146 tok)
 
 ## ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/
 
@@ -363,7 +366,11 @@
 ## apps/server/src/
 
 - `index.ts` — Wire domain event → push notification handlers on server start (~768 tok)
-- `notifications.ts` — Push notification service — Expo Push Notifications (~1189 tok)
+- `notifications.ts` — Push notification service — Expo Push Notifications (~1810 tok)
+
+## apps/server/src/__tests__/
+
+- `notifications-match-accepted.test.ts` — Tests for task #134 — Push notification on MatchRequestAccepted (~1303 tok)
 
 ## apps/web/
 
