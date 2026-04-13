@@ -217,6 +217,56 @@ export const meetupRouter = router({
       return updated;
     }),
 
+  // #75 — Accept a pending proposal → confirm meetup, emit MeetupConfirmed
+  acceptProposal: protectedProcedure
+    .input(z.object({ meetupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .innerJoin(venue, eq(meetup.venueId, venue.id))
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      if (existing.meetup.receiverId !== userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only the current responder can accept this proposal",
+        });
+      }
+
+      if (existing.meetup.status !== "pending") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This proposal has already been responded to",
+        });
+      }
+
+      const [updated] = await db
+        .update(meetup)
+        .set({ status: "confirmed" })
+        .where(eq(meetup.id, input.meetupId))
+        .returning();
+
+      domainEvents.emit("MeetupConfirmed", {
+        meetupId: existing.meetup.id,
+        proposerId: existing.meetup.proposerId,
+        receiverId: existing.meetup.receiverId,
+        venueName: existing.venue.name,
+        date: existing.meetup.date,
+        time: existing.meetup.time,
+        confirmedAt: new Date(),
+      });
+
+      return updated;
+    }),
+
   list: protectedProcedure
     .input(
       z.object({
