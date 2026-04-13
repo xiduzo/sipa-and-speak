@@ -2,6 +2,7 @@ import { protectedProcedure, publicProcedure, router } from "../index";
 import { profileRouter } from "./profile";
 import { matchingRouter } from "./matching";
 import { venueRouter } from "./venue";
+import { adminVenueRouter } from "./venue-admin";
 import { meetupRouter } from "./meetup";
 import { chatRouter } from "./chat";
 
@@ -18,6 +19,7 @@ export const appRouter = router({
   profile: profileRouter,
   matching: matchingRouter,
   venue: venueRouter,
+  adminVenue: adminVenueRouter,
   meetup: meetupRouter,
   chat: chatRouter,
 });

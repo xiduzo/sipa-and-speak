@@ -22,6 +22,13 @@
       "when": 1776079537981,
       "tag": "0002_rich_agent_zero",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1776095865882,
+      "tag": "0003_funny_wolverine",
+      "breakpoints": true
     }
   ]
 }
