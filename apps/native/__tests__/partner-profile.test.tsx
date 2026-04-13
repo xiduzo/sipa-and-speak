@@ -1,6 +1,7 @@
 /**
  * Tests for tasks:
  *   #119 — Display comments section on candidate profile
+ *   #120 — Surface "Send Request" action contextually based on match status
  *   #121 — Handle removed/unavailable candidate profile gracefully
  *   #122 — Send Request button on candidate profile screen
  */
@@ -19,6 +20,7 @@ jest.mock("expo-router", () => ({
 const mockProfileFn = jest.fn();
 const mockCommentsFn = jest.fn();
 const mockSendMatchRequest = jest.fn();
+const mockGetMatchRequestStatusFn = jest.fn();
 
 jest.mock("@/utils/trpc", () => ({
   trpc: {
@@ -31,6 +33,12 @@ jest.mock("@/utils/trpc", () => ({
       },
       sendMatchRequest: {
         mutationOptions: () => ({ mutationFn: mockSendMatchRequest }),
+      },
+      getMatchRequestStatus: {
+        queryOptions: () => ({
+          queryKey: ["matching.getMatchRequestStatus"],
+          queryFn: () => mockGetMatchRequestStatusFn(),
+        }),
       },
     },
     profile: {
@@ -81,6 +89,7 @@ beforeEach(() => {
   mockSendMatchRequest.mockClear().mockResolvedValue({ matchRequestId: "req-1", status: "pending" });
   mockProfileFn.mockReset().mockResolvedValue(defaultProfile);
   mockCommentsFn.mockReset().mockResolvedValue([]);
+  mockGetMatchRequestStatusFn.mockReset().mockResolvedValue({ matchRequestStatus: "none" });
 });
 
 // ─── #119: Comments section ────────────────────────────────────────────────
@@ -152,5 +161,31 @@ describe("#122 — Send Request on candidate profile screen", () => {
     await waitFor(() => {
       expect(mockSendMatchRequest).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+// ─── #120: Contextual Send Request based on match status ───────────────────
+
+describe("#120 — Contextual Send Request action on candidate profile", () => {
+  it("shows Send Request button when no request has been sent", async () => {
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "none" });
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-request-button")).toBeTruthy();
+    });
+    expect(screen.queryByTestId("request-sent-indicator")).toBeNull();
+  });
+
+  it("hides Send Request button and shows Request Sent indicator when a request has already been sent", async () => {
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "pending" });
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("request-sent-indicator")).toBeTruthy();
+    });
+    expect(screen.queryByTestId("send-request-button")).toBeNull();
   });
 });
