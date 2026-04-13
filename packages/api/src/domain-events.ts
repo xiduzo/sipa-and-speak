@@ -22,11 +22,27 @@ export interface MatchRequestSentEvent {
   sentAt: Date;
 }
 
+export interface MatchRequestAcceptedEvent {
+  matchRequestId: string;
+  requesterId: string;
+  receiverId: string;
+  acceptedAt: Date;
+}
+
+export interface MatchRequestDeclinedEvent {
+  matchRequestId: string;
+  requesterId: string;
+  receiverId: string;
+  declinedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
   ProfileCompleted: [ProfileCompletedEvent];
   MatchRequestSent: [MatchRequestSentEvent];
+  MatchRequestAccepted: [MatchRequestAcceptedEvent];
+  MatchRequestDeclined: [MatchRequestDeclinedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

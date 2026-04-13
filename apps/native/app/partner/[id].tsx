@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import { Image, ScrollView, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
-import { trpc } from "@/utils/trpc";
+import { queryClient, trpc } from "@/utils/trpc";
 
 export default function PartnerProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, matchRequestId } = useLocalSearchParams<{ id: string; matchRequestId?: string }>();
   const router = useRouter();
 
   const profileQuery = useQuery(
@@ -31,6 +31,21 @@ export default function PartnerProfileScreen() {
       if (error.data?.code === "CONFLICT") {
         setSendConflictError("A match request to this candidate already exists.");
       }
+    },
+  });
+
+  const acceptMutation = useMutation({
+    ...trpc.matching.acceptMatchRequest.mutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matching.getIncomingRequests"] });
+    },
+  });
+
+  const declineMutation = useMutation({
+    ...trpc.matching.declineMatchRequest.mutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matching.getIncomingRequests"] });
+      router.back();
     },
   });
 
@@ -196,25 +211,57 @@ export default function PartnerProfileScreen() {
           </View>
         )}
 
-        {/* #120/#122 — Contextual Send Request */}
-        {requestAlreadySent ? (
-          <View testID="request-sent-indicator" className="bg-muted rounded-xl p-4 mb-4 items-center">
-            <Text className="text-muted-foreground font-medium">Request Sent</Text>
+        {/* #127 — Accept/Decline bar (when opened from incoming request context) */}
+        {matchRequestId ? (
+          <View testID="accept-decline-bar" className="flex-row gap-3 mb-4">
+            <Button
+              testID="decline-button"
+              variant="ghost"
+              className="flex-1"
+              isDisabled={declineMutation.isPending}
+              onPress={() => {
+                if (matchRequestId) {
+                  declineMutation.mutate({ matchRequestId });
+                }
+              }}
+            >
+              <Button.Label>Decline</Button.Label>
+            </Button>
+            <Button
+              testID="accept-button"
+              variant="primary"
+              className="flex-1"
+              isDisabled={acceptMutation.isPending || acceptMutation.isSuccess}
+              onPress={() => {
+                if (matchRequestId) {
+                  acceptMutation.mutate({ matchRequestId });
+                }
+              }}
+            >
+              <Button.Label>{acceptMutation.isSuccess ? "Accepted" : "Accept"}</Button.Label>
+            </Button>
           </View>
         ) : (
-          <Button
-            testID="send-request-button"
-            variant="primary"
-            isDisabled={sendRequestMutation.isPending || statusQuery.isPending}
-            onPress={() => sendRequestMutation.mutate({ receiverId: id })}
-            className="mb-4"
-          >
-            {sendRequestMutation.isPending ? (
-              <Spinner size="sm" />
-            ) : (
-              <Button.Label>Send Request</Button.Label>
-            )}
-          </Button>
+          /* #120/#122 — Contextual Send Request */
+          requestAlreadySent ? (
+            <View testID="request-sent-indicator" className="bg-muted rounded-xl p-4 mb-4 items-center">
+              <Text className="text-muted-foreground font-medium">Request Sent</Text>
+            </View>
+          ) : (
+            <Button
+              testID="send-request-button"
+              variant="primary"
+              isDisabled={sendRequestMutation.isPending || statusQuery.isPending}
+              onPress={() => sendRequestMutation.mutate({ receiverId: id })}
+              className="mb-4"
+            >
+              {sendRequestMutation.isPending ? (
+                <Spinner size="sm" />
+              ) : (
+                <Button.Label>Send Request</Button.Label>
+              )}
+            </Button>
+          )
         )}
       </ScrollView>
     </Container>
