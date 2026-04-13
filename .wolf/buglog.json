@@ -1538,6 +1538,262 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-13T19:32:59.524Z"
+    },
+    {
+      "id": "bug-096",
+      "timestamp": "2026-04-13T19:34:50.175Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/task-139-body.md",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 5→5 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T19:34:50.175Z"
+    },
+    {
+      "id": "bug-097",
+      "timestamp": "2026-04-13T19:40:16.258Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/messaging.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T19:40:16.258Z"
+    },
+    {
+      "id": "bug-098",
+      "timestamp": "2026-04-13T19:41:23.411Z",
+      "error_message": "Missing error handling in function",
+      "file": "apps/server/src/notifications.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block | Also: // #141 — Notify both Students when their conversation chann; export async function handleConversationOpened(event: Conver | Also: // #142 — Notify both Students when messaging won't be avail; export async function handleMessagingDeclineOutcome(event: M",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-13T19:48:26.568Z"
+    },
+    {
+      "id": "bug-099",
+      "timestamp": "2026-04-13T19:42:02.716Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/task-140-body.md",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 5→5 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T19:42:02.716Z"
+    },
+    {
+      "id": "bug-100",
+      "timestamp": "2026-04-13T19:43:55.940Z",
+      "error_message": "Type error",
+      "file": "packages/api/src/domain-events.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation | Also: export interface MessagingDeclineOutcomeEvent {; meetupId: string;",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T19:47:25.865Z"
+    },
+    {
+      "id": "bug-101",
+      "timestamp": "2026-04-13T19:44:03.774Z",
+      "error_message": "Type error",
+      "file": "packages/api/src/routers/messaging-utils.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation | Also: * Returns true when both Students have responded and at leas; * Used to determine whether to send the decline-outcome noti",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T19:47:11.567Z"
+    },
+    {
+      "id": "bug-102",
+      "timestamp": "2026-04-13T19:45:53.300Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/task-141-body.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→4 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T19:45:53.300Z"
+    },
+    {
+      "id": "bug-103",
+      "timestamp": "2026-04-13T19:47:48.755Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/messaging.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T19:47:48.755Z"
+    },
+    {
+      "id": "bug-104",
+      "timestamp": "2026-04-13T19:59:07.734Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/messaging.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T19:59:07.734Z"
+    },
+    {
+      "id": "bug-105",
+      "timestamp": "2026-04-13T19:59:47.913Z",
+      "error_message": "Significant refactor of ",
+      "file": "packages/api/src/routers/messaging.ts",
+      "root_cause": "37 lines replaced/restructured",
+      "fix": "Rewrote 64→23 lines (37 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T19:59:47.913Z"
+    },
+    {
+      "id": "bug-106",
+      "timestamp": "2026-04-13T20:05:15.420Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/wtf-implement-task-approach.md",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 20→20 lines (7 removed) | Also: | Student sends a message | | |; | Empty input blocked | | |",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T20:05:21.011Z"
+    },
+    {
+      "id": "bug-107",
+      "timestamp": "2026-04-13T20:05:59.075Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/verify-143-body.md",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 7→24 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T20:05:59.075Z"
+    },
+    {
+      "id": "bug-108",
+      "timestamp": "2026-04-13T20:07:36.967Z",
+      "error_message": "Missing guard clause",
+      "file": "packages/api/src/routers/messaging-utils.ts",
+      "root_cause": "No early return/throw for edge case: !trimmed",
+      "fix": "Added guard clause: if (!trimmed)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T20:09:35.601Z"
+    },
+    {
+      "id": "bug-109",
+      "timestamp": "2026-04-13T20:07:52.038Z",
+      "error_message": "Wrong return value",
+      "file": "packages/api/src/routers/messaging.ts",
+      "root_cause": "Was returning: { id: \"\" as string, conversationId: \"\" as string, ",
+      "fix": "Now returns: { id: \"\" as string, conversationId: \"\" as string, ",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T20:07:52.038Z"
+    },
+    {
+      "id": "bug-110",
+      "timestamp": "2026-04-13T20:09:52.113Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/messaging.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T20:09:52.113Z"
+    },
+    {
+      "id": "bug-111",
+      "timestamp": "2026-04-13T20:13:21.719Z",
+      "error_message": "Wrong return value",
+      "file": "packages/api/src/routers/messaging.ts",
+      "root_cause": "Was returning: { id: \"\" as string, conversationId: input.conversa",
+      "fix": "Now returns: the created message",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T20:13:21.719Z"
     }
   ]
 }

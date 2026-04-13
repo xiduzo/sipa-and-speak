@@ -1,19 +1,31 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T19:33:10.539Z
-> Files: 249 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T20:15:40.404Z
+> Files: 277 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
 - `pr-138-body.md` — Summary (~361 tok)
+- `pr-139-body.md` — Summary (~406 tok)
+- `pr-140-body.md` — Summary (~347 tok)
+- `pr-141-body.md` — Summary (~334 tok)
 - `task-138-body.md` — 🛠 Task: Send opt-in push notification to both Students after meetup is completed (~1150 tok)
+- `task-139-body.md` — 🛠 Task: Record each Student's messaging opt-in response independently (~1154 tok)
+- `task-140-body.md` — 🛠 Task: Send second push to pending Student when their match accepts (~1127 tok)
+- `task-141-body.md` — 🛠 Task: Open conversation channel and notify both Students when both accept (~1242 tok)
+- `task144-body.md` — 🛠 Task: Validate message before send (~938 tok)
+- `task145-body.md` — 🛠 Task: Persist and deliver message to recipient (~1123 tok)
+- `task146-body.md` — 🛠 Task: Block message sending in conversations that are not mutually accepted (~1085 tok)
 - `verify-138-body.md` — 🛠 Task: Send opt-in push notification to both Students after meetup is completed (~1104 tok)
+- `verify-139-body.md` — 🛠 Task: Record each Student's messaging opt-in response independently (~1186 tok)
+- `verify-143-body.md` — 🛠 Task: Build message compose UI (~1137 tok)
+- `wtf-implement-task-approach.md` — 🛠 Task: Build message compose UI (~1062 tok)
 
 ## ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/
 
 - `MEMORY.md` — Memory Index (~106 tok)
 - `project_epic3_loop_progress.md` — Completed (merged to main) (~838 tok)
-- `project_epic4_loop_progress.md` — Completed (~498 tok)
+- `project_epic4_loop_progress.md` — Completed (~563 tok)
 
 ## ./
 
@@ -298,6 +310,7 @@
 ## apps/native/__tests__/
 
 - `candidate-card.test.tsx` — Tests for task #122 — Send Request action on suggestion card (~830 tok)
+- `compose-ui.test.tsx` — Tests for task #143 — Build message compose UI (~947 tok)
 - `device-token-registration.test.tsx` — Tests for task #130 — Push notification when MatchRequestSent fires (~722 tok)
 - `notification-deep-link.test.tsx` — Tests for task #132 — Deep-link notification tap to requester's full profile (~1012 tok)
 - `notification-match-accepted.test.tsx` — Tests for task #136 — "Connect Now" CTA in acceptance notification (~1085 tok)
@@ -323,6 +336,10 @@
 - `confirmed-meetups.tsx` — ConfirmedMeetupsScreen (~996 tok)
 - `profile.tsx` — ProfileScreen (~233 tok)
 - `suggestions.tsx` — APP_SHARE_URL (~2196 tok)
+
+## apps/native/app/chat/
+
+- `[conversationId].tsx` — ChatScreen (~727 tok)
 
 ## apps/native/app/partner/
 
@@ -371,16 +388,20 @@
 ## apps/server/src/
 
 - `index.ts` — Wire domain event → push notification handlers on server start (~768 tok)
-- `notifications.ts` — Push notification service — Expo Push Notifications (~6318 tok)
+- `notifications.ts` — Push notification service — Expo Push Notifications (~7901 tok)
 
 ## apps/server/src/__tests__/
 
+- `messaging-send-persistence.test.ts` — Tests for task #145 — Persist and deliver message to recipient (~941 tok)
+- `notifications-conversation-opened.test.ts` — Tests for task #141 — Open conversation channel and notify both Students when both accept (~1478 tok)
 - `notifications-match-accepted.test.ts` — Tests for task #134 — Push notification on MatchRequestAccepted (~1303 tok)
 - `notifications-match-declined.test.ts` — Tests for task #135 — Push notification on MatchRequestDeclined (~1377 tok)
 - `notifications-meetup-cancelled.test.ts` — Tests for task #83 — Push notification on MeetupCancelled (~627 tok)
 - `notifications-meetup-confirmed.test.ts` — Tests for task #75 — Push notification on MeetupConfirmed (~1146 tok)
 - `notifications-meetup-counter-proposed.test.ts` — Tests for task #76 — Push notification on MeetupCounterProposed (~983 tok)
 - `notifications-meetup-declined.test.ts` — Tests for task #77 — Push notification on MeetupDeclined (~1012 tok)
+- `notifications-messaging-decline.test.ts` — Tests for task #142 — Notify both Students when messaging channel won't open (decline outcome) (~858 tok)
+- `notifications-messaging-nudge.test.ts` — Tests for task #140 — Send second push to pending Student when their match accepts (~1353 tok)
 - `notifications-messaging-opt-in.test.ts` — Tests for task #138 — Send opt-in push notification to both Students after meetup is completed (~1504 tok)
 - `notifications-reschedule-proposed.test.ts` — Tests for task #89 — Push notification on MeetupRescheduleProposed (~777 tok)
 
@@ -450,21 +471,31 @@
 ## packages/api/src/
 
 - `context.ts` — Exports CreateContextOptions, createContext, Context (~126 tok)
-- `domain-events.ts` — The student who just counter-proposed (new proposer after role swap) (~1357 tok)
+- `domain-events.ts` — The student who just counter-proposed (new proposer after role swap) (~1554 tok)
 - `index.ts` — tRPC router (~156 tok)
 
 ## packages/api/src/__tests__/
 
 - `matching.test.ts` — Tests for: (~758 tok)
 - `meetup-rounds.test.ts` — Tests for task #73 — Enforce max 3 counter-proposal rounds (~256 tok)
+- `messaging-access-control.test.ts` — Tests for task #146 — Block message sending in non-open conversations (~528 tok)
+- `messaging-conversation.test.ts` — Tests for task #141 — Open conversation channel when both Students accept (~370 tok)
+- `messaging-decline.test.ts` — Tests for task #142 — Block conversation when either Student declines (~301 tok)
+- `messaging-nudge.test.ts` — Tests for task #140 — Send second push to pending Student when their match accepts (~324 tok)
+- `messaging-opt-in.test.ts` — Tests for task #139 — Record each Student's messaging opt-in response independently (~350 tok)
+- `messaging-send-persistence.test.ts` — Tests for task #145 — Persist and deliver message to recipient (~742 tok)
+- `messaging-send-validation.test.ts` — Tests for task #144 — Validate message content before send (~417 tok)
 
 ## packages/api/src/routers/
 
 - `chat.ts` — tRPC router: 6 procedures (~2592 tok)
-- `index.ts` — tRPC router: 2 procedures (~221 tok)
+- `index.ts` — tRPC router: 2 procedures (~243 tok)
 - `matching-utils.ts` — Haversine distance in km between two lat/lng points (~1049 tok)
 - `matching.ts` — tRPC router: 5 procedures (~4728 tok)
 - `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~10102 tok)
+- `messaging-persist.ts` — #145 — Persistence helpers for the messaging send flow. (~216 tok)
+- `messaging-utils.ts` — Pure helpers for the messaging opt-in router. (~891 tok)
+- `messaging.ts` — #139 — Record a Student's accept/decline response to the messaging opt-in prompt. (~2346 tok)
 - `profile.ts` — tRPC router: 6 procedures (~4644 tok)
 - `venue-admin.ts` — Exports adminVenueRouter (~1166 tok)
 - `venue.ts` — Zod schemas: venueTagEnum (~1054 tok)
@@ -527,7 +558,7 @@
 
 - `auth.ts` — Exports user, session, account, verification + 3 more (~1028 tok)
 - `index.ts` (~17 tok)
-- `sip-and-speak.ts` — Exports languageProfile, userLanguage, userInterest, venue + 19 more (~4002 tok)
+- `sip-and-speak.ts` — Exports languageProfile, userLanguage, userInterest, venue + 19 more (~4170 tok)
 
 ## packages/db/src/seed/
 
