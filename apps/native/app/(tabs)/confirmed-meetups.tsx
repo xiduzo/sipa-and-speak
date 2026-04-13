@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Button, Spinner } from "heroui-native";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { Container } from "@/components/container";
 import { trpc, queryClient } from "@/utils/trpc";
@@ -9,6 +10,15 @@ import { trpc, queryClient } from "@/utils/trpc";
 export default function ConfirmedMeetupsScreen() {
   const router = useRouter();
   const meetupsQuery = useQuery(trpc.meetup.getConfirmed.queryOptions());
+
+  // Track which meetup has the reschedule form open
+  const [reschedulingMeetupId, setReschedulingMeetupId] = useState<string | null>(null);
+  const [rescheduleVenueId, setRescheduleVenueId] = useState<string | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
+
+  const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
 
   const cancelMutation = useMutation(
     trpc.meetup.cancelMeetup.mutationOptions({
@@ -19,6 +29,43 @@ export default function ConfirmedMeetupsScreen() {
       onError: (err) => Alert.alert("Error", err.message),
     }),
   );
+
+  const rescheduleMutation = useMutation(
+    trpc.meetup.proposeReschedule.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
+        closeRescheduleForm();
+        Alert.alert("Reschedule proposed", "Your reschedule request has been sent to your partner.");
+      },
+      onError: (err) => setRescheduleError(err.message),
+    }),
+  );
+
+  function openRescheduleForm(meetupId: string, currentVenueId: string, currentDate: string, currentTime: string) {
+    setReschedulingMeetupId(meetupId);
+    setRescheduleVenueId(currentVenueId);
+    setRescheduleDate(currentDate);
+    setRescheduleTime(currentTime);
+    setRescheduleError(null);
+  }
+
+  function closeRescheduleForm() {
+    setReschedulingMeetupId(null);
+    setRescheduleVenueId(null);
+    setRescheduleDate("");
+    setRescheduleTime("");
+    setRescheduleError(null);
+  }
+
+  function handleRescheduleSubmit(meetupId: string) {
+    setRescheduleError(null);
+    if (!rescheduleVenueId) { setRescheduleError("Please select a location"); return; }
+    if (!rescheduleDate.match(/^\d{4}-\d{2}-\d{2}$/)) { setRescheduleError("Enter a date in YYYY-MM-DD format"); return; }
+    if (!rescheduleTime.match(/^\d{2}:\d{2}$/)) { setRescheduleError("Enter a time in HH:MM format"); return; }
+    const proposed = new Date(`${rescheduleDate}T${rescheduleTime}:00`);
+    if (proposed <= new Date()) { setRescheduleError("Date and time must be in the future"); return; }
+    rescheduleMutation.mutate({ meetupId, venueId: rescheduleVenueId, date: rescheduleDate, time: rescheduleTime });
+  }
 
   if (meetupsQuery.isPending) {
     return (
@@ -82,16 +129,104 @@ export default function ConfirmedMeetupsScreen() {
               {m.date} at {m.time}
             </Text>
 
-            {/* #79 — Cancel action hidden when meetup is in the past */}
             {!m.isPast && (
-              <Button
-                testID="cancel-meetup-btn"
-                variant="ghost"
-                onPress={() => handleCancel(m.meetupId)}
-                isDisabled={cancelMutation.isPending}
-              >
-                <Button.Label>Cancel meetup</Button.Label>
-              </Button>
+              <View className="flex flex-col gap-2">
+                {/* #79 — Cancel action hidden when meetup is in the past */}
+                <Button
+                  testID="cancel-meetup-btn"
+                  variant="ghost"
+                  onPress={() => handleCancel(m.meetupId)}
+                  isDisabled={cancelMutation.isPending}
+                >
+                  <Button.Label>Cancel meetup</Button.Label>
+                </Button>
+
+                {/* #86 — Reschedule action */}
+                {reschedulingMeetupId !== m.meetupId ? (
+                  <Button
+                    testID="reschedule-meetup-btn"
+                    variant="outline"
+                    onPress={() => openRescheduleForm(m.meetupId, m.venue.id, m.date, m.time)}
+                    isDisabled={m.reschedulePending}
+                  >
+                    <Button.Label>
+                      {m.reschedulePending && m.rescheduleIsFromMe
+                        ? "Reschedule pending…"
+                        : m.reschedulePending
+                          ? "Partner proposed reschedule"
+                          : "Reschedule"}
+                    </Button.Label>
+                  </Button>
+                ) : (
+                  <View testID="reschedule-form" className="mt-2">
+                    <Text className="text-foreground font-semibold mb-2">Location</Text>
+                    {venuesQuery.isPending ? (
+                      <Spinner />
+                    ) : (
+                      <View className="flex flex-col gap-2 mb-4">
+                        {(venuesQuery.data ?? []).map((v) => (
+                          <TouchableOpacity
+                            key={v.id}
+                            testID="reschedule-venue-option"
+                            onPress={() => setRescheduleVenueId(v.id)}
+                            className={`border rounded-xl p-3 ${rescheduleVenueId === v.id ? "border-primary bg-primary/10" : "border-border bg-card"}`}
+                          >
+                            <Text className={`font-medium ${rescheduleVenueId === v.id ? "text-primary" : "text-foreground"}`}>{v.name}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+
+                    <Text className="text-foreground font-semibold mb-2">Date (YYYY-MM-DD)</Text>
+                    <View className="border border-border rounded-xl px-3 py-2 bg-card mb-4">
+                      <Text
+                        testID="reschedule-date-input"
+                        className="text-foreground"
+                        onPress={() => {/* date picker placeholder */}}
+                      >
+                        {rescheduleDate || "YYYY-MM-DD"}
+                      </Text>
+                    </View>
+
+                    <Text className="text-foreground font-semibold mb-2">Time (HH:MM)</Text>
+                    <View className="border border-border rounded-xl px-3 py-2 bg-card mb-4">
+                      <Text
+                        testID="reschedule-time-input"
+                        className="text-foreground"
+                      >
+                        {rescheduleTime || "HH:MM"}
+                      </Text>
+                    </View>
+
+                    {rescheduleError && (
+                      <Text testID="reschedule-error" className="text-destructive text-sm mb-4">
+                        {rescheduleError}
+                      </Text>
+                    )}
+
+                    <View className="flex flex-row gap-2">
+                      <Button
+                        testID="reschedule-submit-btn"
+                        onPress={() => handleRescheduleSubmit(m.meetupId)}
+                        isDisabled={rescheduleMutation.isPending}
+                        className="flex-1"
+                      >
+                        <Button.Label>
+                          {rescheduleMutation.isPending ? "Sending…" : "Propose reschedule"}
+                        </Button.Label>
+                      </Button>
+                      <Button
+                        testID="reschedule-cancel-btn"
+                        variant="ghost"
+                        onPress={closeRescheduleForm}
+                        className="flex-1"
+                      >
+                        <Button.Label>Cancel</Button.Label>
+                      </Button>
+                    </View>
+                  </View>
+                )}
+              </View>
             )}
 
             {m.isPast && (

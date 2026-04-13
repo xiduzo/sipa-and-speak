@@ -667,6 +667,74 @@ export const meetupRouter = router({
       isPast: new Date(`${row.meetup.date}T${row.meetup.time}:00`) <= new Date(),
       venue: row.venue,
       partner: row.partner,
+      // #86 — Reschedule proposal state
+      reschedulePending: row.meetup.rescheduleProposerId !== null,
+      rescheduleIsFromMe: row.meetup.rescheduleProposerId === userId,
+      reschedule: row.meetup.rescheduleProposerId !== null
+        ? {
+            venueId: row.meetup.rescheduleVenueId!,
+            date: row.meetup.rescheduleDate!,
+            time: row.meetup.rescheduleTime!,
+          }
+        : null,
     }));
   }),
+
+  // #86 — Propose a reschedule for a confirmed meetup
+  proposeReschedule: protectedProcedure
+    .input(
+      z.object({
+        meetupId: z.string(),
+        venueId: z.string(),
+        date: z.string(),
+        time: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      const isParticipant = existing.proposerId === userId || existing.receiverId === userId;
+      if (!isParticipant) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this meetup" });
+      }
+
+      if (existing.status !== "confirmed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only confirmed meetups can be rescheduled" });
+      }
+
+      // #87 will add: future date check, active location check, no-op check, race condition guard
+
+      const [updated] = await db
+        .update(meetup)
+        .set({
+          rescheduleProposerId: userId,
+          rescheduleVenueId: input.venueId,
+          rescheduleDate: input.date,
+          rescheduleTime: input.time,
+        })
+        .where(eq(meetup.id, input.meetupId))
+        .returning();
+
+      domainEvents.emit("MeetupRescheduleProposed", {
+        meetupId: existing.id,
+        proposerId: userId,
+        receiverId: existing.proposerId === userId ? existing.receiverId : existing.proposerId,
+        venueId: input.venueId,
+        date: input.date,
+        time: input.time,
+        proposedAt: new Date(),
+      });
+
+      return updated;
+    }),
 });

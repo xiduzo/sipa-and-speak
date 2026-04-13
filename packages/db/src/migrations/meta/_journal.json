@@ -36,6 +36,13 @@
       "when": 1776096819511,
       "tag": "0004_small_pixie",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776101817801,
+      "tag": "0005_nifty_next_avengers",
+      "breakpoints": true
     }
   ]
 }
