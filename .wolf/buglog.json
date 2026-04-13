@@ -1794,6 +1794,86 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-13T20:13:21.719Z"
+    },
+    {
+      "id": "bug-112",
+      "timestamp": "2026-04-13T22:21:33.861Z",
+      "error_message": "CSS fix: item",
+      "file": "apps/native/__tests__/conversation-inbox.test.tsx",
+      "root_cause": "item: unknown → unknown, index: number) => renderItem({ item, index",
+      "fix": "Changed item: unknown → unknown, index: number) => renderItem({ item, index",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T22:21:33.861Z"
+    },
+    {
+      "id": "bug-113",
+      "timestamp": "2026-04-13T22:21:55.840Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/native/__tests__/conversation-inbox.test.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→3 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T22:21:55.840Z"
+    },
+    {
+      "id": "bug-114",
+      "timestamp": "2026-04-13T22:56:35.933Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Had \"modal\"",
+      "fix": "Changed to \"flag-user\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T22:56:35.933Z"
+    },
+    {
+      "id": "bug-115",
+      "timestamp": "2026-04-13T22:58:17.436Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/native/app/flag-user.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→14 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T22:58:17.436Z"
+    },
+    {
+      "id": "bug-116",
+      "timestamp": "2026-04-13T23:08:46.611Z",
+      "error_message": "Null/undefined access in ",
+      "file": "apps/native/jest-mocks/heroui-native.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T23:08:46.611Z"
     }
   ]
 }

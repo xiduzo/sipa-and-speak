@@ -673,3 +673,38 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 00:20 | Edited packages/api/src/routers/chat.ts | 13→16 lines | ~136 |
+| 00:20 | Created apps/native/app/(tabs)/chats.tsx | — | ~574 |
+| 00:21 | Created apps/native/__tests__/conversation-inbox.test.tsx | — | ~1052 |
+| 00:21 | Edited apps/native/__tests__/conversation-inbox.test.tsx | CSS: props | ~137 |
+| 00:21 | Edited apps/native/__tests__/conversation-inbox.test.tsx | 4→3 lines | ~38 |
+| 00:21 | Edited apps/native/__tests__/conversation-inbox.test.tsx | inline fix | ~18 |
+| 00:28 | Created apps/native/__tests__/inbox-unread-indicator.test.tsx | — | ~1051 |
+| 00:29 | Created apps/native/__tests__/inbox-sort-order.test.tsx | — | ~1173 |
+| 00:29 | Edited apps/native/app/(tabs)/chats.tsx | 4→4 lines | ~77 |
+| 00:29 | Created apps/native/__tests__/inbox-empty-state.test.tsx | — | ~925 |
+| 00:30 | Created apps/native/__tests__/inbox-tap-navigate.test.tsx | — | ~787 |
+| 00:36 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic4_loop_progress.md | — | ~509 |
+| $(date +%H:%M) | Epic #4 complete — Feature #28 (PR #240) and Feature #29 (PR #246) merged to main. All 5 tasks + Epic closed. | apps/native, packages/api, apps/server | ✅ |
+| 00:36 | Session end: 12 writes across 8 files (chat.ts, chats.tsx, conversation-inbox.test.tsx, inbox-unread-indicator.test.tsx, inbox-sort-order.test.tsx) | 6 reads | ~14173 tok |
+
+## Session: 2026-04-13 00:40
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 00:55 | Created packages/api/src/routers/moderation.ts | — | ~284 |
+| 00:55 | Edited packages/api/src/routers/index.ts | added 1 import(s) | ~121 |
+| 00:55 | Edited packages/api/src/routers/index.ts | 2→3 lines | ~19 |
+| 00:56 | Created apps/native/__tests__/flag-user.test.tsx | — | ~1333 |
+| 00:56 | Created apps/native/app/flag-user.tsx | — | ~1241 |
+| 00:56 | Edited apps/native/app/_layout.tsx | 1→2 lines | ~54 |
+| 00:56 | Edited apps/native/app/partner/[id].tsx | expanded (+14 lines) | ~133 |
+| 00:58 | Edited apps/native/app/flag-user.tsx | expanded (+7 lines) | ~106 |
+| 01:08 | Edited apps/native/jest-mocks/heroui-native.tsx | added nullish coalescing | ~63 |
+| 01:08 | Edited apps/native/__tests__/flag-user.test.tsx | reduced (-6 lines) | ~24 |
+| 01:08 | Edited apps/native/__tests__/flag-user.test.tsx | 1→4 lines | ~41 |
+
+## Session: 2026-04-13 01:09
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
