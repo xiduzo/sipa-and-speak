@@ -377,11 +377,12 @@ export const matchingRouter = router({
         });
       }
 
-      // Check for existing active request (dedup at app level)
+      // Check for existing active request (pending or accepted only — declined allows re-request)
       const existing = await db.query.matchRequest.findFirst({
         where: and(
           eq(matchRequest.requesterId, requesterId),
           eq(matchRequest.receiverId, input.receiverId),
+          inArray(matchRequest.status, ["pending", "accepted"]),
         ),
       });
       if (existing) {

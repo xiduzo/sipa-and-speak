@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button, Spinner } from "heroui-native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Image, ScrollView, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
@@ -23,9 +23,16 @@ export default function PartnerProfileScreen() {
     trpc.matching.getMatchRequestStatus.queryOptions({ candidateUserId: id }),
   );
 
-  const sendRequestMutation = useMutation(
-    trpc.matching.sendMatchRequest.mutationOptions(),
-  );
+  const [sendConflictError, setSendConflictError] = useState<string | null>(null);
+
+  const sendRequestMutation = useMutation({
+    ...trpc.matching.sendMatchRequest.mutationOptions(),
+    onError: (error: { data?: { code?: string } }) => {
+      if (error.data?.code === "CONFLICT") {
+        setSendConflictError("A match request to this candidate already exists.");
+      }
+    },
+  });
 
   // #121 — if profile is no longer available, navigate back
   useEffect(() => {
@@ -62,7 +69,7 @@ export default function PartnerProfileScreen() {
   const profile = profileQuery.data;
   const comments = commentsQuery.data ?? [];
   const requestAlreadySent =
-    (statusQuery.data !== undefined && statusQuery.data.matchRequestStatus !== "none") ||
+    (statusQuery.data?.matchRequestStatus === "pending" || statusQuery.data?.matchRequestStatus === "accepted") ||
     sendRequestMutation.isSuccess;
 
   return (
@@ -172,6 +179,13 @@ export default function PartnerProfileScreen() {
             ))
           )}
         </View>
+
+        {/* #123 — Conflict error */}
+        {sendConflictError && (
+          <View testID="conflict-error-message" className="bg-danger/10 rounded-xl p-3 mb-3">
+            <Text className="text-danger text-sm text-center">{sendConflictError}</Text>
+          </View>
+        )}
 
         {/* #120/#122 — Contextual Send Request */}
         {requestAlreadySent ? (
