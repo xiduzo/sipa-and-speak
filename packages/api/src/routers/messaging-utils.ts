@@ -14,6 +14,17 @@ export function hasAlreadyResponded(
 }
 
 /**
+ * Returns true if a nudge push should be sent to the pending partner.
+ * Conditions: the current student just accepted, AND the partner has not yet responded.
+ */
+export function shouldSendNudge(
+  myResponse: "accept" | "decline",
+  partnerResponse: { response: "accept" | "decline" } | undefined,
+): boolean {
+  return myResponse === "accept" && partnerResponse === undefined;
+}
+
+/**
  * Derives the partner's ID from a meetup's proposer/receiver pair.
  */
 export function getPartnerId(

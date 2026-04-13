@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -379,6 +379,9 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("MessagingOptInPrompted", (event) => {
     void handleMessagingOptInPrompted(event);
   });
+  domainEvents.on("MessagingNudgeNeeded", (event) => {
+    void handleMessagingNudge(event);
+  });
 }
 
 // #91 — Notify both Students when a reschedule is accepted and meetup details are updated
@@ -552,6 +555,44 @@ export async function handleMessagingOptInPrompted(event: MessagingOptInPrompted
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send MessagingOptInPrompted notification", { meetupId, err });
+  }
+}
+
+// #140 — Nudge the pending Student when their match accepts the messaging opt-in
+export async function handleMessagingNudge(event: MessagingNudgeNeededEvent): Promise<void> {
+  const { meetupId, acceptingStudentId, pendingStudentId } = event;
+
+  const [acceptingStudentResult, tokens] = await Promise.all([
+    db.select({ name: user.name }).from(user).where(eq(user.id, acceptingStudentId)).limit(1),
+    db
+      .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+      .from(userDeviceToken)
+      .where(eq(userDeviceToken.userId, pendingStudentId)),
+  ]);
+
+  if (tokens.length === 0) {
+    console.info("[push] No device token for pending student — skipping messaging nudge", {
+      meetupId,
+      pendingStudentId,
+    });
+    return;
+  }
+
+  const acceptingStudentName = acceptingStudentResult[0]?.name ?? "Your match";
+
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: "Your match wants to message you!",
+    body: `${acceptingStudentName} accepted messaging — let them know if you're in!`,
+    data: { meetupId, type: "messaging_nudge", deepLink: `/messaging/opt-in/${meetupId}` },
+  }));
+
+  console.info("[push] Sending MessagingNudge notification", { meetupId, pendingStudentId, tokenCount: messages.length });
+
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MessagingNudge notification", { meetupId, pendingStudentId, err });
   }
 }
 

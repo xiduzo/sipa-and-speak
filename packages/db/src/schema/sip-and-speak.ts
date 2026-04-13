@@ -443,6 +443,8 @@ export const messagingOptIn = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     response: text("response", { enum: ["accept", "decline"] }).notNull(),
     respondedAt: timestamp("responded_at").defaultNow().notNull(),
+    // #140 — Set when this acceptance triggered a nudge push to the pending partner; prevents duplicate nudges
+    nudgeSentAt: timestamp("nudge_sent_at"),
   },
   (table) => [
     unique("messaging_opt_in_meetup_student_unique").on(table.meetupId, table.studentId),
