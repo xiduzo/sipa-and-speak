@@ -15,6 +15,13 @@
       "when": 1776066899965,
       "tag": "0001_pretty_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776077330579,
+      "tag": "0002_thick_the_call",
+      "breakpoints": true
     }
   ]
 }

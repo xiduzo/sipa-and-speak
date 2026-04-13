@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { user } from "./auth";
@@ -327,6 +328,29 @@ export const studentCommentRelations = relations(studentComment, ({ one }) => ({
     relationName: "commentTarget",
   }),
 }));
+
+// #130 — Device token storage for push notifications
+export const userDeviceToken = pgTable(
+  "user_device_token",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
+    platform: text("platform", { enum: ["ios", "android", "web"] }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("user_device_token_userId_token_idx").on(table.userId, table.token),
+  ],
+);
 
 export const matchRequestRelations = relations(matchRequest, ({ one }) => ({
   requester: one(user, {
