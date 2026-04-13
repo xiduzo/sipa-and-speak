@@ -25,6 +25,16 @@ export function shouldSendNudge(
 }
 
 /**
+ * Returns true when both Students have responded with "accept".
+ * Used to determine whether a conversation channel should be opened.
+ */
+export function bothAccepted(
+  responses: Array<{ response: "accept" | "decline" }>,
+): boolean {
+  return responses.length === 2 && responses.every((r) => r.response === "accept");
+}
+
+/**
  * Derives the partner's ID from a meetup's proposer/receiver pair.
  */
 export function getPartnerId(

@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -382,6 +382,9 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("MessagingNudgeNeeded", (event) => {
     void handleMessagingNudge(event);
   });
+  domainEvents.on("ConversationOpened", (event) => {
+    void handleConversationOpened(event);
+  });
 }
 
 // #91 — Notify both Students when a reschedule is accepted and meetup details are updated
@@ -593,6 +596,63 @@ export async function handleMessagingNudge(event: MessagingNudgeNeededEvent): Pr
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send MessagingNudge notification", { meetupId, pendingStudentId, err });
+  }
+}
+
+// #141 — Notify both Students when their conversation channel is opened
+export async function handleConversationOpened(event: ConversationOpenedEvent): Promise<void> {
+  const { conversationId, meetupId, studentAId, studentBId } = event;
+
+  const [studentAResult, studentBResult, tokensA, tokensB] = await Promise.all([
+    db.select({ name: user.name }).from(user).where(eq(user.id, studentAId)).limit(1),
+    db.select({ name: user.name }).from(user).where(eq(user.id, studentBId)).limit(1),
+    db
+      .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+      .from(userDeviceToken)
+      .where(eq(userDeviceToken.userId, studentAId)),
+    db
+      .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+      .from(userDeviceToken)
+      .where(eq(userDeviceToken.userId, studentBId)),
+  ]);
+
+  const studentAName = studentAResult[0]?.name ?? "Your match";
+  const studentBName = studentBResult[0]?.name ?? "Your match";
+
+  const messages: ExpoPushMessage[] = [];
+
+  for (const { token } of tokensA) {
+    messages.push({
+      to: token,
+      title: "Your messaging channel is open!",
+      body: `${studentBName} also accepted — you can now message each other.`,
+      data: { conversationId, meetupId, type: "conversation_opened", deepLink: `/conversations/${conversationId}` },
+    });
+  }
+
+  for (const { token } of tokensB) {
+    messages.push({
+      to: token,
+      title: "Your messaging channel is open!",
+      body: `${studentAName} also accepted — you can now message each other.`,
+      data: { conversationId, meetupId, type: "conversation_opened", deepLink: `/conversations/${conversationId}` },
+    });
+  }
+
+  if (messages.length === 0) {
+    console.info("[push] No device tokens for either student — skipping conversation-opened notification", {
+      conversationId,
+      meetupId,
+    });
+    return;
+  }
+
+  console.info("[push] Sending ConversationOpened notification", { conversationId, meetupId, tokenCount: messages.length });
+
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send ConversationOpened notification", { conversationId, meetupId, err });
   }
 }
 

@@ -150,11 +150,14 @@ export const conversation = pgTable(
     user2Id: text("user2_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    // #141 — FK to meetup; unique per meetup (at most one conversation per meetup pair)
+    meetupId: text("meetup_id").references(() => meetup.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
     index("conversation_user1_idx").on(table.user1Id),
     index("conversation_user2_idx").on(table.user2Id),
+    uniqueIndex("conversation_meetupId_idx").on(table.meetupId),
   ],
 );
 
