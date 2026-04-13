@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -118,9 +118,73 @@ async function handleMatchRequestSent(event: MatchRequestSentEvent): Promise<voi
   }
 }
 
+export async function handleMatchRequestAccepted(event: MatchRequestAcceptedEvent): Promise<void> {
+  const { matchRequestId, requesterId, receiverId } = event;
+
+  const [receiverResult, tokens] = await Promise.all([
+    db.select({ name: user.name }).from(user).where(eq(user.id, receiverId)).limit(1),
+    db
+      .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+      .from(userDeviceToken)
+      .where(eq(userDeviceToken.userId, requesterId)),
+  ]);
+
+  if (tokens.length === 0) {
+    console.info("[push] No device token for requester — skipping", { matchRequestId, requesterId });
+    return;
+  }
+
+  const receiverName = receiverResult[0]?.name ?? "Someone";
+
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: "Your match request was accepted!",
+    body: `${receiverName} accepted your request`,
+    data: { matchRequestId, type: "match_accepted" },
+  }));
+
+  console.info("[push] Sending MatchRequestAccepted notification", {
+    matchRequestId,
+    requesterId,
+    tokenCount: messages.length,
+  });
+
+  try {
+    const tickets = await sendExpoPushNotification(messages);
+
+    const staleTokenIds: string[] = [];
+    for (let i = 0; i < tickets.length; i++) {
+      const ticket = tickets[i];
+      if (ticket?.status === "error" && ticket.details?.error === "DeviceNotRegistered") {
+        const staleId = tokens[i]?.id;
+        if (staleId) staleTokenIds.push(staleId);
+      }
+    }
+
+    if (staleTokenIds.length > 0) {
+      await Promise.all(
+        staleTokenIds.map((id) =>
+          db.delete(userDeviceToken).where(eq(userDeviceToken.id, id)),
+        ),
+      );
+      console.info("[push] Removed stale device tokens", { staleTokenIds });
+    }
+
+    console.info("[push] MatchRequestAccepted notification delivery complete", {
+      matchRequestId,
+      tickets: tickets.map((t) => ({ status: t.status, id: t.id })),
+    });
+  } catch (err) {
+    console.error("[push] Failed to send MatchRequestAccepted notification", { matchRequestId, err });
+  }
+}
+
 export function registerNotificationHandlers(): void {
   domainEvents.on("MatchRequestSent", (event) => {
     // Fire and forget — do not await, must not block the mutation response
     void handleMatchRequestSent(event);
+  });
+  domainEvents.on("MatchRequestAccepted", (event) => {
+    void handleMatchRequestAccepted(event);
   });
 }
