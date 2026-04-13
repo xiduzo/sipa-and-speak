@@ -1,5 +1,6 @@
 import { and, desc, eq, lt, or } from "drizzle-orm";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
 import {
   conversation,
@@ -7,6 +8,7 @@ import {
   messageReadStatus,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
+import { checkReadAccess, computeIsUnread, computeMarkReadAt } from "./messaging-utils";
 import { protectedProcedure, router } from "../index";
 
 export const chatRouter = router({
@@ -103,8 +105,9 @@ export const chatRouter = router({
         )
         .limit(1);
 
-      if (conv.length === 0) {
-        throw new Error("Conversation not found");
+      const access = checkReadAccess(conv[0], userId);
+      if (!access.allowed) {
+        throw new TRPCError({ code: "FORBIDDEN", message: access.error });
       }
 
       const conditions = [eq(message.conversationId, input.conversationId)];
@@ -123,9 +126,26 @@ export const chatRouter = router({
       const hasMore = messages.length > input.limit;
       const items = hasMore ? messages.slice(0, input.limit) : messages;
 
+      // Fetch viewer's read status for isUnread computation (#148)
+      const readStatusRows = await db
+        .select({ lastReadAt: messageReadStatus.lastReadAt })
+        .from(messageReadStatus)
+        .where(
+          and(
+            eq(messageReadStatus.conversationId, input.conversationId),
+            eq(messageReadStatus.userId, userId),
+          ),
+        )
+        .limit(1);
+      const lastReadAt = readStatusRows[0]?.lastReadAt ?? null;
+
+      const chronological = items.reverse();
       return {
-        messages: items.reverse(), // chronological order
-        nextCursor: hasMore ? items[items.length - 1]?.id : undefined,
+        messages: chronological.map((msg) => ({
+          ...msg,
+          isUnread: computeIsUnread(msg, userId, lastReadAt),
+        })),
+        nextCursor: hasMore ? chronological[chronological.length - 1]?.id : undefined,
       };
     }),
 
@@ -323,19 +343,22 @@ export const chatRouter = router({
         )
         .limit(1);
 
+      const now = new Date();
+      const newLastReadAt = computeMarkReadAt(existing[0]?.lastReadAt ?? null, now);
+
       if (existing.length > 0) {
         await db
           .update(messageReadStatus)
-          .set({ lastReadAt: new Date() })
+          .set({ lastReadAt: newLastReadAt })
           .where(eq(messageReadStatus.id, existing[0].id));
       } else {
         await db.insert(messageReadStatus).values({
           conversationId: input.conversationId,
           userId,
-          lastReadAt: new Date(),
+          lastReadAt: newLastReadAt,
         });
       }
 
-      return { success: true };
+      return { lastReadAt: newLastReadAt };
     }),
 });
