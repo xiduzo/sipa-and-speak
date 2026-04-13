@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T17:18:57.076Z
-> Files: 240 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T17:24:20.987Z
+> Files: 245 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/
 
@@ -301,14 +301,20 @@
 
 ## apps/native/app/
 
-- `_layout.tsx` — unstable_settings (~1601 tok)
-- `confirmed-meetups.tsx` — ConfirmedMeetupsScreen (~996 tok)
+- `_layout.tsx` — Stack root layout, initialRouteName=(tabs) (~1552 tok)
 - `edit-profile.tsx` — LANGUAGES — uses useRouter, useQuery, useMutation (~3810 tok)
 - `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)
 - `index.tsx` — LANGUAGES (~5398 tok)
 - `propose-meetup.tsx` — ProposeMeetupScreen (~1591 tok)
 - `respond-meetup.tsx` — RespondMeetupScreen (~3171 tok)
 - `review-profile.tsx` — INTERESTS_LABEL — uses useRouter, useQuery, useMutation (~2394 tok)
+
+## apps/native/app/(tabs)/
+
+- `_layout.tsx` — StyledIonicons (~401 tok)
+- `chats.tsx` — ChatsScreen (~140 tok)
+- `confirmed-meetups.tsx` — ConfirmedMeetupsScreen (~996 tok)
+- `profile.tsx` — ProfileScreen (~233 tok)
 - `suggestions.tsx` — APP_SHARE_URL (~2196 tok)
 
 ## apps/native/app/partner/

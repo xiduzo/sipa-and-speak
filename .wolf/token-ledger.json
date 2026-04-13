@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-10T10:02:44.507Z",
   "lifetime": {
-    "total_tokens_estimated": 583006,
-    "total_reads": 359,
-    "total_writes": 523,
+    "total_tokens_estimated": 593965,
+    "total_reads": 364,
+    "total_writes": 530,
     "total_sessions": 34,
-    "anatomy_hits": 287,
+    "anatomy_hits": 292,
     "anatomy_misses": 72,
     "repeated_reads_blocked": 91,
-    "estimated_savings_vs_bare_cli": 318899
+    "estimated_savings_vs_bare_cli": 319899
   },
   "sessions": [
     {
@@ -5543,6 +5543,104 @@
         "writes_count": 2,
         "repeated_reads_blocked": 1,
         "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-13-1920",
+      "started": "2026-04-13T17:20:58.966Z",
+      "ended": "2026-04-13T17:21:26.245Z",
+      "reads": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1601,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 1601,
+        "output_tokens_estimated": 0,
+        "reads_count": 1,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-13-1920",
+      "started": "2026-04-13T17:20:58.966Z",
+      "ended": "2026-04-13T17:24:55.527Z",
+      "reads": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1601,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/components/theme-toggle.tsx",
+          "tokens_estimated": 309,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 2196,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/confirmed-meetups.tsx",
+          "tokens_estimated": 996,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/_layout.tsx",
+          "tokens_estimated": 401,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/suggestions.tsx",
+          "tokens_estimated": 2196,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/confirmed-meetups.tsx",
+          "tokens_estimated": 996,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/chats.tsx",
+          "tokens_estimated": 140,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/profile.tsx",
+          "tokens_estimated": 233,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 20,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 270,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5102,
+        "output_tokens_estimated": 4256,
+        "reads_count": 4,
+        "writes_count": 7,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 4
       }
     }
   ],

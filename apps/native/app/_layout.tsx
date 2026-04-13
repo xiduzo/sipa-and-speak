@@ -33,7 +33,7 @@ import { useNotificationTapHandler } from "@/hooks/use-notification-tap-handler"
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
-  initialRouteName: "(drawer)",
+  initialRouteName: "(tabs)",
 };
 
 function useNotificationCategories() {
@@ -107,7 +107,7 @@ function AuthGuard() {
 function StackLayout() {
   return (
     <Stack screenOptions={{}}>
-      <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="enrolment" options={{ title: "Enrol with TU/e", headerBackVisible: false }} />
       <Stack.Screen name="onboarding" options={{ title: "Set Up Your Profile", headerBackVisible: false }} />
       <Stack.Screen name="edit-profile" options={{ title: "Edit Profile" }} />
@@ -116,9 +116,7 @@ function StackLayout() {
       <Stack.Screen name="schedule/[partnerId]" options={{ title: "Schedule Meet-Up" }} />
       <Stack.Screen name="chat/[conversationId]" options={{ title: "Chat" }} />
       <Stack.Screen name="map" options={{ title: "Campus Map" }} />
-      <Stack.Screen name="suggestions" options={{ title: "Suggestions" }} />
       <Stack.Screen name="respond-meetup" options={{ title: "Respond to Proposal" }} />
-      <Stack.Screen name="confirmed-meetups" options={{ title: "Confirmed Meetups" }} />
       <Stack.Screen name="modal" options={{ title: "Modal", presentation: "modal" }} />
     </Stack>
   );

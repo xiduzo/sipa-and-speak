@@ -1442,6 +1442,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-13T17:18:50.122Z"
+    },
+    {
+      "id": "bug-090",
+      "timestamp": "2026-04-13T17:24:13.286Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Had \"(drawer)\"",
+      "fix": "Changed to \"(tabs)\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T17:24:13.286Z"
     }
   ]
 }
