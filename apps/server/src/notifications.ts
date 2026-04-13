@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -259,6 +259,82 @@ async function handleMeetupProposed(event: MeetupProposedEvent): Promise<void> {
   }
 }
 
+// #75 — Notify both Students when a meetup is confirmed
+async function handleMeetupConfirmed(event: MeetupConfirmedEvent): Promise<void> {
+  const { meetupId, proposerId, receiverId, venueName, date, time } = event;
+
+  const [proposerTokens, receiverTokens] = await Promise.all([
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, proposerId)),
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, receiverId)),
+  ]);
+
+  const allTokens = [...proposerTokens, ...receiverTokens];
+  if (allTokens.length === 0) return;
+
+  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+    to: token,
+    title: "Meetup confirmed! 🎉",
+    body: `${venueName} · ${date} at ${time}`,
+    data: { meetupId, type: "meetup_confirmed" },
+  }));
+
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MeetupConfirmed notification", { meetupId, err });
+  }
+}
+
+// #76 — Notify the original proposer that a counter-proposal has been made
+async function handleMeetupCounterProposed(event: MeetupCounterProposedEvent): Promise<void> {
+  const { meetupId, newReceiverId, venueName, date, time, round } = event;
+
+  const tokens = await db
+    .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(eq(userDeviceToken.userId, newReceiverId));
+  if (tokens.length === 0) return;
+
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: `Counter-proposal received (round ${round})`,
+    body: `${venueName} · ${date} at ${time}`,
+    data: { meetupId, type: "meetup_counter_proposed", round },
+  }));
+
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MeetupCounterProposed notification", { meetupId, err });
+  }
+}
+
+// #77 — Notify both Students when a proposal is declined
+async function handleMeetupDeclined(event: MeetupDeclinedEvent): Promise<void> {
+  const { meetupId, proposerId, receiverId } = event;
+
+  const [proposerTokens, receiverTokens] = await Promise.all([
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, proposerId)),
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, receiverId)),
+  ]);
+
+  const allTokens = [...proposerTokens, ...receiverTokens];
+  if (allTokens.length === 0) return;
+
+  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+    to: token,
+    title: "Meetup proposal declined",
+    body: "The proposal was declined — you can start a fresh proposal",
+    data: { meetupId, type: "meetup_declined" },
+  }));
+
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MeetupDeclined notification", { meetupId, err });
+  }
+}
+
 export function registerNotificationHandlers(): void {
   domainEvents.on("MatchRequestSent", (event) => {
     // Fire and forget — do not await, must not block the mutation response
@@ -272,5 +348,14 @@ export function registerNotificationHandlers(): void {
   });
   domainEvents.on("MeetupProposed", (event) => {
     void handleMeetupProposed(event);
+  });
+  domainEvents.on("MeetupConfirmed", (event) => {
+    void handleMeetupConfirmed(event);
+  });
+  domainEvents.on("MeetupCounterProposed", (event) => {
+    void handleMeetupCounterProposed(event);
+  });
+  domainEvents.on("MeetupDeclined", (event) => {
+    void handleMeetupDeclined(event);
   });
 }

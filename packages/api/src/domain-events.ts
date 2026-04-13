@@ -46,6 +46,36 @@ export interface MeetupProposedEvent {
   proposedAt: Date;
 }
 
+export interface MeetupConfirmedEvent {
+  meetupId: string;
+  proposerId: string;
+  receiverId: string;
+  venueName: string;
+  date: string;
+  time: string;
+  confirmedAt: Date;
+}
+
+export interface MeetupCounterProposedEvent {
+  meetupId: string;
+  /** The student who just counter-proposed (new proposer after role swap) */
+  newProposerId: string;
+  /** The student who must now respond (new receiver after role swap) */
+  newReceiverId: string;
+  venueName: string;
+  date: string;
+  time: string;
+  round: number;
+  counterProposedAt: Date;
+}
+
+export interface MeetupDeclinedEvent {
+  meetupId: string;
+  proposerId: string;
+  receiverId: string;
+  declinedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -54,6 +84,9 @@ type DomainEventMap = {
   MatchRequestAccepted: [MatchRequestAcceptedEvent];
   MatchRequestDeclined: [MatchRequestDeclinedEvent];
   MeetupProposed: [MeetupProposedEvent];
+  MeetupConfirmed: [MeetupConfirmedEvent];
+  MeetupCounterProposed: [MeetupCounterProposedEvent];
+  MeetupDeclined: [MeetupDeclinedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {
