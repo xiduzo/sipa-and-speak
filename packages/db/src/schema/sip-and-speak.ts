@@ -185,6 +185,55 @@ export const messageReadStatus = pgTable(
 );
 
 
+export const studentComment = pgTable(
+  "student_comment",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "set null" }),
+    targetId: text("target_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("student_comment_targetId_idx").on(table.targetId),
+  ],
+);
+
+export const matchRequest = pgTable(
+  "match_request",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    requesterId: text("requester_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    receiverId: text("receiver_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    status: text("status", {
+      enum: ["pending", "accepted", "declined", "voided"],
+    })
+      .notNull()
+      .default("pending"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("match_request_requesterId_idx").on(table.requesterId),
+    index("match_request_receiverId_idx").on(table.receiverId),
+  ],
+);
+
 // --- Relations ---
 
 export const languageProfileRelations = relations(languageProfile, ({ one }) => ({
@@ -263,5 +312,31 @@ export const messageReadStatusRelations = relations(messageReadStatus, ({ one })
   user: one(user, {
     fields: [messageReadStatus.userId],
     references: [user.id],
+  }),
+}));
+
+export const studentCommentRelations = relations(studentComment, ({ one }) => ({
+  author: one(user, {
+    fields: [studentComment.authorId],
+    references: [user.id],
+    relationName: "commentAuthor",
+  }),
+  target: one(user, {
+    fields: [studentComment.targetId],
+    references: [user.id],
+    relationName: "commentTarget",
+  }),
+}));
+
+export const matchRequestRelations = relations(matchRequest, ({ one }) => ({
+  requester: one(user, {
+    fields: [matchRequest.requesterId],
+    references: [user.id],
+    relationName: "matchRequester",
+  }),
+  receiver: one(user, {
+    fields: [matchRequest.receiverId],
+    references: [user.id],
+    relationName: "matchReceiver",
   }),
 }));

@@ -6,7 +6,9 @@ import {
   languageProfile,
   userLanguage,
   userInterest,
+  studentComment,
 } from "@sip-and-speak/db/schema/sip-and-speak";
+import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 
@@ -487,5 +489,27 @@ export const profileRouter = router({
       domainEvents.emit("InterestProfileUpdated", { userId, changedAt: new Date() });
 
       return { success: true };
+    }),
+
+  getCandidateComments: protectedProcedure
+    .input(z.object({ candidateUserId: z.string() }))
+    .query(async ({ input }) => {
+      const comments = await db
+        .select({
+          id: studentComment.id,
+          content: studentComment.content,
+          createdAt: studentComment.createdAt,
+          authorName: user.name,
+        })
+        .from(studentComment)
+        .leftJoin(user, eq(studentComment.authorId, user.id))
+        .where(eq(studentComment.targetId, input.candidateUserId))
+        .orderBy(studentComment.createdAt);
+
+      return comments.map((c) => ({
+        authorName: c.authorName ?? "Former Student",
+        content: c.content,
+        createdAt: c.createdAt.toISOString(),
+      }));
     }),
 });

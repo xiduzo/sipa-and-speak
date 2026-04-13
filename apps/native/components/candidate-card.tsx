@@ -1,5 +1,9 @@
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { Button, Spinner } from "heroui-native";
 import { Image, Pressable, Text, View } from "react-native";
+
+import { trpc } from "@/utils/trpc";
 
 interface CandidateCardProps {
   userId: string;
@@ -19,9 +23,11 @@ export function CandidateCard({
   interests,
 }: CandidateCardProps) {
   const router = useRouter();
+  const sendRequestMutation = useMutation(
+    trpc.matching.sendMatchRequest.mutationOptions(),
+  );
 
   function handlePress() {
-    // Route created in Task #118 — cast until partner/[id].tsx exists
     router.push(`/partner/${userId}` as never);
   }
 
@@ -84,7 +90,7 @@ export function CandidateCard({
       )}
 
       {interests.length > 0 && (
-        <View>
+        <View className="mb-3">
           <Text className="text-muted-foreground text-xs uppercase font-medium mb-1">
             Topics
           </Text>
@@ -97,6 +103,22 @@ export function CandidateCard({
           </View>
         </View>
       )}
+
+      {/* #122 — Send Request quick action */}
+      <Button
+        testID="send-request-button"
+        variant="primary"
+        isDisabled={sendRequestMutation.isPending || sendRequestMutation.isSuccess}
+        onPress={() => sendRequestMutation.mutate({ receiverId: userId })}
+      >
+        {sendRequestMutation.isPending ? (
+          <Spinner size="sm" />
+        ) : (
+          <Button.Label>
+            {sendRequestMutation.isSuccess ? "Request Sent" : "Send Request"}
+          </Button.Label>
+        )}
+      </Button>
     </Pressable>
   );
 }

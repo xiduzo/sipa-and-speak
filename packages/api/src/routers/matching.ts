@@ -1,13 +1,16 @@
 import { and, eq, ne, inArray } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "@sip-and-speak/db";
 import {
   languageProfile,
   userLanguage,
   userInterest,
+  matchRequest,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
+import { domainEvents } from "../domain-events";
 
 // --- Scoring helpers (exported for testing) ---
 
@@ -291,7 +294,10 @@ export const matchingRouter = router({
       });
 
       if (!profile) {
-        return null;
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "This profile is no longer available.",
+        });
       }
 
       const languages = await db
@@ -328,5 +334,72 @@ export const matchingRouter = router({
         interests: interests.map((i) => i.interest),
         onboardingComplete: profile.onboardingComplete,
       };
+    }),
+
+  sendMatchRequest: protectedProcedure
+    .input(z.object({ receiverId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const requesterId = ctx.session.user.id;
+
+      if (requesterId === input.receiverId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You cannot send a match request to yourself.",
+        });
+      }
+
+      // Check receiver exists
+      const receiverProfile = await db.query.languageProfile.findFirst({
+        where: eq(languageProfile.userId, input.receiverId),
+      });
+      if (!receiverProfile) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "This profile is no longer available.",
+        });
+      }
+
+      // Check for existing active request (dedup at app level)
+      const existing = await db.query.matchRequest.findFirst({
+        where: and(
+          eq(matchRequest.requesterId, requesterId),
+          eq(matchRequest.receiverId, input.receiverId),
+        ),
+      });
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "A match request to this candidate already exists.",
+        });
+      }
+
+      const rows = await db
+        .insert(matchRequest)
+        .values({
+          requesterId,
+          receiverId: input.receiverId,
+          status: "pending",
+        })
+        .returning({ id: matchRequest.id });
+
+      const created = rows[0];
+      if (!created) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create match request." });
+      }
+
+      console.info("[MatchRequestSent]", {
+        matchRequestId: created.id,
+        requesterId,
+        receiverId: input.receiverId,
+      });
+
+      domainEvents.emit("MatchRequestSent", {
+        matchRequestId: created.id,
+        requesterId,
+        receiverId: input.receiverId,
+        sentAt: new Date(),
+      });
+
+      return { matchRequestId: created.id, status: "pending" as const };
     }),
 });

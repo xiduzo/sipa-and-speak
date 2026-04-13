@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
-import { Spinner } from "heroui-native";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Button, Spinner } from "heroui-native";
+import { useEffect } from "react";
 import { Image, ScrollView, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
@@ -8,10 +9,26 @@ import { trpc } from "@/utils/trpc";
 
 export default function PartnerProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
 
   const profileQuery = useQuery(
     trpc.matching.getPartnerProfile.queryOptions({ userId: id }),
   );
+
+  const commentsQuery = useQuery(
+    trpc.profile.getCandidateComments.queryOptions({ candidateUserId: id }),
+  );
+
+  const sendRequestMutation = useMutation(
+    trpc.matching.sendMatchRequest.mutationOptions(),
+  );
+
+  // #121 — if profile is no longer available, navigate back
+  useEffect(() => {
+    if (profileQuery.error && (profileQuery.error as { data?: { code?: string } }).data?.code === "NOT_FOUND") {
+      router.back();
+    }
+  }, [profileQuery.error, router]);
 
   if (profileQuery.isPending) {
     return (
@@ -23,9 +40,7 @@ export default function PartnerProfileScreen() {
     );
   }
 
-  const profile = profileQuery.data;
-
-  if (!profile) {
+  if (profileQuery.isError) {
     return (
       <Container isScrollable={false}>
         <View className="flex-1 items-center justify-center px-6">
@@ -39,6 +54,9 @@ export default function PartnerProfileScreen() {
       </Container>
     );
   }
+
+  const profile = profileQuery.data;
+  const comments = commentsQuery.data ?? [];
 
   return (
     <Container isScrollable={false}>
@@ -124,6 +142,46 @@ export default function PartnerProfileScreen() {
             </View>
           </View>
         )}
+
+        {/* #119 — Comments section */}
+        <View className="mb-6" testID="comments-section">
+          <Text className="text-foreground font-semibold mb-3">What others say</Text>
+          {comments.length === 0 ? (
+            <Text testID="comments-empty" className="text-muted-foreground text-sm">
+              No reviews yet.
+            </Text>
+          ) : (
+            comments.map((comment, idx) => (
+              <View
+                key={idx}
+                testID="comment-item"
+                className="bg-muted/50 rounded-xl p-3 mb-2"
+              >
+                <Text className="text-foreground text-sm font-medium mb-1">
+                  {comment.authorName}
+                </Text>
+                <Text className="text-muted-foreground text-sm">{comment.content}</Text>
+              </View>
+            ))
+          )}
+        </View>
+
+        {/* #122 — Send Request */}
+        <Button
+          testID="send-request-button"
+          variant="primary"
+          isDisabled={sendRequestMutation.isPending || sendRequestMutation.isSuccess}
+          onPress={() => sendRequestMutation.mutate({ receiverId: id })}
+          className="mb-4"
+        >
+          {sendRequestMutation.isPending ? (
+            <Spinner size="sm" />
+          ) : (
+            <Button.Label>
+              {sendRequestMutation.isSuccess ? "Request Sent" : "Send Request"}
+            </Button.Label>
+          )}
+        </Button>
       </ScrollView>
     </Container>
   );
