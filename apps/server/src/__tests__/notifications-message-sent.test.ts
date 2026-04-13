@@ -120,8 +120,9 @@ describe("#152 — Send push notification to recipient when a new message arrive
     if (!msg) throw new Error("Expected a message");
 
     expect(msg.to).toBe("ExponentPushToken[recipient]");
-    expect(msg.title).toContain("Alice");
-    expect(msg.body).toBeUndefined();
+    // #154 — title is sender's display name; body is generic (no message content)
+    expect(msg.title).toBe("Alice");
+    expect(msg.body).toBe("sent you a message");
     expect(msg.data?.type).toBe("message_received");
     expect(msg.data?.conversationId).toBe("conv-1");
     expect(msg.data?.senderId).toBe(SENDER_ID);
@@ -133,5 +134,30 @@ describe("#152 — Send push notification to recipient when a new message arrive
     await handleMessageSent(makeMessageSentEvent());
 
     expect(fetchCalls).toHaveLength(0);
+  });
+});
+
+describe("#154 — Notification payload includes sender identity but not message content", () => {
+  it("sets title to sender display name and body to a generic string", async () => {
+    mockRecipientTokens = [{ id: "tok-1", token: "ExponentPushToken[recipient]" }];
+
+    await handleMessageSent(makeMessageSentEvent({ senderName: "Bob" }));
+
+    const msg = fetchCalls[0]?.messages[0];
+    if (!msg) throw new Error("Expected a message");
+
+    expect(msg.title).toBe("Bob");
+    expect(msg.body).toBe("sent you a message");
+  });
+
+  it("payload contains conversationId for deep-linking", async () => {
+    mockRecipientTokens = [{ id: "tok-1", token: "ExponentPushToken[recipient]" }];
+
+    await handleMessageSent(makeMessageSentEvent({ conversationId: "conv-deep-link" }));
+
+    const msg = fetchCalls[0]?.messages[0];
+    if (!msg) throw new Error("Expected a message");
+
+    expect(msg.data?.conversationId).toBe("conv-deep-link");
   });
 });

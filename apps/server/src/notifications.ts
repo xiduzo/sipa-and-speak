@@ -708,8 +708,8 @@ export async function handleMessageSent(event: MessageSentEvent): Promise<void> 
 
   const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
     to: token,
-    title: `${senderName} sent you a message`,
-    body: undefined,
+    title: senderName,
+    body: "sent you a message",
     data: { conversationId, senderId, type: "message_received" },
   }));
 
