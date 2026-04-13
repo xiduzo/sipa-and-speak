@@ -2,7 +2,7 @@ import { and, eq, or, sql, count } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
-import { meetup, venue, studentMatch } from "@sip-and-speak/db/schema/sip-and-speak";
+import { meetup, venue, studentMatch, attendanceReport } from "@sip-and-speak/db/schema/sip-and-speak";
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 import { isMeetupInThePast, isRescheduleNoOp } from "./meetup-utils";
@@ -631,34 +631,43 @@ export const meetupRouter = router({
   getConfirmed: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const rows = await db
-      .select({
-        meetup: meetup,
-        venue: {
-          id: venue.id,
-          name: venue.name,
-          description: venue.description,
-          photoUrl: venue.photoUrl,
-        },
-        partner: {
-          id: sql<string>`partner.id`.as("gc_partner_id"),
-          name: sql<string>`partner.name`.as("gc_partner_name"),
-          image: sql<string | null>`partner.image`.as("gc_partner_image"),
-        },
-      })
-      .from(meetup)
-      .innerJoin(venue, eq(meetup.venueId, venue.id))
-      .innerJoin(
-        sql`"user" as partner`,
-        sql`partner.id = CASE WHEN ${meetup.proposerId} = ${userId} THEN ${meetup.receiverId} ELSE ${meetup.proposerId} END`,
-      )
-      .where(
-        and(
-          eq(meetup.status, "confirmed"),
-          or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
-        ),
-      )
-      .orderBy(meetup.date, meetup.time);
+    const [rows, myReports] = await Promise.all([
+      db
+        .select({
+          meetup: meetup,
+          venue: {
+            id: venue.id,
+            name: venue.name,
+            description: venue.description,
+            photoUrl: venue.photoUrl,
+          },
+          partner: {
+            id: sql<string>`partner.id`.as("gc_partner_id"),
+            name: sql<string>`partner.name`.as("gc_partner_name"),
+            image: sql<string | null>`partner.image`.as("gc_partner_image"),
+          },
+        })
+        .from(meetup)
+        .innerJoin(venue, eq(meetup.venueId, venue.id))
+        .innerJoin(
+          sql`"user" as partner`,
+          sql`partner.id = CASE WHEN ${meetup.proposerId} = ${userId} THEN ${meetup.receiverId} ELSE ${meetup.proposerId} END`,
+        )
+        .where(
+          and(
+            eq(meetup.status, "confirmed"),
+            or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
+          ),
+        )
+        .orderBy(meetup.date, meetup.time),
+      // #97 — Fetch this user's attendance reports
+      db
+        .select({ meetupId: attendanceReport.meetupId, attended: attendanceReport.attended })
+        .from(attendanceReport)
+        .where(eq(attendanceReport.studentId, userId)),
+    ]);
+
+    const myReportMap = new Map(myReports.map((r) => [r.meetupId, r.attended]));
 
     return rows.map((row) => ({
       meetupId: row.meetup.id,
@@ -678,6 +687,9 @@ export const meetupRouter = router({
             time: row.meetup.rescheduleTime!,
           }
         : null,
+      // #97 — Attendance report state
+      hasReported: myReportMap.has(row.meetup.id),
+      myAttendance: myReportMap.get(row.meetup.id) ?? null,
     }));
   }),
 
@@ -910,5 +922,130 @@ export const meetupRouter = router({
       });
 
       return updated;
+    }),
+
+  // #97 — Record each Student's attendance report independently
+  reportAttendance: protectedProcedure
+    .input(z.object({ meetupId: z.string(), attended: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      const isParticipant =
+        existing.proposerId === userId || existing.receiverId === userId;
+      if (!isParticipant) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this meetup" });
+      }
+
+      if (existing.status !== "confirmed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only confirmed meetups can receive attendance reports" });
+      }
+
+      // #96 — Reject self-report before the meetup's scheduled time has passed
+      if (!isMeetupInThePast(existing.date, existing.time)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "You can only report attendance after the meetup's scheduled time has passed" });
+      }
+
+      // Check for duplicate report
+      const [existingReport] = await db
+        .select({ id: attendanceReport.id })
+        .from(attendanceReport)
+        .where(
+          and(
+            eq(attendanceReport.meetupId, input.meetupId),
+            eq(attendanceReport.studentId, userId),
+          ),
+        )
+        .limit(1);
+
+      if (existingReport) {
+        throw new TRPCError({ code: "CONFLICT", message: "You have already reported attendance for this meetup" });
+      }
+
+      const partnerId =
+        existing.proposerId === userId ? existing.receiverId : existing.proposerId;
+
+      const [created] = await db
+        .insert(attendanceReport)
+        .values({
+          meetupId: input.meetupId,
+          studentId: userId,
+          attended: input.attended,
+        })
+        .returning();
+
+      domainEvents.emit("AttendanceReported", {
+        reportId: created!.id,
+        meetupId: input.meetupId,
+        studentId: userId,
+        partnerId,
+        attended: input.attended,
+        reportedAt: created!.reportedAt,
+      });
+
+      // #99 — Check if both Students have now reported; trigger state transition if so
+      const allReports = await db
+        .select({ studentId: attendanceReport.studentId, attended: attendanceReport.attended })
+        .from(attendanceReport)
+        .where(eq(attendanceReport.meetupId, input.meetupId));
+
+      if (allReports.length === 2) {
+        const bothAttended = allReports.every((r) => r.attended);
+
+        if (bothAttended) {
+          // Both attended → transition to Connected state
+          const [matchRecord] = await db
+            .select({ id: studentMatch.id })
+            .from(studentMatch)
+            .where(
+              or(
+                and(
+                  eq(studentMatch.studentAId, existing.proposerId),
+                  eq(studentMatch.studentBId, existing.receiverId),
+                ),
+                and(
+                  eq(studentMatch.studentAId, existing.receiverId),
+                  eq(studentMatch.studentBId, existing.proposerId),
+                ),
+              ),
+            )
+            .limit(1);
+
+          if (matchRecord) {
+            await Promise.all([
+              db.update(meetup).set({ status: "completed" }).where(eq(meetup.id, input.meetupId)),
+              db.update(studentMatch).set({ status: "connected" }).where(eq(studentMatch.id, matchRecord.id)),
+            ]);
+
+            domainEvents.emit("SipAndSpeakMomentCompleted", {
+              meetupId: input.meetupId,
+              studentAId: existing.proposerId,
+              studentBId: existing.receiverId,
+              completedAt: new Date(),
+            });
+          }
+        } else {
+          // #101 — At least one non-attendance → return pair to Matched (meetup closed)
+          await db.update(meetup).set({ status: "not_attended" }).where(eq(meetup.id, input.meetupId));
+
+          domainEvents.emit("MeetupNotAttended", {
+            meetupId: input.meetupId,
+            studentAId: existing.proposerId,
+            studentBId: existing.receiverId,
+            recordedAt: new Date(),
+          });
+        }
+      }
+
+      return created;
     }),
 });

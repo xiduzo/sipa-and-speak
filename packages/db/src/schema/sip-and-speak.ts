@@ -7,6 +7,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { user } from "./auth";
@@ -114,7 +115,7 @@ export const meetup = pgTable(
     date: text("date").notNull(),
     time: text("time").notNull(),
     status: text("status", {
-      enum: ["pending", "confirmed", "declined", "cancelled"],
+      enum: ["pending", "confirmed", "declined", "cancelled", "completed", "not_attended"],
     })
       .notNull()
       .default("pending"),
@@ -395,11 +396,35 @@ export const studentMatch = pgTable(
     matchRequestId: text("match_request_id")
       .notNull()
       .references(() => matchRequest.id, { onDelete: "cascade" }),
+    // #99 — Connected state: set to "connected" when both Students confirm attendance
+    status: text("status", { enum: ["matched", "connected"] }).notNull().default("matched"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
     index("student_match_studentA_idx").on(table.studentAId),
     index("student_match_studentB_idx").on(table.studentBId),
+  ],
+);
+
+// #97 — Attendance report: each Student independently reports after a meetup
+export const attendanceReport = pgTable(
+  "attendance_report",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    meetupId: text("meetup_id")
+      .notNull()
+      .references(() => meetup.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    attended: boolean("attended").notNull(),
+    reportedAt: timestamp("reported_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("attendance_report_meetup_student_unique").on(table.meetupId, table.studentId),
+    index("attendance_report_meetupId_idx").on(table.meetupId),
   ],
 );
 

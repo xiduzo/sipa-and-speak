@@ -114,6 +114,29 @@ export interface MeetupRescheduleDeclinedEvent {
   declinedAt: Date;
 }
 
+export interface AttendanceReportedEvent {
+  reportId: string;
+  meetupId: string;
+  studentId: string;
+  partnerId: string;
+  attended: boolean;
+  reportedAt: Date;
+}
+
+export interface SipAndSpeakMomentCompletedEvent {
+  meetupId: string;
+  studentAId: string;
+  studentBId: string;
+  completedAt: Date;
+}
+
+export interface MeetupNotAttendedEvent {
+  meetupId: string;
+  studentAId: string;
+  studentBId: string;
+  recordedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -129,6 +152,9 @@ type DomainEventMap = {
   MeetupRescheduleProposed: [MeetupRescheduleProposedEvent];
   MeetupRescheduled: [MeetupRescheduledEvent];
   MeetupRescheduleDeclined: [MeetupRescheduleDeclinedEvent];
+  AttendanceReported: [AttendanceReportedEvent];
+  SipAndSpeakMomentCompleted: [SipAndSpeakMomentCompletedEvent];
+  MeetupNotAttended: [MeetupNotAttendedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {
