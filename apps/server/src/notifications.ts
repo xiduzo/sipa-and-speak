@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -364,6 +364,35 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("MeetupRescheduleProposed", (event) => {
     void handleMeetupRescheduleProposed(event);
   });
+  domainEvents.on("MeetupRescheduled", (event) => {
+    void handleMeetupRescheduled(event);
+  });
+}
+
+// #91 — Notify both Students when a reschedule is accepted and meetup details are updated
+async function handleMeetupRescheduled(event: MeetupRescheduledEvent): Promise<void> {
+  const { meetupId, proposerId, receiverId, venueName, newDate, newTime } = event;
+
+  const [proposerTokens, receiverTokens] = await Promise.all([
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, proposerId)),
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, receiverId)),
+  ]);
+
+  const allTokens = [...proposerTokens, ...receiverTokens];
+  if (allTokens.length === 0) return;
+
+  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+    to: token,
+    title: "Meetup rescheduled",
+    body: `New details: ${venueName} · ${newDate} at ${newTime}`,
+    data: { meetupId, type: "meetup_rescheduled" },
+  }));
+
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MeetupRescheduled notification", { meetupId, err });
+  }
 }
 
 // #89 — Notify the other Student of a reschedule proposal

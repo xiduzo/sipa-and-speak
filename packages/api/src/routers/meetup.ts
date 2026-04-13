@@ -681,6 +681,80 @@ export const meetupRouter = router({
     }));
   }),
 
+  // #91 — Accept a reschedule proposal → update meetup details, emit MeetupRescheduled, notify both
+  acceptReschedule: protectedProcedure
+    .input(z.object({ meetupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .innerJoin(venue, eq(meetup.venueId, venue.id))
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      const isParticipant =
+        existing.meetup.proposerId === userId || existing.meetup.receiverId === userId;
+      if (!isParticipant) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this meetup" });
+      }
+
+      if (existing.meetup.status !== "confirmed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only confirmed meetups can have a reschedule accepted" });
+      }
+
+      if (existing.meetup.rescheduleProposerId === null) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No reschedule proposal is pending for this meetup" });
+      }
+
+      if (existing.meetup.rescheduleProposerId === userId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You cannot accept your own reschedule proposal" });
+      }
+
+      // Fetch the reschedule venue for the notification body
+      const [rescheduleVenue] = await db
+        .select({ id: venue.id, name: venue.name })
+        .from(venue)
+        .where(eq(venue.id, existing.meetup.rescheduleVenueId!))
+        .limit(1);
+
+      // Atomic update: only succeeds if rescheduleProposerId is still set (race-condition guard)
+      const [updated] = await db
+        .update(meetup)
+        .set({
+          venueId: existing.meetup.rescheduleVenueId!,
+          date: existing.meetup.rescheduleDate!,
+          time: existing.meetup.rescheduleTime!,
+          rescheduleProposerId: null,
+          rescheduleVenueId: null,
+          rescheduleDate: null,
+          rescheduleTime: null,
+        })
+        .where(and(eq(meetup.id, input.meetupId), sql`${meetup.rescheduleProposerId} IS NOT NULL`))
+        .returning();
+
+      if (!updated) {
+        throw new TRPCError({ code: "CONFLICT", message: "The reschedule proposal was already handled by another request" });
+      }
+
+      domainEvents.emit("MeetupRescheduled", {
+        meetupId: existing.meetup.id,
+        proposerId: existing.meetup.proposerId,
+        receiverId: existing.meetup.receiverId,
+        venueName: rescheduleVenue?.name ?? existing.venue.name,
+        newDate: existing.meetup.rescheduleDate!,
+        newTime: existing.meetup.rescheduleTime!,
+        rescheduledAt: new Date(),
+      });
+
+      return updated;
+    }),
+
   // #86 — Propose a reschedule for a confirmed meetup
   proposeReschedule: protectedProcedure
     .input(
@@ -738,7 +812,7 @@ export const meetupRouter = router({
 
       // #87 — Active location check
       const [venueRecord] = await db
-        .select({ id: venue.id, isActive: venue.isActive })
+        .select({ id: venue.id, name: venue.name, isActive: venue.isActive })
         .from(venue)
         .where(eq(venue.id, input.venueId))
         .limit(1);
