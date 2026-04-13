@@ -2,6 +2,7 @@
  * Tests for tasks:
  *   #126 — Display incoming match requests on home page
  *   #127 — Allow receiver to open requester's profile before deciding
+ *   #133 — Ensure incoming request appears on home page regardless of notification permission status
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
@@ -11,6 +12,16 @@ const mockPush = jest.fn();
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: mockPush }),
+}));
+
+jest.mock("../components/candidate-card", () => ({
+  CandidateCard: () => null,
+}));
+
+const mockGetPermissionsAsync = jest.fn();
+
+jest.mock("expo-notifications", () => ({
+  getPermissionsAsync: () => mockGetPermissionsAsync(),
 }));
 
 const mockDiscoverFn = jest.fn();
@@ -92,6 +103,7 @@ beforeEach(() => {
   mockDiscoverFn.mockReset().mockResolvedValue({ partners: [defaultPartner], nextCursor: undefined });
   mockIncomingRequestsFn.mockReset().mockResolvedValue([]);
   mockSendMatchRequest.mockReset().mockResolvedValue({ matchRequestId: "r", status: "pending" });
+  mockGetPermissionsAsync.mockReset().mockResolvedValue({ granted: true, status: "granted" });
 });
 
 // ─── #126: Incoming match requests on home page ─────────────────────────────
@@ -190,5 +202,51 @@ describe("#127 — Open requester's profile from incoming request", () => {
         matchRequestId: defaultIncomingRequest.matchRequestId,
       },
     });
+  });
+});
+
+// ─── #133: Incoming requests visible regardless of notification permission ──
+
+describe("#133 — Incoming requests visible regardless of notification permission", () => {
+  it("shows suggestions list when notifications are disabled", async () => {
+    mockGetPermissionsAsync.mockResolvedValue({ granted: false, status: "denied" });
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByText("Suggestions")).toBeTruthy();
+    });
+  });
+
+  it("shows a non-blocking enable-notifications banner when permissions are denied", async () => {
+    mockGetPermissionsAsync.mockResolvedValue({ granted: false, status: "denied" });
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("enable-notifications-banner")).toBeTruthy();
+    });
+  });
+
+  it("banner does not block the suggestions list", async () => {
+    mockGetPermissionsAsync.mockResolvedValue({ granted: false, status: "denied" });
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("enable-notifications-banner")).toBeTruthy();
+    });
+    expect(screen.getByText("Suggestions")).toBeTruthy();
+  });
+
+  it("does not show the banner when notifications are enabled", async () => {
+    mockGetPermissionsAsync.mockResolvedValue({ granted: true, status: "granted" });
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByText("Suggestions")).toBeTruthy();
+    });
+    expect(screen.queryByTestId("enable-notifications-banner")).toBeNull();
   });
 });

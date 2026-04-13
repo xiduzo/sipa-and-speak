@@ -18,6 +18,7 @@
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
+    "drizzle-orm": "^0.45.2",
     "hono": "catalog:",
     "zod": "catalog:"
   },

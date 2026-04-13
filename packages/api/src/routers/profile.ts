@@ -7,6 +7,7 @@ import {
   userLanguage,
   userInterest,
   studentComment,
+  userDeviceToken,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
@@ -487,6 +488,28 @@ export const profileRouter = router({
 
       await syncMatchingEligibility(userId);
       domainEvents.emit("InterestProfileUpdated", { userId, changedAt: new Date() });
+
+      return { success: true };
+    }),
+
+  registerDeviceToken: protectedProcedure
+    .input(
+      z.object({
+        token: z.string(),
+        platform: z.enum(["ios", "android", "web"]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      // Upsert: update if (userId, token) exists, insert otherwise
+      await db
+        .insert(userDeviceToken)
+        .values({ userId, token: input.token, platform: input.platform })
+        .onConflictDoUpdate({
+          target: [userDeviceToken.userId, userDeviceToken.token],
+          set: { platform: input.platform, updatedAt: new Date() },
+        });
 
       return { success: true };
     }),

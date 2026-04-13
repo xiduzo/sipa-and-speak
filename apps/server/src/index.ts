@@ -9,6 +9,10 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { registerNotificationHandlers } from "./notifications";
+
+// Wire domain event → push notification handlers on server start
+registerNotificationHandlers();
 
 const app = new Hono();
 
