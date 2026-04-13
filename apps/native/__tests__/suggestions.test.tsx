@@ -1,12 +1,16 @@
 /**
- * Tests for task #126 — Display incoming match requests on home page
+ * Tests for tasks:
+ *   #126 — Display incoming match requests on home page
+ *   #127 — Allow receiver to open requester's profile before deciding
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
 
+const mockPush = jest.fn();
+
 jest.mock("expo-router", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 const mockDiscoverFn = jest.fn();
@@ -84,6 +88,7 @@ function renderScreen() {
 }
 
 beforeEach(() => {
+  mockPush.mockClear();
   mockDiscoverFn.mockReset().mockResolvedValue({ partners: [defaultPartner], nextCursor: undefined });
   mockIncomingRequestsFn.mockReset().mockResolvedValue([]);
   mockSendMatchRequest.mockReset().mockResolvedValue({ matchRequestId: "r", status: "pending" });
@@ -140,5 +145,50 @@ describe("#126 — Incoming match requests on home page", () => {
     });
     expect(screen.getByText("Bob")).toBeTruthy();
     expect(screen.getByText("Carol")).toBeTruthy();
+  });
+});
+
+// ─── #127: Open requester's profile from incoming request ───────────────────
+
+describe("#127 — Open requester's profile from incoming request", () => {
+  it("navigates to requester's full profile when tapping a request item from home page", async () => {
+    mockIncomingRequestsFn.mockResolvedValue([defaultIncomingRequest]);
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("incoming-request-item")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByTestId("incoming-request-item"));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/partner/[id]",
+      params: {
+        id: defaultIncomingRequest.requesterId,
+        matchRequestId: defaultIncomingRequest.matchRequestId,
+      },
+    });
+  });
+
+  it("navigates with correct matchRequestId when tapping from notifications area", async () => {
+    mockDiscoverFn.mockResolvedValue({ partners: [], nextCursor: undefined });
+    mockIncomingRequestsFn.mockResolvedValue([defaultIncomingRequest]);
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("incoming-request-item")).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByTestId("incoming-request-item"));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/partner/[id]",
+      params: {
+        id: defaultIncomingRequest.requesterId,
+        matchRequestId: defaultIncomingRequest.matchRequestId,
+      },
+    });
   });
 });

@@ -8,7 +8,7 @@ import { Container } from "@/components/container";
 import { trpc } from "@/utils/trpc";
 
 export default function PartnerProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, matchRequestId } = useLocalSearchParams<{ id: string; matchRequestId?: string }>();
   const router = useRouter();
 
   const profileQuery = useQuery(
@@ -196,25 +196,47 @@ export default function PartnerProfileScreen() {
           </View>
         )}
 
-        {/* #120/#122 — Contextual Send Request */}
-        {requestAlreadySent ? (
-          <View testID="request-sent-indicator" className="bg-muted rounded-xl p-4 mb-4 items-center">
-            <Text className="text-muted-foreground font-medium">Request Sent</Text>
+        {/* #127 — Accept/Decline bar (when opened from incoming request context) */}
+        {matchRequestId ? (
+          <View testID="accept-decline-bar" className="flex-row gap-3 mb-4">
+            <Button
+              testID="decline-button"
+              variant="ghost"
+              className="flex-1"
+              onPress={() => {/* T15.4 — wired in Decline action task */}}
+            >
+              <Button.Label>Decline</Button.Label>
+            </Button>
+            <Button
+              testID="accept-button"
+              variant="primary"
+              className="flex-1"
+              onPress={() => {/* T15.3 — wired in Accept action task */}}
+            >
+              <Button.Label>Accept</Button.Label>
+            </Button>
           </View>
         ) : (
-          <Button
-            testID="send-request-button"
-            variant="primary"
-            isDisabled={sendRequestMutation.isPending || statusQuery.isPending}
-            onPress={() => sendRequestMutation.mutate({ receiverId: id })}
-            className="mb-4"
-          >
-            {sendRequestMutation.isPending ? (
-              <Spinner size="sm" />
-            ) : (
-              <Button.Label>Send Request</Button.Label>
-            )}
-          </Button>
+          /* #120/#122 — Contextual Send Request */
+          requestAlreadySent ? (
+            <View testID="request-sent-indicator" className="bg-muted rounded-xl p-4 mb-4 items-center">
+              <Text className="text-muted-foreground font-medium">Request Sent</Text>
+            </View>
+          ) : (
+            <Button
+              testID="send-request-button"
+              variant="primary"
+              isDisabled={sendRequestMutation.isPending || statusQuery.isPending}
+              onPress={() => sendRequestMutation.mutate({ receiverId: id })}
+              className="mb-4"
+            >
+              {sendRequestMutation.isPending ? (
+                <Spinner size="sm" />
+              ) : (
+                <Button.Label>Send Request</Button.Label>
+              )}
+            </Button>
+          )
         )}
       </ScrollView>
     </Container>

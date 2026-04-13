@@ -4,6 +4,7 @@
  *   #120 — Surface "Send Request" action contextually based on match status
  *   #121 — Handle removed/unavailable candidate profile gracefully
  *   #122 — Send Request button on candidate profile screen
+ *   #127 — Allow receiver to open requester's profile before deciding
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
@@ -11,8 +12,9 @@ import React from "react";
 
 // Mock expo-router (must be before any imports that use it)
 const mockBack = jest.fn();
+let mockSearchParams: { id: string; matchRequestId?: string } = { id: "candidate-123" };
 jest.mock("expo-router", () => ({
-  useLocalSearchParams: () => ({ id: "candidate-123" }),
+  useLocalSearchParams: () => mockSearchParams,
   useRouter: () => ({ back: mockBack }),
 }));
 
@@ -85,6 +87,7 @@ function renderScreen() {
 }
 
 beforeEach(() => {
+  mockSearchParams = { id: "candidate-123" };
   mockBack.mockClear();
   mockSendMatchRequest.mockClear().mockResolvedValue({ matchRequestId: "req-1", status: "pending" });
   mockProfileFn.mockReset().mockResolvedValue(defaultProfile);
@@ -258,5 +261,44 @@ describe("#123 — Duplicate match request prevention on candidate profile", () 
     await waitFor(() => {
       expect(mockSendMatchRequest).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+// ─── #127: Accept/Decline bar when opened from incoming request ────────────
+
+describe("#127 — Accept/Decline action bar on requester profile", () => {
+  it("shows Accept/Decline action bar when opened from incoming request context", async () => {
+    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("accept-decline-bar")).toBeTruthy();
+    });
+    expect(screen.getByTestId("accept-button")).toBeTruthy();
+    expect(screen.getByTestId("decline-button")).toBeTruthy();
+  });
+
+  it("hides Send Request section when opened from incoming request context", async () => {
+    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("accept-decline-bar")).toBeTruthy();
+    });
+    expect(screen.queryByTestId("send-request-button")).toBeNull();
+    expect(screen.queryByTestId("request-sent-indicator")).toBeNull();
+  });
+
+  it("shows Send Request section when not opened from incoming request context", async () => {
+    mockSearchParams = { id: "candidate-123" };
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-request-button")).toBeTruthy();
+    });
+    expect(screen.queryByTestId("accept-decline-bar")).toBeNull();
   });
 });
