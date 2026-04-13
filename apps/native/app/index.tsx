@@ -75,7 +75,7 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     if (onboardingStatus.data?.complete) {
-      router.replace("/edit-profile");
+      router.replace("/suggestions");
     }
   }, [onboardingStatus.data?.complete]);
 
