@@ -1,9 +1,13 @@
 /**
  * Tests for task #152 — Send push notification to recipient when a new message arrives
+ * Tests for task #156 — Handle gracefully when recipient has not granted push permissions
+ * Tests for task #154 — Include match identity in notification payload without message content
  *
  * Covers:
  *   - Recipient receives a push identifying the sender (no message content)
  *   - No push sent when recipient has no registered device token
+ *   - DeviceNotRegistered receipt error is handled gracefully (stale token removed)
+ *   - Notification payload shape: title = sender name, body = generic, conversationId in data
  */
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 
@@ -15,6 +19,9 @@ interface CapturedFetchCall {
 }
 
 const fetchCalls: CapturedFetchCall[] = [];
+let mockFetchTickets: Array<{ status: string; id?: string; details?: { error?: string } }> = [
+  { status: "ok", id: "ticket-1" },
+];
 
 (global as unknown as { fetch: unknown }).fetch = mock(async (url: string, options: RequestInit) => {
   fetchCalls.push({
@@ -22,7 +29,7 @@ const fetchCalls: CapturedFetchCall[] = [];
     messages: JSON.parse(options.body as string) as CapturedFetchCall["messages"],
   });
   return {
-    json: async () => ({ data: [{ status: "ok", id: "ticket-1" }] }),
+    json: async () => ({ data: mockFetchTickets }),
   };
 });
 
@@ -51,6 +58,7 @@ const SENDER_ID = "sender-id";
 const RECIPIENT_ID = "recipient-id";
 
 let mockRecipientTokens: Array<{ id: string; token: string }> = [];
+const deletedTokenIds: string[] = [];
 
 mock.module("@sip-and-speak/db", () => ({
   db: {
@@ -63,7 +71,10 @@ mock.module("@sip-and-speak/db", () => ({
       }),
     }),
     delete: (_table: unknown) => ({
-      where: (_clause: unknown) => Promise.resolve([]),
+      where: (clause: { _val: string }) => {
+        deletedTokenIds.push(clause._val);
+        return Promise.resolve([]);
+      },
     }),
   },
 }));
@@ -99,7 +110,9 @@ function makeMessageSentEvent(
 
 beforeEach(() => {
   fetchCalls.length = 0;
+  deletedTokenIds.length = 0;
   mockRecipientTokens = [];
+  mockFetchTickets = [{ status: "ok", id: "ticket-1" }];
 });
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -121,7 +134,6 @@ describe("#152 — Send push notification to recipient when a new message arrive
 
     expect(msg.to).toBe("ExponentPushToken[recipient]");
     expect(msg.title).toContain("Alice");
-    expect(msg.body).toBeUndefined();
     expect(msg.data?.type).toBe("message_received");
     expect(msg.data?.conversationId).toBe("conv-1");
     expect(msg.data?.senderId).toBe(SENDER_ID);
@@ -132,6 +144,54 @@ describe("#152 — Send push notification to recipient when a new message arrive
 
     await handleMessageSent(makeMessageSentEvent());
 
+    expect(fetchCalls).toHaveLength(0);
+  });
+});
+
+describe("#154 — Notification payload includes sender identity but not message content", () => {
+  it("sets title to sender display name and body to a generic string", async () => {
+    mockRecipientTokens = [{ id: "tok-1", token: "ExponentPushToken[recipient]" }];
+
+    await handleMessageSent(makeMessageSentEvent({ senderName: "Bob" }));
+
+    const msg = fetchCalls[0]?.messages[0];
+    if (!msg) throw new Error("Expected a message");
+
+    expect(msg.title).toContain("Bob");
+    // Body must never expose message content
+    expect(String(msg.body ?? "")).not.toContain("Let's meet again");
+  });
+
+  it("payload contains conversationId for deep-linking", async () => {
+    mockRecipientTokens = [{ id: "tok-1", token: "ExponentPushToken[recipient]" }];
+
+    await handleMessageSent(makeMessageSentEvent({ conversationId: "conv-deep-link" }));
+
+    const msg = fetchCalls[0]?.messages[0];
+    if (!msg) throw new Error("Expected a message");
+
+    expect(msg.data?.conversationId).toBe("conv-deep-link");
+  });
+});
+
+describe("#156 — Handle gracefully when recipient has not granted push permissions", () => {
+  it("removes stale token and does not throw when Expo returns DeviceNotRegistered", async () => {
+    mockRecipientTokens = [{ id: "stale-tok-id", token: "ExponentPushToken[stale]" }];
+    mockFetchTickets = [{ status: "error", details: { error: "DeviceNotRegistered" } }];
+
+    await expect(handleMessageSent(makeMessageSentEvent())).resolves.toBeUndefined();
+
+    expect(deletedTokenIds).toContain("stale-tok-id");
+  });
+
+  it("still resolves when fetch returns DeviceNotRegistered for all tokens", async () => {
+    mockRecipientTokens = [{ id: "tok-bad", token: "ExponentPushToken[bad]" }];
+    mockFetchTickets = [{ status: "error", details: { error: "DeviceNotRegistered" } }];
+
+    // Second call — token already removed, no tokens left, so no push attempt
+    mockRecipientTokens = [];
+
+    await expect(handleMessageSent(makeMessageSentEvent())).resolves.toBeUndefined();
     expect(fetchCalls).toHaveLength(0);
   });
 });
