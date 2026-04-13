@@ -475,4 +475,46 @@ export const matchingRouter = router({
 
       return { status: "accepted" as const, matchedWithUserId: request.requesterId };
     }),
+
+  declineMatchRequest: protectedProcedure
+    .input(z.object({ matchRequestId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const receiverId = ctx.session.user.id;
+
+      const request = await db.query.matchRequest.findFirst({
+        where: eq(matchRequest.id, input.matchRequestId),
+      });
+
+      if (!request) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Match request not found." });
+      }
+
+      if (request.receiverId !== receiverId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only the designated receiver may decline this request." });
+      }
+
+      if (request.status !== "pending") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending requests can be declined." });
+      }
+
+      await db
+        .update(matchRequest)
+        .set({ status: "declined" })
+        .where(eq(matchRequest.id, input.matchRequestId));
+
+      console.info("[MatchRequestDeclined]", {
+        matchRequestId: input.matchRequestId,
+        requesterId: request.requesterId,
+        receiverId,
+      });
+
+      domainEvents.emit("MatchRequestDeclined", {
+        matchRequestId: input.matchRequestId,
+        requesterId: request.requesterId,
+        receiverId,
+        declinedAt: new Date(),
+      });
+
+      return { status: "declined" as const };
+    }),
 });

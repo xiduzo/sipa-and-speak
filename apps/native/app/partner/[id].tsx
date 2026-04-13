@@ -41,6 +41,14 @@ export default function PartnerProfileScreen() {
     },
   });
 
+  const declineMutation = useMutation({
+    ...trpc.matching.declineMatchRequest.mutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matching.getIncomingRequests"] });
+      router.back();
+    },
+  });
+
   // #121 — if profile is no longer available, navigate back
   useEffect(() => {
     if (profileQuery.error && (profileQuery.error as { data?: { code?: string } }).data?.code === "NOT_FOUND") {
@@ -210,7 +218,12 @@ export default function PartnerProfileScreen() {
               testID="decline-button"
               variant="ghost"
               className="flex-1"
-              onPress={() => {/* T15.4 — wired in Decline action task */}}
+              isDisabled={declineMutation.isPending}
+              onPress={() => {
+                if (matchRequestId) {
+                  declineMutation.mutate({ matchRequestId });
+                }
+              }}
             >
               <Button.Label>Decline</Button.Label>
             </Button>
