@@ -520,6 +520,45 @@ export const meetupRouter = router({
       return ALL_SLOTS.filter((slot) => !busyTimes.has(slot));
     }),
 
+  // #73 — Get the pending incoming proposal for me (where I am the current receiverId)
+  getPendingIncoming: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const [row] = await db
+      .select({
+        meetup: meetup,
+        venue: {
+          id: venue.id,
+          name: venue.name,
+          description: venue.description,
+          photoUrl: venue.photoUrl,
+        },
+        proposer: {
+          id: sql<string>`proposer.id`.as("pi_proposer_id"),
+          name: sql<string>`proposer.name`.as("pi_proposer_name"),
+          image: sql<string | null>`proposer.image`.as("pi_proposer_image"),
+        },
+      })
+      .from(meetup)
+      .innerJoin(venue, eq(meetup.venueId, venue.id))
+      .innerJoin(sql`"user" as proposer`, sql`proposer.id = ${meetup.proposerId}`)
+      .where(and(eq(meetup.receiverId, userId), eq(meetup.status, "pending")))
+      .orderBy(meetup.createdAt)
+      .limit(1);
+
+    if (!row) return null;
+
+    return {
+      meetupId: row.meetup.id,
+      round: row.meetup.round,
+      canCounterPropose: row.meetup.round < 3,
+      venue: row.venue,
+      date: row.meetup.date,
+      time: row.meetup.time,
+      proposer: row.proposer,
+    };
+  }),
+
   pendingCount: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
