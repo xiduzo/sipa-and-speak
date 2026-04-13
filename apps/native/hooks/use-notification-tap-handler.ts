@@ -20,6 +20,11 @@ export function useNotificationTapHandler() {
       return;
     }
 
+    if (type === "meetup_proposed") {
+      router.push("/suggestions");
+      return;
+    }
+
     const matchRequestId = typeof data?.matchRequestId === "string" ? data.matchRequestId : undefined;
     const requesterId = typeof data?.requesterId === "string" ? data.requesterId : undefined;
 

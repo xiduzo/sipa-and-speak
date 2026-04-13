@@ -36,6 +36,16 @@ export interface MatchRequestDeclinedEvent {
   declinedAt: Date;
 }
 
+export interface MeetupProposedEvent {
+  meetupId: string;
+  proposerId: string;
+  receiverId: string;
+  venueName: string;
+  date: string;
+  time: string;
+  proposedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -43,6 +53,7 @@ type DomainEventMap = {
   MatchRequestSent: [MatchRequestSentEvent];
   MatchRequestAccepted: [MatchRequestAcceptedEvent];
   MatchRequestDeclined: [MatchRequestDeclinedEvent];
+  MeetupProposed: [MeetupProposedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

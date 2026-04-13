@@ -118,6 +118,7 @@ export const meetup = pgTable(
     })
       .notNull()
       .default("pending"),
+    round: integer("round").default(1).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

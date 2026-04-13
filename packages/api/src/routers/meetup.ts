@@ -2,9 +2,9 @@ import { and, eq, or, sql, count } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
-import { meetup, venue } from "@sip-and-speak/db/schema/sip-and-speak";
-import { user } from "@sip-and-speak/db/schema/auth";
+import { meetup, venue, studentMatch } from "@sip-and-speak/db/schema/sip-and-speak";
 import { protectedProcedure, router } from "../index";
+import { domainEvents } from "../domain-events";
 
 /** All bookable half-hour slots from 08:00 to 20:00 */
 const ALL_SLOTS = Array.from({ length: 25 }, (_, i) => {
@@ -15,6 +15,38 @@ const ALL_SLOTS = Array.from({ length: 25 }, (_, i) => {
 });
 
 export const meetupRouter = router({
+  canPropose: protectedProcedure
+    .input(z.object({ partnerId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const [match, pending] = await Promise.all([
+        db
+          .select({ id: studentMatch.id })
+          .from(studentMatch)
+          .where(
+            or(
+              and(eq(studentMatch.studentAId, userId), eq(studentMatch.studentBId, input.partnerId)),
+              and(eq(studentMatch.studentAId, input.partnerId), eq(studentMatch.studentBId, userId)),
+            ),
+          )
+          .limit(1),
+        db
+          .select({ id: meetup.id })
+          .from(meetup)
+          .where(
+            and(
+              eq(meetup.status, "pending"),
+              or(
+                and(eq(meetup.proposerId, userId), eq(meetup.receiverId, input.partnerId)),
+                and(eq(meetup.proposerId, input.partnerId), eq(meetup.receiverId, userId)),
+              ),
+            ),
+          )
+          .limit(1),
+      ]);
+      return { isMatched: match.length > 0, hasPendingProposal: pending.length > 0 };
+    }),
+
   propose: protectedProcedure
     .input(
       z.object({
@@ -28,38 +60,62 @@ export const meetupRouter = router({
       const userId = ctx.session.user.id;
 
       if (userId === input.partnerId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You cannot propose a meetup with yourself",
-        });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot propose a meetup with yourself" });
       }
 
-      // Check for scheduling conflicts for either participant
-      const conflicts = await db
+      // #68: Matched state check
+      const [matchRecord] = await db
+        .select({ id: studentMatch.id })
+        .from(studentMatch)
+        .where(
+          or(
+            and(eq(studentMatch.studentAId, userId), eq(studentMatch.studentBId, input.partnerId)),
+            and(eq(studentMatch.studentAId, input.partnerId), eq(studentMatch.studentBId, userId)),
+          ),
+        )
+        .limit(1);
+      if (!matchRecord) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You can only propose meetups with your matched partner" });
+      }
+
+      // #68: No duplicate pending proposal
+      const [existingPending] = await db
         .select({ id: meetup.id })
         .from(meetup)
         .where(
           and(
-            eq(meetup.date, input.date),
-            eq(meetup.time, input.time),
-            eq(meetup.status, "confirmed"),
+            eq(meetup.status, "pending"),
             or(
-              eq(meetup.proposerId, userId),
-              eq(meetup.receiverId, userId),
-              eq(meetup.proposerId, input.partnerId),
-              eq(meetup.receiverId, input.partnerId),
+              and(eq(meetup.proposerId, userId), eq(meetup.receiverId, input.partnerId)),
+              and(eq(meetup.proposerId, input.partnerId), eq(meetup.receiverId, userId)),
             ),
           ),
-        );
-
-      if (conflicts.length > 0) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message:
-            "Scheduling conflict: one of the participants already has a confirmed meetup at this date and time",
-        });
+        )
+        .limit(1);
+      if (existingPending) {
+        throw new TRPCError({ code: "CONFLICT", message: "A proposal is already awaiting a response from your partner" });
       }
 
+      // #68: Active location check
+      const [venueRecord] = await db
+        .select({ id: venue.id, name: venue.name, isActive: venue.isActive })
+        .from(venue)
+        .where(eq(venue.id, input.venueId))
+        .limit(1);
+      if (!venueRecord) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Location not found" });
+      }
+      if (!venueRecord.isActive) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This location is no longer available. Please choose another." });
+      }
+
+      // #68: Future date/time check
+      const proposedDateTime = new Date(`${input.date}T${input.time}:00`);
+      if (proposedDateTime <= new Date()) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The proposed date and time must be in the future" });
+      }
+
+      // #69: Persist proposal with round=1
       const [created] = await db
         .insert(meetup)
         .values({
@@ -69,8 +125,20 @@ export const meetupRouter = router({
           date: input.date,
           time: input.time,
           status: "pending",
+          round: 1,
         })
         .returning();
+
+      // #69: Emit MeetupProposed event (fire and forget)
+      domainEvents.emit("MeetupProposed", {
+        meetupId: created!.id,
+        proposerId: userId,
+        receiverId: input.partnerId,
+        venueName: venueRecord.name,
+        date: input.date,
+        time: input.time,
+        proposedAt: new Date(),
+      });
 
       return created;
     }),

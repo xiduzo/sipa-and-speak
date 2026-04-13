@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -237,6 +237,28 @@ export async function handleMatchRequestDeclined(event: MatchRequestDeclinedEven
   }
 }
 
+async function handleMeetupProposed(event: MeetupProposedEvent): Promise<void> {
+  const { meetupId, receiverId, venueName, date, time } = event;
+  const tokens = await db
+    .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(eq(userDeviceToken.userId, receiverId));
+  if (tokens.length === 0) return;
+
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: "New meetup proposal",
+    body: `${venueName} · ${date} at ${time}`,
+    data: { meetupId, type: "meetup_proposed" },
+  }));
+
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MeetupProposed notification", { meetupId, err });
+  }
+}
+
 export function registerNotificationHandlers(): void {
   domainEvents.on("MatchRequestSent", (event) => {
     // Fire and forget — do not await, must not block the mutation response
@@ -247,5 +269,8 @@ export function registerNotificationHandlers(): void {
   });
   domainEvents.on("MatchRequestDeclined", (event) => {
     void handleMatchRequestDeclined(event);
+  });
+  domainEvents.on("MeetupProposed", (event) => {
+    void handleMeetupProposed(event);
   });
 }
