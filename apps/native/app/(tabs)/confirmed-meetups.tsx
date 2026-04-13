@@ -20,6 +20,15 @@ export default function ConfirmedMeetupsScreen() {
 
   const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
 
+  const reportAttendanceMutation = useMutation(
+    trpc.meetup.reportAttendance.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
+      },
+      onError: (err) => Alert.alert("Error", err.message),
+    }),
+  );
+
   const cancelMutation = useMutation(
     trpc.meetup.cancelMeetup.mutationOptions({
       onSuccess: () => {
@@ -229,9 +238,41 @@ export default function ConfirmedMeetupsScreen() {
               </View>
             )}
 
-            {m.isPast && (
-              <Text testID="meetup-past-label" className="text-muted-foreground text-xs text-center">
-                This meetup has already taken place
+            {/* #95 — Attendance prompt shown after meetup time passes */}
+            {m.isPast && !m.hasReported && (
+              <View testID="attendance-prompt" className="mt-2">
+                <Text className="text-foreground font-semibold text-sm text-center mb-3">
+                  Did your meetup take place?
+                </Text>
+                <View className="flex flex-row gap-2">
+                  <Button
+                    testID="attendance-yes-btn"
+                    onPress={() =>
+                      reportAttendanceMutation.mutate({ meetupId: m.meetupId, attended: true })
+                    }
+                    isDisabled={reportAttendanceMutation.isPending}
+                    className="flex-1"
+                  >
+                    <Button.Label>We met up</Button.Label>
+                  </Button>
+                  <Button
+                    testID="attendance-no-btn"
+                    variant="outline"
+                    onPress={() =>
+                      reportAttendanceMutation.mutate({ meetupId: m.meetupId, attended: false })
+                    }
+                    isDisabled={reportAttendanceMutation.isPending}
+                    className="flex-1"
+                  >
+                    <Button.Label>We didn't meet</Button.Label>
+                  </Button>
+                </View>
+              </View>
+            )}
+
+            {m.isPast && m.hasReported && (
+              <Text testID="attendance-reported-label" className="text-muted-foreground text-xs text-center mt-2">
+                {m.myAttendance ? "You reported attending this meetup" : "You reported not attending this meetup"}
               </Text>
             )}
           </View>
