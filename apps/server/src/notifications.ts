@@ -18,6 +18,7 @@ interface ExpoPushMessage {
   title?: string;
   body?: string;
   data?: Record<string, unknown>;
+  categoryIdentifier?: string;
 }
 
 interface ExpoPushTicket {
@@ -140,7 +141,8 @@ export async function handleMatchRequestAccepted(event: MatchRequestAcceptedEven
     to: token,
     title: "Your match request was accepted!",
     body: `${receiverName} accepted your request`,
-    data: { matchRequestId, type: "match_accepted" },
+    data: { matchRequestId, matchedWithUserId: receiverId, type: "match_accepted" },
+    categoryIdentifier: "match_accepted",
   }));
 
   console.info("[push] Sending MatchRequestAccepted notification", {
