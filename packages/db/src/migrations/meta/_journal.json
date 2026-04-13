@@ -50,6 +50,13 @@
       "when": 1776104822671,
       "tag": "0006_eager_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776105551308,
+      "tag": "0007_wooden_texas_twister",
+      "breakpoints": true
     }
   ]
 }

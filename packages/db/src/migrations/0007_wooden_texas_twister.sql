@@ -1,0 +1,1 @@
+ALTER TABLE "student_match" ADD COLUMN "status" text DEFAULT 'matched' NOT NULL;

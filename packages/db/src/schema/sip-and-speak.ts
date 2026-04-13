@@ -115,7 +115,7 @@ export const meetup = pgTable(
     date: text("date").notNull(),
     time: text("time").notNull(),
     status: text("status", {
-      enum: ["pending", "confirmed", "declined", "cancelled"],
+      enum: ["pending", "confirmed", "declined", "cancelled", "completed", "not_attended"],
     })
       .notNull()
       .default("pending"),
@@ -396,6 +396,8 @@ export const studentMatch = pgTable(
     matchRequestId: text("match_request_id")
       .notNull()
       .references(() => matchRequest.id, { onDelete: "cascade" }),
+    // #99 — Connected state: set to "connected" when both Students confirm attendance
+    status: text("status", { enum: ["matched", "connected"] }).notNull().default("matched"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [

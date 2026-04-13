@@ -992,6 +992,50 @@ export const meetupRouter = router({
         reportedAt: created!.reportedAt,
       });
 
+      // #99 — Check if both Students have now reported; trigger state transition if so
+      const allReports = await db
+        .select({ studentId: attendanceReport.studentId, attended: attendanceReport.attended })
+        .from(attendanceReport)
+        .where(eq(attendanceReport.meetupId, input.meetupId));
+
+      if (allReports.length === 2) {
+        const bothAttended = allReports.every((r) => r.attended);
+
+        if (bothAttended) {
+          // Both attended → transition to Connected state
+          const [matchRecord] = await db
+            .select({ id: studentMatch.id })
+            .from(studentMatch)
+            .where(
+              or(
+                and(
+                  eq(studentMatch.studentAId, existing.proposerId),
+                  eq(studentMatch.studentBId, existing.receiverId),
+                ),
+                and(
+                  eq(studentMatch.studentAId, existing.receiverId),
+                  eq(studentMatch.studentBId, existing.proposerId),
+                ),
+              ),
+            )
+            .limit(1);
+
+          if (matchRecord) {
+            await Promise.all([
+              db.update(meetup).set({ status: "completed" }).where(eq(meetup.id, input.meetupId)),
+              db.update(studentMatch).set({ status: "connected" }).where(eq(studentMatch.id, matchRecord.id)),
+            ]);
+
+            domainEvents.emit("SipAndSpeakMomentCompleted", {
+              meetupId: input.meetupId,
+              studentAId: existing.proposerId,
+              studentBId: existing.receiverId,
+              completedAt: new Date(),
+            });
+          }
+        }
+      }
+
       return created;
     }),
 });
