@@ -87,6 +87,22 @@ export function computeCompositeScore(
 }
 
 /**
+ * Compose the push notification body for a MatchRequestSent event.
+ * Includes language summary only when both offered and targeted languages are known.
+ * Format: "{name} wants to meet you — speaks {offered}, learning {targeted}"
+ */
+export function buildMatchRequestNotificationBody(
+  requesterName: string,
+  offeredLanguage: string | null,
+  targetedLanguage: string | null,
+): string {
+  if (offeredLanguage && targetedLanguage) {
+    return `${requesterName} wants to meet you — speaks ${offeredLanguage}, learning ${targetedLanguage}`;
+  }
+  return `${requesterName} wants to meet you`;
+}
+
+/**
  * Extract excluded user IDs from active match requests involving the given user.
  * Bidirectional: a candidate who sent a request to the user is also excluded.
  */
