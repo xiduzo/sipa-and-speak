@@ -818,6 +818,102 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-12T22:15:44.919Z"
+    },
+    {
+      "id": "bug-051",
+      "timestamp": "2026-04-13T09:52:48.476Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "../../../../tmp/task-123-body.md",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T09:52:48.476Z"
+    },
+    {
+      "id": "bug-052",
+      "timestamp": "2026-04-13T09:52:52.727Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../../../tmp/task-123-body.md",
+      "root_cause": "Had `/packages/api/src/routers/matching.ts`",
+      "fix": "Changed to `packages/api/src/routers/matching.ts`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T09:52:52.727Z"
+    },
+    {
+      "id": "bug-053",
+      "timestamp": "2026-04-13T09:53:09.786Z",
+      "error_message": "CSS fix: matchRequestStatus",
+      "file": "apps/native/__tests__/partner-profile.test.tsx",
+      "root_cause": "matchRequestStatus: \"pending\" → \"declined\"",
+      "fix": "Changed matchRequestStatus: \"pending\" → \"declined\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T09:53:09.786Z"
+    },
+    {
+      "id": "bug-054",
+      "timestamp": "2026-04-13T09:53:54.255Z",
+      "error_message": "Null/undefined access in ",
+      "file": "apps/native/app/partner/[id].tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: (statusQuery.data?.matchRequestStatus === \"pending\" || statu",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T09:53:58.339Z"
+    },
+    {
+      "id": "bug-055",
+      "timestamp": "2026-04-13T09:54:12.639Z",
+      "error_message": "Null/undefined access in ",
+      "file": "apps/native/components/candidate-card.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T09:54:12.639Z"
+    },
+    {
+      "id": "bug-056",
+      "timestamp": "2026-04-13T10:01:47.226Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/task-123-body.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→6 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T10:01:47.226Z"
     }
   ]
 }
