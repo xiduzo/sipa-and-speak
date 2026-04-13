@@ -84,6 +84,11 @@ jest.mock("@/utils/trpc", () => ({
           onError: opts.onError,
         }),
       },
+      setPresence: {
+        mutationOptions: () => ({
+          mutationFn: jest.fn().mockResolvedValue({ ok: true }),
+        }),
+      },
     },
   },
 }));

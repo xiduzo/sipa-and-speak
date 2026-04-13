@@ -24,6 +24,17 @@ let sendMessageCallbacks: { onSuccess?: () => void; onError?: (e: Error) => void
 
 jest.mock("@/utils/trpc", () => ({
   trpc: {
+    chat: {
+      getMessages: {
+        queryOptions: (_input: unknown, _opts: unknown) => ({
+          queryKey: ["chat.getMessages"],
+          queryFn: async () => ({ messages: [] }),
+        }),
+      },
+      markRead: {
+        mutationOptions: () => ({ mutationFn: jest.fn().mockResolvedValue({}) }),
+      },
+    },
     messaging: {
       sendMessage: {
         mutationOptions: (opts: { onSuccess?: () => void; onError?: (e: Error) => void }) => {
@@ -34,6 +45,9 @@ jest.mock("@/utils/trpc", () => ({
             onError: opts?.onError,
           };
         },
+      },
+      setPresence: {
+        mutationOptions: () => ({ mutationFn: jest.fn().mockResolvedValue({ ok: true }) }),
       },
     },
   },

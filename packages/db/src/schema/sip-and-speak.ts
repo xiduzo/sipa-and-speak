@@ -484,3 +484,22 @@ export const studentMatchRelations = relations(studentMatch, ({ one }) => ({
     references: [matchRequest.id],
   }),
 }));
+
+// #153 — Presence record: tracks whether a Student is actively viewing a conversation
+// activeUntil acts as a TTL — stale records (past activeUntil) are treated as inactive
+export const conversationPresence = pgTable(
+  "conversation_presence",
+  {
+    studentId: text("student_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversation.id, { onDelete: "cascade" }),
+    activeUntil: timestamp("active_until").notNull(),
+  },
+  (table) => [
+    unique("conversation_presence_student_conv_unique").on(table.studentId, table.conversationId),
+    index("conversation_presence_studentId_idx").on(table.studentId),
+  ],
+);

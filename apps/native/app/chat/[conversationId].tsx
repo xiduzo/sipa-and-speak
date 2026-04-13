@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { AppState, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { authClient } from "@/lib/auth-client";
 import { Container } from "@/components/container";
@@ -28,6 +28,10 @@ export default function ChatScreen() {
     trpc.chat.markRead.mutationOptions(),
   );
 
+  const setPresence = useMutation(
+    trpc.messaging.setPresence.mutationOptions(),
+  );
+
   useFocusEffect(
     useCallback(() => {
       markRead.mutate(
@@ -39,6 +43,22 @@ export default function ChatScreen() {
           },
         },
       );
+
+      // #153 — Signal active presence so push notifications are suppressed while viewing
+      setPresence.mutate({ conversationId, active: true });
+
+      const appStateSub = AppState.addEventListener("change", (nextState) => {
+        if (nextState === "background" || nextState === "inactive") {
+          setPresence.mutate({ conversationId, active: false });
+        } else if (nextState === "active") {
+          setPresence.mutate({ conversationId, active: true });
+        }
+      });
+
+      return () => {
+        setPresence.mutate({ conversationId, active: false });
+        appStateSub.remove();
+      };
     }, [conversationId]),
   );
 
