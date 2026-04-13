@@ -1033,6 +1033,16 @@ export const meetupRouter = router({
               completedAt: new Date(),
             });
           }
+        } else {
+          // #101 — At least one non-attendance → return pair to Matched (meetup closed)
+          await db.update(meetup).set({ status: "not_attended" }).where(eq(meetup.id, input.meetupId));
+
+          domainEvents.emit("MeetupNotAttended", {
+            meetupId: input.meetupId,
+            studentAId: existing.proposerId,
+            studentBId: existing.receiverId,
+            recordedAt: new Date(),
+          });
         }
       }
 
