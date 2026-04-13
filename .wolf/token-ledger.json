@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-10T10:02:44.507Z",
   "lifetime": {
-    "total_tokens_estimated": 461619,
-    "total_reads": 309,
-    "total_writes": 441,
-    "total_sessions": 27,
-    "anatomy_hits": 240,
+    "total_tokens_estimated": 473243,
+    "total_reads": 314,
+    "total_writes": 453,
+    "total_sessions": 28,
+    "anatomy_hits": 245,
     "anatomy_misses": 69,
     "repeated_reads_blocked": 71,
-    "estimated_savings_vs_bare_cli": 261082
+    "estimated_savings_vs_bare_cli": 262082
   },
   "sessions": [
     {
@@ -4731,6 +4731,113 @@
         "writes_count": 32,
         "repeated_reads_blocked": 17,
         "anatomy_lookups": 13
+      }
+    },
+    {
+      "id": "session-2026-04-13-1323",
+      "started": "2026-04-13T11:23:14.846Z",
+      "ended": "2026-04-13T14:12:05.870Z",
+      "reads": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1402,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 1189,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/jest.config.ts",
+          "tokens_estimated": 309,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 1125,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/suggestions.test.tsx",
+          "tokens_estimated": 958,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 328,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 21,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/notification-deep-link.test.tsx",
+          "tokens_estimated": 1507,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/jest.config.ts",
+          "tokens_estimated": 31,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/jest-mocks/style-mock.ts",
+          "tokens_estimated": 21,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/hooks/use-notification-tap-handler.ts",
+          "tokens_estimated": 350,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 70,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/notification-deep-link.test.tsx",
+          "tokens_estimated": 984,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/notification-deep-link.test.tsx",
+          "tokens_estimated": 146,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/suggestions.test.tsx",
+          "tokens_estimated": 2224,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic2_loop_progress.md",
+          "tokens_estimated": 942,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4983,
+        "output_tokens_estimated": 6641,
+        "reads_count": 5,
+        "writes_count": 12,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 5
       }
     }
   ],
