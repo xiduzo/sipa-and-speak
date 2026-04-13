@@ -7,6 +7,7 @@ import {
   userLanguage,
   userInterest,
   matchRequest,
+  studentMatch,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
@@ -238,6 +239,59 @@ export const matchingRouter = router({
       return { partners: page, nextCursor };
     }),
 
+  getIncomingRequests: protectedProcedure
+    .query(async ({ ctx }) => {
+      const receiverId = ctx.session.user.id;
+
+      const pendingRequests = await db
+        .select({
+          matchRequestId: matchRequest.id,
+          requesterId: matchRequest.requesterId,
+          createdAt: matchRequest.createdAt,
+        })
+        .from(matchRequest)
+        .where(
+          and(
+            eq(matchRequest.receiverId, receiverId),
+            eq(matchRequest.status, "pending"),
+          ),
+        );
+
+      if (pendingRequests.length === 0) return [];
+
+      const requesterIds = pendingRequests.map((r) => r.requesterId);
+
+      const [requesterUsers, requesterLanguages] = await Promise.all([
+        db
+          .select({ id: user.id, name: user.name, image: user.image })
+          .from(user)
+          .where(inArray(user.id, requesterIds)),
+        db
+          .select()
+          .from(userLanguage)
+          .where(inArray(userLanguage.userId, requesterIds)),
+      ]);
+
+      return pendingRequests.map((req) => {
+        const userInfo = requesterUsers.find((u) => u.id === req.requesterId);
+        const langs = requesterLanguages.filter((l) => l.userId === req.requesterId);
+
+        return {
+          matchRequestId: req.matchRequestId,
+          requesterId: req.requesterId,
+          requesterName: userInfo?.name ?? "Unknown",
+          requesterPhotoUrl: userInfo?.image ?? null,
+          requesterOfferedLanguages: langs
+            .filter((l) => l.type === "spoken")
+            .map((l) => l.language),
+          requesterTargetedLanguages: langs
+            .filter((l) => l.type === "learning")
+            .map((l) => l.language),
+          createdAt: req.createdAt.toISOString(),
+        };
+      });
+    }),
+
   getPartnerProfile: protectedProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
@@ -372,5 +426,95 @@ export const matchingRouter = router({
       });
 
       return { matchRequestId: created.id, status: "pending" as const };
+    }),
+
+  acceptMatchRequest: protectedProcedure
+    .input(z.object({ matchRequestId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const receiverId = ctx.session.user.id;
+
+      const request = await db.query.matchRequest.findFirst({
+        where: eq(matchRequest.id, input.matchRequestId),
+      });
+
+      if (!request) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Match request not found." });
+      }
+
+      if (request.receiverId !== receiverId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only the designated receiver may accept this request." });
+      }
+
+      if (request.status !== "pending") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending requests can be accepted." });
+      }
+
+      await db
+        .update(matchRequest)
+        .set({ status: "accepted" })
+        .where(eq(matchRequest.id, input.matchRequestId));
+
+      await db.insert(studentMatch).values({
+        studentAId: request.requesterId,
+        studentBId: receiverId,
+        matchRequestId: input.matchRequestId,
+      });
+
+      console.info("[MatchRequestAccepted]", {
+        matchRequestId: input.matchRequestId,
+        requesterId: request.requesterId,
+        receiverId,
+      });
+
+      domainEvents.emit("MatchRequestAccepted", {
+        matchRequestId: input.matchRequestId,
+        requesterId: request.requesterId,
+        receiverId,
+        acceptedAt: new Date(),
+      });
+
+      return { status: "accepted" as const, matchedWithUserId: request.requesterId };
+    }),
+
+  declineMatchRequest: protectedProcedure
+    .input(z.object({ matchRequestId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const receiverId = ctx.session.user.id;
+
+      const request = await db.query.matchRequest.findFirst({
+        where: eq(matchRequest.id, input.matchRequestId),
+      });
+
+      if (!request) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Match request not found." });
+      }
+
+      if (request.receiverId !== receiverId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only the designated receiver may decline this request." });
+      }
+
+      if (request.status !== "pending") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending requests can be declined." });
+      }
+
+      await db
+        .update(matchRequest)
+        .set({ status: "declined" })
+        .where(eq(matchRequest.id, input.matchRequestId));
+
+      console.info("[MatchRequestDeclined]", {
+        matchRequestId: input.matchRequestId,
+        requesterId: request.requesterId,
+        receiverId,
+      });
+
+      domainEvents.emit("MatchRequestDeclined", {
+        matchRequestId: input.matchRequestId,
+        requesterId: request.requesterId,
+        receiverId,
+        declinedAt: new Date(),
+      });
+
+      return { status: "declined" as const };
     }),
 });

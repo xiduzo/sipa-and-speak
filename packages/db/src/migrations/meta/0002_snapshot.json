@@ -1,5 +1,5 @@
 {
-  "id": "3e642786-f124-4d43-be3f-0f645b61dfda",
+  "id": "493b82ee-98bf-474e-9b2f-3981e5a034e2",
   "prevId": "8f1dc8c0-fd47-4e1c-8e78-3245e43160cb",
   "version": "7",
   "dialect": "postgresql",
@@ -1095,8 +1095,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.user_device_token": {
-      "name": "user_device_token",
+    "public.student_match": {
+      "name": "student_match",
       "schema": "",
       "columns": {
         "id": {
@@ -1105,20 +1105,20 @@
           "primaryKey": true,
           "notNull": true
         },
-        "user_id": {
-          "name": "user_id",
+        "student_a_id": {
+          "name": "student_a_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "token": {
-          "name": "token",
+        "student_b_id": {
+          "name": "student_b_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "platform": {
-          "name": "platform",
+        "match_request_id": {
+          "name": "match_request_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1129,45 +1129,73 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {
-        "user_device_token_userId_token_idx": {
-          "name": "user_device_token_userId_token_idx",
+        "student_match_studentA_idx": {
+          "name": "student_match_studentA_idx",
           "columns": [
             {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "token",
+              "expression": "student_a_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
-          "isUnique": true,
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "student_match_studentB_idx": {
+          "name": "student_match_studentB_idx",
+          "columns": [
+            {
+              "expression": "student_b_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "user_device_token_user_id_user_id_fk": {
-          "name": "user_device_token_user_id_user_id_fk",
-          "tableFrom": "user_device_token",
+        "student_match_student_a_id_user_id_fk": {
+          "name": "student_match_student_a_id_user_id_fk",
+          "tableFrom": "student_match",
           "tableTo": "user",
           "columnsFrom": [
-            "user_id"
+            "student_a_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "student_match_student_b_id_user_id_fk": {
+          "name": "student_match_student_b_id_user_id_fk",
+          "tableFrom": "student_match",
+          "tableTo": "user",
+          "columnsFrom": [
+            "student_b_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "student_match_match_request_id_match_request_id_fk": {
+          "name": "student_match_match_request_id_match_request_id_fk",
+          "tableFrom": "student_match",
+          "tableTo": "match_request",
+          "columnsFrom": [
+            "match_request_id"
           ],
           "columnsTo": [
             "id"
