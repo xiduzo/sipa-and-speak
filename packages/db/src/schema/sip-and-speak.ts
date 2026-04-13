@@ -74,18 +74,27 @@ export const userInterest = pgTable(
   (table) => [index("user_interest_userId_idx").on(table.userId)],
 );
 
-export const venue = pgTable("venue", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  name: text("name").notNull(),
-  description: text("description"),
-  photoUrl: text("photo_url"),
-  latitude: doublePrecision("latitude").notNull(),
-  longitude: doublePrecision("longitude").notNull(),
-  tags: text("tags").array().notNull().default([]),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const venue = pgTable(
+  "venue",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: text("name").notNull(),
+    description: text("description"),
+    photoUrl: text("photo_url"),
+    latitude: doublePrecision("latitude").notNull(),
+    longitude: doublePrecision("longitude").notNull(),
+    tags: text("tags").array().notNull().default([]),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [uniqueIndex("venue_name_idx").on(table.name)],
+);
 
 export const meetup = pgTable(
   "meetup",
