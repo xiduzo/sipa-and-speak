@@ -7,6 +7,7 @@ import { domainEvents } from "../domain-events";
 import { db } from "@sip-and-speak/db";
 import { meetup, messagingOptIn, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
 import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome, validateMessageContent, checkConversationAccess } from "./messaging-utils";
+import { persistMessage } from "./messaging-persist";
 
 export const messagingRouter = router({
   /**
@@ -231,7 +232,17 @@ export const messagingRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
       }
 
-      // #145 — Persistence (added in task #145)
-      return { id: "" as string, conversationId: input.conversationId, senderId, content: validation.trimmed, createdAt: new Date() };
+      // #145 — Persist and return the created message
+      const created = await persistMessage({
+        conversationId: input.conversationId,
+        senderId,
+        content: validation.trimmed,
+      });
+
+      console.log(
+        `[messaging] message sent conversationId=${input.conversationId} senderId=${senderId}`,
+      );
+
+      return created;
     }),
 });
