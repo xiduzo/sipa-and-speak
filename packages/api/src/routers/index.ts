@@ -5,6 +5,7 @@ import { venueRouter } from "./venue";
 import { adminVenueRouter } from "./venue-admin";
 import { meetupRouter } from "./meetup";
 import { chatRouter } from "./chat";
+import { messagingRouter } from "./messaging";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -22,5 +23,6 @@ export const appRouter = router({
   adminVenue: adminVenueRouter,
   meetup: meetupRouter,
   chat: chatRouter,
+  messaging: messagingRouter,
 });
 export type AppRouter = typeof appRouter;

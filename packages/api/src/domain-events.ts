@@ -137,6 +137,49 @@ export interface MeetupNotAttendedEvent {
   recordedAt: Date;
 }
 
+export interface MessagingOptInPromptedEvent {
+  meetupId: string;
+  studentAId: string;
+  studentBId: string;
+  promptedAt: Date;
+}
+
+export interface MessagingAcceptedEvent {
+  meetupId: string;
+  studentId: string;
+  partnerId: string;
+  respondedAt: Date;
+}
+
+export interface MessagingDeclinedEvent {
+  meetupId: string;
+  studentId: string;
+  partnerId: string;
+  respondedAt: Date;
+}
+
+export interface ConversationOpenedEvent {
+  conversationId: string;
+  meetupId: string;
+  studentAId: string;
+  studentBId: string;
+  openedAt: Date;
+}
+
+export interface MessagingDeclineOutcomeEvent {
+  meetupId: string;
+  studentAId: string;
+  studentBId: string;
+}
+
+export interface MessagingNudgeNeededEvent {
+  meetupId: string;
+  /** The student who accepted and triggered the nudge */
+  acceptingStudentId: string;
+  /** The student who has not yet responded and should receive the nudge */
+  pendingStudentId: string;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -155,6 +198,12 @@ type DomainEventMap = {
   AttendanceReported: [AttendanceReportedEvent];
   SipAndSpeakMomentCompleted: [SipAndSpeakMomentCompletedEvent];
   MeetupNotAttended: [MeetupNotAttendedEvent];
+  MessagingOptInPrompted: [MessagingOptInPromptedEvent];
+  MessagingAccepted: [MessagingAcceptedEvent];
+  MessagingDeclined: [MessagingDeclinedEvent];
+  MessagingNudgeNeeded: [MessagingNudgeNeededEvent];
+  ConversationOpened: [ConversationOpenedEvent];
+  MessagingDeclineOutcome: [MessagingDeclineOutcomeEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

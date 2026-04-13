@@ -150,11 +150,14 @@ export const conversation = pgTable(
     user2Id: text("user2_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    // #141 — FK to meetup; unique per meetup (at most one conversation per meetup pair)
+    meetupId: text("meetup_id").references(() => meetup.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
     index("conversation_user1_idx").on(table.user1Id),
     index("conversation_user2_idx").on(table.user2Id),
+    uniqueIndex("conversation_meetupId_idx").on(table.meetupId),
   ],
 );
 
@@ -427,6 +430,41 @@ export const attendanceReport = pgTable(
     index("attendance_report_meetupId_idx").on(table.meetupId),
   ],
 );
+
+// #139 — Messaging opt-in: each Student independently records their accept/decline response
+export const messagingOptIn = pgTable(
+  "messaging_opt_in",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    meetupId: text("meetup_id")
+      .notNull()
+      .references(() => meetup.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    response: text("response", { enum: ["accept", "decline"] }).notNull(),
+    respondedAt: timestamp("responded_at").defaultNow().notNull(),
+    // #140 — Set when this acceptance triggered a nudge push to the pending partner; prevents duplicate nudges
+    nudgeSentAt: timestamp("nudge_sent_at"),
+  },
+  (table) => [
+    unique("messaging_opt_in_meetup_student_unique").on(table.meetupId, table.studentId),
+    index("messaging_opt_in_meetupId_idx").on(table.meetupId),
+  ],
+);
+
+export const messagingOptInRelations = relations(messagingOptIn, ({ one }) => ({
+  meetup: one(meetup, {
+    fields: [messagingOptIn.meetupId],
+    references: [meetup.id],
+  }),
+  student: one(user, {
+    fields: [messagingOptIn.studentId],
+    references: [user.id],
+  }),
+}));
 
 export const studentMatchRelations = relations(studentMatch, ({ one }) => ({
   studentA: one(user, {

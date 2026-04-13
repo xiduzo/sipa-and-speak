@@ -1,0 +1,1 @@
+ALTER TABLE "messaging_opt_in" ADD COLUMN "nudge_sent_at" timestamp;
