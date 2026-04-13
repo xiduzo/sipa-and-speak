@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 import { db } from "@sip-and-speak/db";
 import { meetup, messagingOptIn } from "@sip-and-speak/db/schema/sip-and-speak";
-import { hasAlreadyResponded, getPartnerId } from "./messaging-utils";
+import { hasAlreadyResponded, getPartnerId, shouldSendNudge } from "./messaging-utils";
 
 export const messagingRouter = router({
   /**
@@ -93,6 +93,41 @@ export const messagingRouter = router({
           partnerId,
           respondedAt: created!.respondedAt,
         });
+
+        // #140 — Check if partner has responded; if not, nudge them
+        const [partnerResponse] = await db
+          .select({ response: messagingOptIn.response })
+          .from(messagingOptIn)
+          .where(
+            and(
+              eq(messagingOptIn.meetupId, input.meetupId),
+              eq(messagingOptIn.studentId, partnerId),
+            ),
+          )
+          .limit(1);
+
+        if (shouldSendNudge("accept", partnerResponse)) {
+          // Atomically mark nudge as sent to prevent duplicates on concurrent accepts
+          const updated = await db
+            .update(messagingOptIn)
+            .set({ nudgeSentAt: new Date() })
+            .where(
+              and(
+                eq(messagingOptIn.meetupId, input.meetupId),
+                eq(messagingOptIn.studentId, studentId),
+                isNull(messagingOptIn.nudgeSentAt),
+              ),
+            )
+            .returning({ id: messagingOptIn.id });
+
+          if (updated.length > 0) {
+            domainEvents.emit("MessagingNudgeNeeded", {
+              meetupId: input.meetupId,
+              acceptingStudentId: studentId,
+              pendingStudentId: partnerId,
+            });
+          }
+        }
       } else {
         domainEvents.emit("MessagingDeclined", {
           meetupId: input.meetupId,
