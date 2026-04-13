@@ -6,6 +6,7 @@
  *   #122 — Send Request button on candidate profile screen
  *   #127 — Allow receiver to open requester's profile before deciding
  *   #128 — Accept action transitioning both Students to Matched state
+ *   #129 — Decline action removing the request and navigating back
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
@@ -25,6 +26,7 @@ const mockCommentsFn = jest.fn();
 const mockSendMatchRequest = jest.fn();
 const mockGetMatchRequestStatusFn = jest.fn();
 const mockAcceptMatchRequest = jest.fn();
+const mockDeclineMatchRequest = jest.fn();
 const mockInvalidateQueries = jest.fn();
 
 jest.mock("@/utils/trpc", () => ({
@@ -48,6 +50,9 @@ jest.mock("@/utils/trpc", () => ({
       },
       acceptMatchRequest: {
         mutationOptions: () => ({ mutationFn: mockAcceptMatchRequest }),
+      },
+      declineMatchRequest: {
+        mutationOptions: () => ({ mutationFn: mockDeclineMatchRequest }),
       },
     },
     profile: {
@@ -98,6 +103,7 @@ beforeEach(() => {
   mockBack.mockClear();
   mockSendMatchRequest.mockClear().mockResolvedValue({ matchRequestId: "req-1", status: "pending" });
   mockAcceptMatchRequest.mockClear().mockResolvedValue({ status: "accepted", matchedWithUserId: "requester-1" });
+  mockDeclineMatchRequest.mockClear().mockResolvedValue({ status: "declined" });
   mockInvalidateQueries.mockClear();
   mockProfileFn.mockReset().mockResolvedValue(defaultProfile);
   mockCommentsFn.mockReset().mockResolvedValue([]);
@@ -354,6 +360,52 @@ describe("#128 — Accept action transitioning both Students to Matched state", 
 
     await waitFor(() => {
       expect(screen.getByText("Accepted")).toBeTruthy();
+    });
+  });
+});
+
+// ─── #129: Decline action ──────────────────────────────────────────────────
+
+describe("#129 — Decline action removing the request and navigating back", () => {
+  it("calls declineMatchRequest mutation when Decline is tapped", async () => {
+    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
+
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("decline-button"));
+    fireEvent.press(screen.getByTestId("decline-button"));
+
+    await waitFor(() => {
+      expect(mockDeclineMatchRequest).toHaveBeenCalledTimes(1);
+      expect(mockDeclineMatchRequest.mock.calls[0][0]).toEqual({ matchRequestId: "req-abc" });
+    });
+  });
+
+  it("navigates back after successful decline", async () => {
+    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
+
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("decline-button"));
+    fireEvent.press(screen.getByTestId("decline-button"));
+
+    await waitFor(() => {
+      expect(mockBack).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("invalidates incoming requests query after declining", async () => {
+    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
+
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("decline-button"));
+    fireEvent.press(screen.getByTestId("decline-button"));
+
+    await waitFor(() => {
+      expect(mockInvalidateQueries).toHaveBeenCalledWith(
+        expect.objectContaining({ queryKey: ["matching.getIncomingRequests"] }),
+      );
     });
   });
 });
