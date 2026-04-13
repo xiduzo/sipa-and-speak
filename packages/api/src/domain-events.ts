@@ -76,6 +76,13 @@ export interface MeetupDeclinedEvent {
   declinedAt: Date;
 }
 
+export interface MeetupCancelledEvent {
+  meetupId: string;
+  cancelledById: string;
+  otherStudentId: string;
+  cancelledAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -87,6 +94,7 @@ type DomainEventMap = {
   MeetupConfirmed: [MeetupConfirmedEvent];
   MeetupCounterProposed: [MeetupCounterProposedEvent];
   MeetupDeclined: [MeetupDeclinedEvent];
+  MeetupCancelled: [MeetupCancelledEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {
