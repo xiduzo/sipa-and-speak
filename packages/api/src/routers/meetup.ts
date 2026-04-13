@@ -217,6 +217,112 @@ export const meetupRouter = router({
       return updated;
     }),
 
+  // #76 — Counter-propose: swap roles, update details, increment round, emit MeetupCounterProposed
+  counterPropose: protectedProcedure
+    .input(
+      z.object({
+        meetupId: z.string(),
+        venueId: z.string(),
+        date: z.string(),
+        time: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .innerJoin(venue, eq(meetup.venueId, venue.id))
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      if (existing.meetup.receiverId !== userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only the current responder can counter-propose",
+        });
+      }
+
+      if (existing.meetup.status !== "pending") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This proposal has already been responded to",
+        });
+      }
+
+      // #73 — Reject counter-propose when round is already at 3
+      if (existing.meetup.round >= 3) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Maximum counter-proposal rounds reached. You can only accept or decline.",
+        });
+      }
+
+      // Reject no-op counter-proposal (same venue, date, and time)
+      if (
+        existing.meetup.venueId === input.venueId &&
+        existing.meetup.date === input.date &&
+        existing.meetup.time === input.time
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Counter-proposal must differ from the current proposal in at least one detail",
+        });
+      }
+
+      // Future date/time validation
+      const proposedDateTime = new Date(`${input.date}T${input.time}:00`);
+      if (proposedDateTime <= new Date()) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The proposed date and time must be in the future" });
+      }
+
+      // Active venue check
+      const [newVenue] = await db
+        .select({ id: venue.id, name: venue.name, isActive: venue.isActive })
+        .from(venue)
+        .where(eq(venue.id, input.venueId))
+        .limit(1);
+      if (!newVenue) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Location not found" });
+      }
+      if (!newVenue.isActive) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This location is no longer available. Please choose another." });
+      }
+
+      // Swap proposer/receiver so original proposer now becomes the responder
+      const newRound = existing.meetup.round + 1;
+      const [updated] = await db
+        .update(meetup)
+        .set({
+          proposerId: userId,
+          receiverId: existing.meetup.proposerId,
+          venueId: input.venueId,
+          date: input.date,
+          time: input.time,
+          round: newRound,
+        })
+        .where(eq(meetup.id, input.meetupId))
+        .returning();
+
+      domainEvents.emit("MeetupCounterProposed", {
+        meetupId: existing.meetup.id,
+        newProposerId: userId,
+        newReceiverId: existing.meetup.proposerId,
+        venueName: newVenue.name,
+        date: input.date,
+        time: input.time,
+        round: newRound,
+        counterProposedAt: new Date(),
+      });
+
+      return updated;
+    }),
+
   // #75 — Accept a pending proposal → confirm meetup, emit MeetupConfirmed
   acceptProposal: protectedProcedure
     .input(z.object({ meetupId: z.string() }))
