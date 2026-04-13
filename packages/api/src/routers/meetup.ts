@@ -755,6 +755,70 @@ export const meetupRouter = router({
       return updated;
     }),
 
+  // #93 — Decline a reschedule proposal → retain original details, emit MeetupRescheduleDeclined, notify both
+  declineReschedule: protectedProcedure
+    .input(z.object({ meetupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .innerJoin(venue, eq(meetup.venueId, venue.id))
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      const isParticipant =
+        existing.meetup.proposerId === userId || existing.meetup.receiverId === userId;
+      if (!isParticipant) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this meetup" });
+      }
+
+      if (existing.meetup.status !== "confirmed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only confirmed meetups can have a reschedule declined" });
+      }
+
+      if (existing.meetup.rescheduleProposerId === null) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No reschedule proposal is pending for this meetup" });
+      }
+
+      if (existing.meetup.rescheduleProposerId === userId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You cannot decline your own reschedule proposal" });
+      }
+
+      // Atomic update: only clears reschedule columns if rescheduleProposerId is still set
+      const [updated] = await db
+        .update(meetup)
+        .set({
+          rescheduleProposerId: null,
+          rescheduleVenueId: null,
+          rescheduleDate: null,
+          rescheduleTime: null,
+        })
+        .where(and(eq(meetup.id, input.meetupId), sql`${meetup.rescheduleProposerId} IS NOT NULL`))
+        .returning();
+
+      if (!updated) {
+        throw new TRPCError({ code: "CONFLICT", message: "The reschedule proposal was already handled by another request" });
+      }
+
+      domainEvents.emit("MeetupRescheduleDeclined", {
+        meetupId: existing.meetup.id,
+        proposerId: existing.meetup.proposerId,
+        receiverId: existing.meetup.receiverId,
+        venueName: existing.venue.name,
+        originalDate: existing.meetup.date,
+        originalTime: existing.meetup.time,
+        declinedAt: new Date(),
+      });
+
+      return updated;
+    }),
+
   // #86 — Propose a reschedule for a confirmed meetup
   proposeReschedule: protectedProcedure
     .input(

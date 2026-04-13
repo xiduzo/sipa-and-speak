@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -367,6 +367,9 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("MeetupRescheduled", (event) => {
     void handleMeetupRescheduled(event);
   });
+  domainEvents.on("MeetupRescheduleDeclined", (event) => {
+    void handleMeetupRescheduleDeclined(event);
+  });
 }
 
 // #91 — Notify both Students when a reschedule is accepted and meetup details are updated
@@ -392,6 +395,32 @@ async function handleMeetupRescheduled(event: MeetupRescheduledEvent): Promise<v
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupRescheduled notification", { meetupId, err });
+  }
+}
+
+// #93 — Notify both Students when a reschedule is declined; confirm original details still in effect
+async function handleMeetupRescheduleDeclined(event: MeetupRescheduleDeclinedEvent): Promise<void> {
+  const { meetupId, proposerId, receiverId, venueName, originalDate, originalTime } = event;
+
+  const [proposerTokens, receiverTokens] = await Promise.all([
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, proposerId)),
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, receiverId)),
+  ]);
+
+  const allTokens = [...proposerTokens, ...receiverTokens];
+  if (allTokens.length === 0) return;
+
+  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+    to: token,
+    title: "Reschedule declined",
+    body: `Original meetup stands: ${venueName} · ${originalDate} at ${originalTime}`,
+    data: { meetupId, type: "meetup_reschedule_declined" },
+  }));
+
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MeetupRescheduleDeclined notification", { meetupId, err });
   }
 }
 
