@@ -133,7 +133,9 @@ describe("#152 — Send push notification to recipient when a new message arrive
     if (!msg) throw new Error("Expected a message");
 
     expect(msg.to).toBe("ExponentPushToken[recipient]");
-    expect(msg.title).toContain("Alice");
+    // #154 — title is sender's display name; body is generic (no message content)
+    expect(msg.title).toBe("Alice");
+    expect(msg.body).toBe("sent you a message");
     expect(msg.data?.type).toBe("message_received");
     expect(msg.data?.conversationId).toBe("conv-1");
     expect(msg.data?.senderId).toBe(SENDER_ID);
@@ -157,9 +159,8 @@ describe("#154 — Notification payload includes sender identity but not message
     const msg = fetchCalls[0]?.messages[0];
     if (!msg) throw new Error("Expected a message");
 
-    expect(msg.title).toContain("Bob");
-    // Body must never expose message content
-    expect(String(msg.body ?? "")).not.toContain("Let's meet again");
+    expect(msg.title).toBe("Bob");
+    expect(msg.body).toBe("sent you a message");
   });
 
   it("payload contains conversationId for deep-linking", async () => {
