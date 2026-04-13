@@ -7,6 +7,7 @@ const config: Config = {
     "node_modules/(?!(jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|heroui-native|@gorhom|nativewind|expo-router|@trpc|@tanstack|.bun)",
   ],
   moduleNameMapper: {
+    "\\.css$": "<rootDir>/jest-mocks/style-mock.ts",
     "^@/(.*)$": "<rootDir>/$1",
     "^react-native-reanimated$": "<rootDir>/jest-mocks/react-native-reanimated.ts",
     "^react-native-worklets$": "<rootDir>/jest-mocks/react-native-worklets.ts",
