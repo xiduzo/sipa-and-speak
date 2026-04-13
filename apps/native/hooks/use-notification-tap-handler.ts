@@ -15,6 +15,11 @@ export function useNotificationTapHandler() {
       return;
     }
 
+    if (type === "match_declined") {
+      router.push("/suggestions");
+      return;
+    }
+
     const matchRequestId = typeof data?.matchRequestId === "string" ? data.matchRequestId : undefined;
     const requesterId = typeof data?.requesterId === "string" ? data.requesterId : undefined;
 
