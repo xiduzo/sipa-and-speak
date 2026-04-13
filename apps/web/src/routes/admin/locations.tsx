@@ -29,6 +29,12 @@ type Venue = {
 
 type FormMode = { type: "add" } | { type: "edit"; venue: Venue } | null;
 
+function useVenueListInvalidation() {
+  const queryClient = useQueryClient();
+  return () =>
+    queryClient.invalidateQueries(trpc.adminVenue.findAll.queryOptions());
+}
+
 function LocationForm({
   mode,
   onClose,
@@ -36,7 +42,7 @@ function LocationForm({
   mode: FormMode;
   onClose: () => void;
 }) {
-  const queryClient = useQueryClient();
+  const invalidate = useVenueListInvalidation();
   const initialVenue = mode?.type === "edit" ? mode.venue : null;
 
   const [name, setName] = useState(initialVenue?.name ?? "");
@@ -44,9 +50,6 @@ function LocationForm({
     initialVenue?.description ?? "",
   );
   const [nameError, setNameError] = useState<string | null>(null);
-
-  const invalidate = () =>
-    queryClient.invalidateQueries(trpc.adminVenue.findAll.queryOptions());
 
   const createMutation = useMutation(
     trpc.adminVenue.create.mutationOptions({
@@ -104,7 +107,7 @@ function LocationForm({
       createMutation.mutate({
         name: trimmedName,
         description: description.trim() || undefined,
-        latitude: 51.4483, // TU/e campus default
+        latitude: 51.4483,
         longitude: 5.4903,
       });
     }
@@ -175,6 +178,186 @@ function LocationForm({
   );
 }
 
+function DeactivateDialog({
+  venue,
+  onClose,
+}: {
+  venue: Venue;
+  onClose: () => void;
+}) {
+  const invalidate = useVenueListInvalidation();
+  const warningsQuery = useQuery(
+    trpc.adminVenue.deactivateWarnings.queryOptions({ id: venue.id }),
+  );
+
+  const deactivateMutation = useMutation(
+    trpc.adminVenue.deactivate.mutationOptions({
+      onSuccess: () => {
+        toast.success(`"${venue.name}" has been deactivated`);
+        invalidate();
+        onClose();
+      },
+      onError: (err) => {
+        toast.error(err.message);
+        onClose();
+      },
+    }),
+  );
+
+  const warnings = warningsQuery.data;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-xl">
+        <h2 className="text-foreground text-xl font-semibold mb-2">
+          Deactivate location?
+        </h2>
+        <p className="text-muted-foreground mb-4">
+          "{venue.name}" will be hidden from the meetup proposal picker.
+        </p>
+
+        {warningsQuery.isPending ? (
+          <div className="flex items-center justify-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+          </div>
+        ) : (
+          <>
+            {warnings?.hasPendingProposals && (
+              <div
+                data-testid="pending-proposals-warning"
+                className="bg-amber-500/10 border border-amber-500/20 text-amber-600 text-sm rounded-xl p-3 mb-3"
+              >
+                This location has unconfirmed meetup proposals. They will not be
+                automatically cancelled, but students won't be able to select
+                this location for new proposals.
+              </div>
+            )}
+            {warnings?.isLastActive && (
+              <div
+                data-testid="last-active-warning"
+                className="bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-xl p-3 mb-3"
+              >
+                This is the last active location. After deactivation, students
+                will be unable to create new meetup proposals.
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="flex gap-2 justify-end mt-4">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            data-testid="confirm-deactivate-btn"
+            disabled={deactivateMutation.isPending}
+            onClick={() => deactivateMutation.mutate({ id: venue.id })}
+          >
+            Deactivate
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LocationRow({
+  venue,
+  onEdit,
+}: {
+  venue: Venue;
+  onEdit: (v: Venue) => void;
+}) {
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
+  const invalidate = useVenueListInvalidation();
+
+  const reactivateMutation = useMutation(
+    trpc.adminVenue.reactivate.mutationOptions({
+      onSuccess: () => {
+        toast.success(`"${venue.name}" has been reactivated`);
+        invalidate();
+      },
+      onError: (err) => toast.error(err.message),
+    }),
+  );
+
+  return (
+    <>
+      <div
+        data-testid="location-row"
+        className="flex items-start justify-between gap-4 bg-card border border-border rounded-2xl p-4"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span
+              data-testid="location-name"
+              className="text-foreground font-semibold truncate"
+            >
+              {venue.name}
+            </span>
+            <span
+              data-testid="location-status"
+              className={`text-xs px-2 py-0.5 rounded-full ${
+                venue.isActive
+                  ? "bg-green-500/10 text-green-600"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {venue.isActive ? "Active" : "Inactive"}
+            </span>
+          </div>
+          {venue.description && (
+            <p
+              data-testid="location-description"
+              className="text-muted-foreground text-sm"
+            >
+              {venue.description}
+            </p>
+          )}
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            data-testid="location-edit-btn"
+            onClick={() => onEdit(venue)}
+          >
+            Edit
+          </Button>
+          {venue.isActive ? (
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="location-deactivate-btn"
+              onClick={() => setShowDeactivateDialog(true)}
+            >
+              Deactivate
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="location-reactivate-btn"
+              disabled={reactivateMutation.isPending}
+              onClick={() => reactivateMutation.mutate({ id: venue.id })}
+            >
+              Reactivate
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {showDeactivateDialog && (
+        <DeactivateDialog
+          venue={venue}
+          onClose={() => setShowDeactivateDialog(false)}
+        />
+      )}
+    </>
+  );
+}
+
 function RouteComponent() {
   const [formMode, setFormMode] = useState<FormMode>(null);
   const venuesQuery = useQuery(trpc.adminVenue.findAll.queryOptions());
@@ -206,53 +389,13 @@ function RouteComponent() {
           No locations yet. Add the first one.
         </p>
       ) : (
-        <div
-          data-testid="locations-list"
-          className="flex flex-col gap-3"
-        >
+        <div data-testid="locations-list" className="flex flex-col gap-3">
           {venues.map((v) => (
-            <div
+            <LocationRow
               key={v.id}
-              data-testid="location-row"
-              className="flex items-start justify-between gap-4 bg-card border border-border rounded-2xl p-4"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    data-testid="location-name"
-                    className="text-foreground font-semibold truncate"
-                  >
-                    {v.name}
-                  </span>
-                  <span
-                    data-testid="location-status"
-                    className={`text-xs px-2 py-0.5 rounded-full ${
-                      v.isActive
-                        ? "bg-green-500/10 text-green-600"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {v.isActive ? "Active" : "Inactive"}
-                  </span>
-                </div>
-                {v.description && (
-                  <p
-                    data-testid="location-description"
-                    className="text-muted-foreground text-sm"
-                  >
-                    {v.description}
-                  </p>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                data-testid="location-edit-btn"
-                onClick={() => setFormMode({ type: "edit", venue: v })}
-              >
-                Edit
-              </Button>
-            </div>
+              venue={v}
+              onEdit={(venue) => setFormMode({ type: "edit", venue })}
+            />
           ))}
         </div>
       )}

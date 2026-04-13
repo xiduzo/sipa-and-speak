@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { and, count, eq, ne } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { venue } from "@sip-and-speak/db/schema/sip-and-speak";
+import { meetup, venue } from "@sip-and-speak/db/schema/sip-and-speak";
 import { protectedProcedure, router } from "../index";
 
 async function assertNameUnique(name: string, excludeId?: string) {
@@ -87,12 +87,51 @@ export const adminVenueRouter = router({
       return updated;
     }),
 
+  deactivateWarnings: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      const [pendingMeetupsResult, activeCountResult] = await Promise.all([
+        db
+          .select({ count: count() })
+          .from(meetup)
+          .where(
+            and(
+              eq(meetup.venueId, input.id),
+              eq(meetup.status, "pending"),
+            ),
+          ),
+        db
+          .select({ count: count() })
+          .from(venue)
+          .where(and(eq(venue.isActive, true), ne(venue.id, input.id))),
+      ]);
+
+      return {
+        hasPendingProposals: (pendingMeetupsResult[0]?.count ?? 0) > 0,
+        isLastActive: (activeCountResult[0]?.count ?? 0) === 0,
+      };
+    }),
+
   deactivate: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       const [updated] = await db
         .update(venue)
         .set({ isActive: false })
+        .where(eq(venue.id, input.id))
+        .returning();
+      if (!updated) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Venue not found" });
+      }
+      return updated;
+    }),
+
+  reactivate: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      const [updated] = await db
+        .update(venue)
+        .set({ isActive: true })
         .where(eq(venue.id, input.id))
         .returning();
       if (!updated) {
