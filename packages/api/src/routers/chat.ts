@@ -8,7 +8,7 @@ import {
   messageReadStatus,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { checkReadAccess } from "./messaging-utils";
+import { checkReadAccess, computeIsUnread } from "./messaging-utils";
 import { protectedProcedure, router } from "../index";
 
 export const chatRouter = router({
@@ -126,9 +126,26 @@ export const chatRouter = router({
       const hasMore = messages.length > input.limit;
       const items = hasMore ? messages.slice(0, input.limit) : messages;
 
+      // Fetch viewer's read status for isUnread computation (#148)
+      const readStatusRows = await db
+        .select({ lastReadAt: messageReadStatus.lastReadAt })
+        .from(messageReadStatus)
+        .where(
+          and(
+            eq(messageReadStatus.conversationId, input.conversationId),
+            eq(messageReadStatus.userId, userId),
+          ),
+        )
+        .limit(1);
+      const lastReadAt = readStatusRows[0]?.lastReadAt ?? null;
+
+      const chronological = items.reverse();
       return {
-        messages: items.reverse(), // chronological order
-        nextCursor: hasMore ? items[items.length - 1]?.id : undefined,
+        messages: chronological.map((msg) => ({
+          ...msg,
+          isUnread: computeIsUnread(msg, userId, lastReadAt),
+        })),
+        nextCursor: hasMore ? chronological[chronological.length - 1]?.id : undefined,
       };
     }),
 

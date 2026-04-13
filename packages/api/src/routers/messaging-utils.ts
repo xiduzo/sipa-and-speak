@@ -74,6 +74,21 @@ export function validateMessageContent(
 }
 
 /**
+ * #148 — Determines whether a message is unread by the viewing student.
+ * Own messages are always treated as read.
+ * Partner messages are unread if their createdAt is after the viewer's lastReadAt.
+ */
+export function computeIsUnread(
+  message: { senderId: string; createdAt: Date },
+  viewerId: string,
+  lastReadAt: Date | null,
+): boolean {
+  if (message.senderId === viewerId) return false; // own messages always read
+  if (lastReadAt === null) return true; // no read record → all partner messages unread
+  return message.createdAt > lastReadAt;
+}
+
+/**
  * #151 — Checks whether a reader is allowed to fetch messages from a conversation.
  * Non-participants and suspended conversations both return NOT_A_PARTICIPANT to
  * avoid leaking whether the conversation exists.

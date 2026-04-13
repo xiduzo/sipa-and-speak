@@ -77,22 +77,32 @@ export default function ChatScreen() {
           return (
             <View
               testID="message-bubble"
-              className={`mx-4 my-1 max-w-[80%] rounded-2xl px-3 py-2 ${isMine ? "self-end bg-primary" : "self-start bg-muted"}`}
+              className={`mx-4 my-1 max-w-[80%] rounded-2xl px-3 py-2 ${isMine ? "self-end bg-primary" : item.isUnread ? "self-start bg-muted border-l-2 border-primary" : "self-start bg-muted"}`}
             >
               {!isMine && (
                 <Text testID="message-sender" className="text-xs text-muted-foreground mb-1">
                   Match
                 </Text>
               )}
-              <Text className={isMine ? "text-primary-foreground" : "text-foreground"}>
+              <Text
+                className={`${isMine ? "text-primary-foreground" : "text-foreground"} ${item.isUnread && !isMine ? "font-semibold" : ""}`}
+              >
                 {item.content}
               </Text>
-              <Text
-                testID="message-timestamp"
-                className={`text-xs mt-1 ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}
-              >
-                {formatTime(item.createdAt)}
-              </Text>
+              <View className="flex-row items-center justify-end gap-1 mt-1">
+                {item.isUnread && !isMine && (
+                  <View
+                    testID="unread-indicator"
+                    className="w-2 h-2 rounded-full bg-primary"
+                  />
+                )}
+                <Text
+                  testID="message-timestamp"
+                  className={`text-xs ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+                >
+                  {formatTime(item.createdAt)}
+                </Text>
+              </View>
             </View>
           );
         }}
