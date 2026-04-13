@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -373,6 +373,9 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("SipAndSpeakMomentCompleted", (event) => {
     void handleSipAndSpeakMomentCompleted(event);
   });
+  domainEvents.on("MeetupNotAttended", (event) => {
+    void handleMeetupNotAttended(event);
+  });
 }
 
 // #91 — Notify both Students when a reschedule is accepted and meetup details are updated
@@ -448,6 +451,28 @@ async function handleMeetupRescheduleProposed(event: MeetupRescheduleProposedEve
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupRescheduleProposed notification", { meetupId, err });
+  }
+}
+
+// #101 — Notify both Students when meetup not attended; pair returns to Matched
+async function handleMeetupNotAttended(event: MeetupNotAttendedEvent): Promise<void> {
+  const { meetupId, studentAId, studentBId } = event;
+  const [tokensA, tokensB] = await Promise.all([
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, studentAId)),
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, studentBId)),
+  ]);
+  const allTokens = [...tokensA, ...tokensB];
+  if (allTokens.length === 0) return;
+  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+    to: token,
+    title: "Meetup not attended",
+    body: "The meetup was marked as not attended — you can schedule a new one",
+    data: { meetupId, type: "meetup_not_attended" },
+  }));
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MeetupNotAttended notification", { meetupId, err });
   }
 }
 
