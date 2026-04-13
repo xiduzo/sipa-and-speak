@@ -123,6 +123,13 @@ export interface AttendanceReportedEvent {
   reportedAt: Date;
 }
 
+export interface SipAndSpeakMomentCompletedEvent {
+  meetupId: string;
+  studentAId: string;
+  studentBId: string;
+  completedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -139,6 +146,7 @@ type DomainEventMap = {
   MeetupRescheduled: [MeetupRescheduledEvent];
   MeetupRescheduleDeclined: [MeetupRescheduleDeclinedEvent];
   AttendanceReported: [AttendanceReportedEvent];
+  SipAndSpeakMomentCompleted: [SipAndSpeakMomentCompletedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

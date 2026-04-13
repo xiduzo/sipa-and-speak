@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -370,6 +370,9 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("MeetupRescheduleDeclined", (event) => {
     void handleMeetupRescheduleDeclined(event);
   });
+  domainEvents.on("SipAndSpeakMomentCompleted", (event) => {
+    void handleSipAndSpeakMomentCompleted(event);
+  });
 }
 
 // #91 — Notify both Students when a reschedule is accepted and meetup details are updated
@@ -445,6 +448,28 @@ async function handleMeetupRescheduleProposed(event: MeetupRescheduleProposedEve
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupRescheduleProposed notification", { meetupId, err });
+  }
+}
+
+// #99 — Notify both Students when their S&S moment is completed (both attended)
+async function handleSipAndSpeakMomentCompleted(event: SipAndSpeakMomentCompletedEvent): Promise<void> {
+  const { meetupId, studentAId, studentBId } = event;
+  const [tokensA, tokensB] = await Promise.all([
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, studentAId)),
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, studentBId)),
+  ]);
+  const allTokens = [...tokensA, ...tokensB];
+  if (allTokens.length === 0) return;
+  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+    to: token,
+    title: "Your S&S moment is complete! 🎉",
+    body: "You both attended — congratulations on your connection!",
+    data: { meetupId, type: "sip_and_speak_moment_completed" },
+  }));
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send SipAndSpeakMomentCompleted notification", { meetupId, err });
   }
 }
 
