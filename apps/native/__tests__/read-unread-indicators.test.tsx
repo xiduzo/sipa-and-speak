@@ -31,10 +31,14 @@ jest.mock("react-native", () => {
 
 // ── Router mock ───────────────────────────────────────────────────────────────
 
-jest.mock("expo-router", () => ({
-  useLocalSearchParams: () => ({ conversationId: "conv-1" }),
-  useRouter: () => ({ back: jest.fn() }),
-}));
+jest.mock("expo-router", () => {
+  const { useEffect } = require("react");
+  return {
+    useLocalSearchParams: () => ({ conversationId: "conv-1" }),
+    useRouter: () => ({ back: jest.fn() }),
+    useFocusEffect: (cb: () => void) => { useEffect(() => { cb(); }, []); }, // eslint-disable-line react-hooks/exhaustive-deps
+  };
+});
 
 // ── Auth mock ─────────────────────────────────────────────────────────────────
 
@@ -61,6 +65,9 @@ jest.mock("@/utils/trpc", () => ({
           }),
         }),
       },
+      markRead: {
+        mutationOptions: () => ({ mutationFn: jest.fn().mockResolvedValue({}) }),
+      },
     },
     messaging: {
       sendMessage: {
@@ -69,6 +76,9 @@ jest.mock("@/utils/trpc", () => ({
           onSuccess: opts.onSuccess,
           onError: opts.onError,
         }),
+      },
+      setPresence: {
+        mutationOptions: () => ({ mutationFn: jest.fn().mockResolvedValue({ ok: true }) }),
       },
     },
   },

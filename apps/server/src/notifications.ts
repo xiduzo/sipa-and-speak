@@ -4,11 +4,11 @@
  * Wires domain events to Expo Push API calls.
  * Fire-and-forget: errors are logged but never thrown to callers.
  */
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
+import { userDeviceToken, userLanguage, conversationPresence } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -388,6 +388,9 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("MessagingDeclineOutcome", (event) => {
     void handleMessagingDeclineOutcome(event);
   });
+  domainEvents.on("MessageSent", (event) => {
+    void handleMessageSent(event);
+  });
 }
 
 // #91 — Notify both Students when a reschedule is accepted and meetup details are updated
@@ -683,6 +686,84 @@ export async function handleMessagingDeclineOutcome(event: MessagingDeclineOutco
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send MessagingDeclineOutcome notification", { meetupId, err });
+  }
+}
+
+// #152 — Notify recipient when a new message arrives
+export async function handleMessageSent(event: MessageSentEvent): Promise<void> {
+  const { conversationId, senderId, recipientId, senderName } = event;
+
+  // #153 — Suppress push if recipient is actively viewing this conversation
+  const [presence] = await db
+    .select({ activeUntil: conversationPresence.activeUntil })
+    .from(conversationPresence)
+    .where(
+      and(
+        eq(conversationPresence.studentId, recipientId),
+        eq(conversationPresence.conversationId, conversationId),
+      ),
+    )
+    .limit(1);
+
+  if (presence && presence.activeUntil > new Date()) {
+    console.info("[push] Recipient is actively viewing — suppressing push", {
+      conversationId,
+      recipientId,
+    });
+    return;
+  }
+
+  const tokens = await db
+    .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(eq(userDeviceToken.userId, recipientId));
+
+  if (tokens.length === 0) {
+    console.info("[push] No device token for recipient — skipping new message notification", {
+      conversationId,
+      recipientId,
+    });
+    return;
+  }
+
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: senderName,
+    body: "sent you a message",
+    data: { conversationId, senderId, type: "message_received" },
+  }));
+
+  console.info("[push] Sending MessageSent notification", {
+    conversationId,
+    recipientId,
+    tokenCount: messages.length,
+  });
+
+  try {
+    const tickets = await sendExpoPushNotification(messages);
+
+    const staleTokenIds: string[] = [];
+    for (let i = 0; i < tickets.length; i++) {
+      const ticket = tickets[i];
+      if (ticket?.status === "error" && ticket.details?.error === "DeviceNotRegistered") {
+        const staleId = tokens[i]?.id;
+        if (staleId) staleTokenIds.push(staleId);
+      }
+    }
+
+    if (staleTokenIds.length > 0) {
+      await Promise.all(
+        staleTokenIds.map((id) => db.delete(userDeviceToken).where(eq(userDeviceToken.id, id))),
+      );
+      console.info("[push] Removed stale device tokens", { staleTokenIds });
+    }
+
+    console.info("[push] MessageSent notification delivery complete", {
+      conversationId,
+      tickets: tickets.map((t) => ({ status: t.status, id: t.id })),
+    });
+  } catch (err) {
+    console.error("[push] Failed to send MessageSent notification", { conversationId, err });
   }
 }
 

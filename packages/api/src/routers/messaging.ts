@@ -5,7 +5,8 @@ import { and, eq, isNull } from "drizzle-orm";
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 import { db } from "@sip-and-speak/db";
-import { meetup, messagingOptIn, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
+import { meetup, messagingOptIn, conversation, conversationPresence } from "@sip-and-speak/db/schema/sip-and-speak";
+import { user } from "@sip-and-speak/db/schema/auth";
 import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome, validateMessageContent, checkConversationAccess } from "./messaging-utils";
 import { persistMessage } from "./messaging-persist";
 
@@ -233,10 +234,23 @@ export const messagingRouter = router({
       }
 
       // #145 — Persist and return the created message
-      const created = await persistMessage({
+      const [created, senderResult] = await Promise.all([
+        persistMessage({
+          conversationId: input.conversationId,
+          senderId,
+          content: validation.trimmed,
+        }),
+        db.select({ name: user.name }).from(user).where(eq(user.id, senderId)).limit(1),
+      ]);
+
+      // #152 — Notify recipient about new message
+      const recipientId = conv!.user1Id === senderId ? conv!.user2Id : conv!.user1Id;
+      const senderName = senderResult[0]?.name ?? "Your match";
+      domainEvents.emit("MessageSent", {
         conversationId: input.conversationId,
         senderId,
-        content: validation.trimmed,
+        recipientId,
+        senderName,
       });
 
       console.log(
@@ -244,5 +258,51 @@ export const messagingRouter = router({
       );
 
       return created;
+    }),
+
+  /**
+   * #153 — Record whether the current Student is actively viewing a conversation.
+   * Active: upserts a presence record with a 30-second TTL.
+   * Inactive: sets activeUntil to epoch (immediately stale) so push resumes.
+   */
+  setPresence: protectedProcedure
+    .input(
+      z.object({
+        conversationId: z.string(),
+        active: z.boolean(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const studentId = ctx.session.user.id;
+      const PRESENCE_TTL_MS = 30_000;
+
+      if (input.active) {
+        const activeUntil = new Date(Date.now() + PRESENCE_TTL_MS);
+        await db
+          .insert(conversationPresence)
+          .values({ studentId, conversationId: input.conversationId, activeUntil })
+          .onConflictDoUpdate({
+            target: [conversationPresence.studentId, conversationPresence.conversationId],
+            set: { activeUntil },
+          });
+        console.log(
+          `[messaging] presence set active conversationId=${input.conversationId} studentId=${studentId} until=${activeUntil.toISOString()}`,
+        );
+      } else {
+        await db
+          .update(conversationPresence)
+          .set({ activeUntil: new Date(0) })
+          .where(
+            and(
+              eq(conversationPresence.studentId, studentId),
+              eq(conversationPresence.conversationId, input.conversationId),
+            ),
+          );
+        console.log(
+          `[messaging] presence set inactive conversationId=${input.conversationId} studentId=${studentId}`,
+        );
+      }
+
+      return { ok: true as const };
     }),
 });

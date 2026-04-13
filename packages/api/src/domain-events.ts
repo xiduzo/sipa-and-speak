@@ -180,6 +180,13 @@ export interface MessagingNudgeNeededEvent {
   pendingStudentId: string;
 }
 
+export interface MessageSentEvent {
+  conversationId: string;
+  senderId: string;
+  recipientId: string;
+  senderName: string;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -204,6 +211,7 @@ type DomainEventMap = {
   MessagingNudgeNeeded: [MessagingNudgeNeededEvent];
   ConversationOpened: [ConversationOpenedEvent];
   MessagingDeclineOutcome: [MessagingDeclineOutcomeEvent];
+  MessageSent: [MessageSentEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {
