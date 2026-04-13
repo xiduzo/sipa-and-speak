@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { Button, Spinner } from "heroui-native";
 import { useState, useCallback } from "react";
-import { FlatList, Image, RefreshControl, Share, Text, View } from "react-native";
+import { FlatList, Image, Pressable, RefreshControl, Share, Text, View } from "react-native";
 
 import { CandidateCard } from "@/components/candidate-card";
 import { Container } from "@/components/container";
@@ -35,6 +36,7 @@ function EmptySuggestionState() {
 
 function IncomingRequestItem({
   request,
+  onPress,
 }: {
   request: {
     matchRequestId: string;
@@ -45,10 +47,12 @@ function IncomingRequestItem({
     requesterTargetedLanguages: string[];
     createdAt: string;
   };
+  onPress: () => void;
 }) {
   return (
-    <View
+    <Pressable
       testID="incoming-request-item"
+      onPress={onPress}
       className="bg-card border border-border rounded-2xl p-4 mb-3"
     >
       <View className="flex-row items-center gap-3 mb-2">
@@ -92,11 +96,12 @@ function IncomingRequestItem({
           ))}
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
 
 export default function SuggestionsScreen() {
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
   const discoverQuery = useQuery(trpc.matching.discover.queryOptions({}));
@@ -133,7 +138,11 @@ export default function SuggestionsScreen() {
                 People who want to meet you
               </Text>
               {incomingRequests.map((req) => (
-                <IncomingRequestItem key={req.matchRequestId} request={req} />
+                <IncomingRequestItem
+                    key={req.matchRequestId}
+                    request={req}
+                    onPress={() => router.push({ pathname: "/partner/[id]", params: { id: req.requesterId, matchRequestId: req.matchRequestId } })}
+                  />
               ))}
             </View>
           )}
@@ -162,7 +171,11 @@ export default function SuggestionsScreen() {
                   People who want to meet you
                 </Text>
                 {incomingRequests.map((req) => (
-                  <IncomingRequestItem key={req.matchRequestId} request={req} />
+                  <IncomingRequestItem
+                    key={req.matchRequestId}
+                    request={req}
+                    onPress={() => router.push({ pathname: "/partner/[id]", params: { id: req.requesterId, matchRequestId: req.matchRequestId } })}
+                  />
                 ))}
               </View>
             )}
