@@ -116,6 +116,7 @@ function StackLayout() {
       <Stack.Screen name="map" options={{ title: "Campus Map" }} />
       <Stack.Screen name="suggestions" options={{ title: "Suggestions" }} />
       <Stack.Screen name="respond-meetup" options={{ title: "Respond to Proposal" }} />
+      <Stack.Screen name="confirmed-meetups" options={{ title: "Confirmed Meetups" }} />
       <Stack.Screen name="modal" options={{ title: "Modal", presentation: "modal" }} />
     </Stack>
   );

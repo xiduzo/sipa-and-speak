@@ -574,4 +574,99 @@ export const meetupRouter = router({
 
     return result?.count ?? 0;
   }),
+
+  // #81/#85 — Cancel a confirmed meetup → cancelled status, emit MeetupCancelled
+  cancelMeetup: protectedProcedure
+    .input(z.object({ meetupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      const isParticipant =
+        existing.proposerId === userId || existing.receiverId === userId;
+      if (!isParticipant) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this meetup" });
+      }
+
+      if (existing.status !== "confirmed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only confirmed meetups can be cancelled" });
+      }
+
+      // #81 — meetup must not have already occurred
+      const meetupDateTime = new Date(`${existing.date}T${existing.time}:00`);
+      if (meetupDateTime <= new Date()) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This meetup has already taken place and cannot be cancelled" });
+      }
+
+      const [updated] = await db
+        .update(meetup)
+        .set({ status: "cancelled" })
+        .where(eq(meetup.id, input.meetupId))
+        .returning();
+
+      const otherStudentId =
+        existing.proposerId === userId ? existing.receiverId : existing.proposerId;
+
+      domainEvents.emit("MeetupCancelled", {
+        meetupId: existing.id,
+        cancelledById: userId,
+        otherStudentId,
+        cancelledAt: new Date(),
+      });
+
+      return updated;
+    }),
+
+  // Query confirmed meetups for the current user
+  getConfirmed: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const rows = await db
+      .select({
+        meetup: meetup,
+        venue: {
+          id: venue.id,
+          name: venue.name,
+          description: venue.description,
+          photoUrl: venue.photoUrl,
+        },
+        partner: {
+          id: sql<string>`partner.id`.as("gc_partner_id"),
+          name: sql<string>`partner.name`.as("gc_partner_name"),
+          image: sql<string | null>`partner.image`.as("gc_partner_image"),
+        },
+      })
+      .from(meetup)
+      .innerJoin(venue, eq(meetup.venueId, venue.id))
+      .innerJoin(
+        sql`"user" as partner`,
+        sql`partner.id = CASE WHEN ${meetup.proposerId} = ${userId} THEN ${meetup.receiverId} ELSE ${meetup.proposerId} END`,
+      )
+      .where(
+        and(
+          eq(meetup.status, "confirmed"),
+          or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
+        ),
+      )
+      .orderBy(meetup.date, meetup.time);
+
+    return rows.map((row) => ({
+      meetupId: row.meetup.id,
+      date: row.meetup.date,
+      time: row.meetup.time,
+      status: row.meetup.status,
+      isPast: new Date(`${row.meetup.date}T${row.meetup.time}:00`) <= new Date(),
+      venue: row.venue,
+      partner: row.partner,
+    }));
+  }),
 });
