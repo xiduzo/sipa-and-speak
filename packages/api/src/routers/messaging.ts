@@ -6,7 +6,7 @@ import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 import { db } from "@sip-and-speak/db";
 import { meetup, messagingOptIn, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
-import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome, validateMessageContent } from "./messaging-utils";
+import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome, validateMessageContent, checkConversationAccess } from "./messaging-utils";
 
 export const messagingRouter = router({
   /**
@@ -201,15 +201,37 @@ export const messagingRouter = router({
         content: z.string(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const senderId = ctx.session.user.id;
+
+      // #146 — Access gate: fail fast before any validation or DB write
+      const [conv] = await db
+        .select({
+          id: conversation.id,
+          user1Id: conversation.user1Id,
+          user2Id: conversation.user2Id,
+          status: conversation.status,
+        })
+        .from(conversation)
+        .where(eq(conversation.id, input.conversationId))
+        .limit(1);
+
+      const access = checkConversationAccess(conv, senderId);
+      if (!access.allowed) {
+        const code = access.error === "CONVERSATION_NOT_FOUND" ? "NOT_FOUND" : "FORBIDDEN";
+        console.log(
+          `[messaging] access denied conversationId=${input.conversationId} senderId=${senderId} reason=${access.error}`,
+        );
+        throw new TRPCError({ code, message: access.error });
+      }
+
       // #144 — Content validation
       const validation = validateMessageContent(input.content);
       if (!validation.valid) {
         throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
       }
 
-      // #146 — Access gate (added in task #146)
       // #145 — Persistence (added in task #145)
-      return { id: "" as string, conversationId: "" as string, senderId: "" as string, content: validation.trimmed, createdAt: new Date() };
+      return { id: "" as string, conversationId: input.conversationId, senderId, content: validation.trimmed, createdAt: new Date() };
     }),
 });
