@@ -111,6 +111,15 @@ export function CandidateCard({
         </View>
       )}
 
+      {/* #124 — Confirmation feedback */}
+      {sendRequestMutation.isSuccess && (
+        <View testID="confirmation-message" className="bg-primary/10 rounded-xl p-2 mb-2">
+          <Text className="text-primary text-xs text-center">
+            Request sent! We'll let you know when they respond.
+          </Text>
+        </View>
+      )}
+
       {/* #123 — Conflict error */}
       {sendConflictError && (
         <View testID="conflict-error-message" className="bg-danger/10 rounded-xl p-2 mb-2">
