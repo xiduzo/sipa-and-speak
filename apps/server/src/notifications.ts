@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -361,6 +361,33 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("MeetupCancelled", (event) => {
     void handleMeetupCancelled(event);
   });
+  domainEvents.on("MeetupRescheduleProposed", (event) => {
+    void handleMeetupRescheduleProposed(event);
+  });
+}
+
+// #89 — Notify the other Student of a reschedule proposal
+async function handleMeetupRescheduleProposed(event: MeetupRescheduleProposedEvent): Promise<void> {
+  const { meetupId, receiverId, venueName, date, time } = event;
+  const tokens = await db
+    .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(eq(userDeviceToken.userId, receiverId));
+  if (tokens.length === 0) {
+    console.info("[push] No device token for receiver — skipping reschedule notification", { meetupId, receiverId });
+    return;
+  }
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: "Reschedule request",
+    body: `Your partner wants to move your meetup to ${venueName} · ${date} at ${time}`,
+    data: { meetupId, type: "meetup_reschedule_proposed" },
+  }));
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MeetupRescheduleProposed notification", { meetupId, err });
+  }
 }
 
 // #83 — Notify the other Student of the cancellation

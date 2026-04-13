@@ -88,6 +88,7 @@ export interface MeetupRescheduleProposedEvent {
   proposerId: string;
   receiverId: string;
   venueId: string;
+  venueName: string;
   date: string;
   time: string;
   proposedAt: Date;
