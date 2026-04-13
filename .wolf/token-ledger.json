@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-10T10:02:44.507Z",
   "lifetime": {
-    "total_tokens_estimated": 528126,
-    "total_reads": 343,
-    "total_writes": 495,
-    "total_sessions": 31,
-    "anatomy_hits": 272,
-    "anatomy_misses": 71,
-    "repeated_reads_blocked": 79,
-    "estimated_savings_vs_bare_cli": 281055
+    "total_tokens_estimated": 579686,
+    "total_reads": 357,
+    "total_writes": 519,
+    "total_sessions": 32,
+    "anatomy_hits": 285,
+    "anatomy_misses": 72,
+    "repeated_reads_blocked": 89,
+    "estimated_savings_vs_bare_cli": 315321
   },
   "sessions": [
     {
@@ -5256,6 +5256,227 @@
         "writes_count": 32,
         "repeated_reads_blocked": 6,
         "anatomy_lookups": 26
+      }
+    },
+    {
+      "id": "session-2026-04-13-1817",
+      "started": "2026-04-13T16:17:54.201Z",
+      "ended": "2026-04-13T17:16:36.103Z",
+      "reads": [
+        {
+          "file": "/Users/sander/.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic3_loop_progress.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/meetup.ts",
+          "tokens_estimated": 5093,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts",
+          "tokens_estimated": 760,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/sip-and-speak.ts",
+          "tokens_estimated": 3304,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 3630,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/propose-meetup.tsx",
+          "tokens_estimated": 1591,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/index.tsx",
+          "tokens_estimated": 5398,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/suggestions.tsx",
+          "tokens_estimated": 2196,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1531,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/.agents/skills/wtf.implement-task/SKILL.md",
+          "tokens_estimated": 2446,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/__tests__/notifications-match-accepted.test.ts",
+          "tokens_estimated": 1303,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/matching.test.ts",
+          "tokens_estimated": 758,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/candidate-card.test.tsx",
+          "tokens_estimated": 830,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/partner/[id].tsx",
+          "tokens_estimated": 2824,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts",
+          "tokens_estimated": 392,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/meetup.ts",
+          "tokens_estimated": 1020,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 77,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 1102,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/__tests__/notifications-meetup-confirmed.test.ts",
+          "tokens_estimated": 1146,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/meetup.ts",
+          "tokens_estimated": 1006,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/__tests__/notifications-meetup-counter-proposed.test.ts",
+          "tokens_estimated": 983,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/meetup.ts",
+          "tokens_estimated": 444,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/__tests__/notifications-meetup-declined.test.ts",
+          "tokens_estimated": 1012,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/meetup.ts",
+          "tokens_estimated": 369,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/meetup-rounds.test.ts",
+          "tokens_estimated": 256,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/respond-meetup.tsx",
+          "tokens_estimated": 3165,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/respond-meetup.tsx",
+          "tokens_estimated": 3171,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 50,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/respond-meetup.test.tsx",
+          "tokens_estimated": 1631,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/respond-meetup.test.tsx",
+          "tokens_estimated": 63,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts",
+          "tokens_estimated": 235,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/meetup.ts",
+          "tokens_estimated": 893,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 85,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 288,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/__tests__/notifications-meetup-cancelled.test.ts",
+          "tokens_estimated": 627,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/confirmed-meetups.tsx",
+          "tokens_estimated": 996,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 76,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic3_loop_progress.md",
+          "tokens_estimated": 809,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 31664,
+        "output_tokens_estimated": 19896,
+        "reads_count": 14,
+        "writes_count": 24,
+        "repeated_reads_blocked": 10,
+        "anatomy_lookups": 13
       }
     }
   ],

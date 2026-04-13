@@ -1,12 +1,12 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T16:17:26.786Z
-> Files: 232 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T17:16:27.877Z
+> Files: 240 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/
 
 - `MEMORY.md` — Memory Index (~73 tok)
-- `project_epic3_loop_progress.md` — Completed (merged to main) (~449 tok)
+- `project_epic3_loop_progress.md` — Completed (merged to main) (~722 tok)
 
 ## ./
 
@@ -296,15 +296,18 @@
 - `notification-match-accepted.test.tsx` — Tests for task #136 — "Connect Now" CTA in acceptance notification (~1085 tok)
 - `notification-match-declined.test.tsx` — Tests for task #137 — Suggestion list deep-link in decline notification (~861 tok)
 - `partner-profile.test.tsx` — Tests for tasks: (~3997 tok)
+- `respond-meetup.test.tsx` — Tests for task #71 — Build proposal response UI (accept / counter-propose / decline) (~1671 tok)
 - `suggestions.test.tsx` — Tests for tasks: (~2224 tok)
 
 ## apps/native/app/
 
-- `_layout.tsx` — unstable_settings — uses useEffect, useMutation, useRouter, useQuery (~1506 tok)
+- `_layout.tsx` — unstable_settings (~1556 tok)
+- `confirmed-meetups.tsx` — ConfirmedMeetupsScreen (~996 tok)
 - `edit-profile.tsx` — LANGUAGES — uses useRouter, useQuery, useMutation (~3810 tok)
 - `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)
 - `index.tsx` — LANGUAGES (~5398 tok)
 - `propose-meetup.tsx` — ProposeMeetupScreen (~1591 tok)
+- `respond-meetup.tsx` — RespondMeetupScreen (~3171 tok)
 - `review-profile.tsx` — INTERESTS_LABEL — uses useRouter, useQuery, useMutation (~2394 tok)
 - `suggestions.tsx` — APP_SHARE_URL (~2196 tok)
 
@@ -355,12 +358,16 @@
 ## apps/server/src/
 
 - `index.ts` — Wire domain event → push notification handlers on server start (~768 tok)
-- `notifications.ts` — Push notification service — Expo Push Notifications (~2656 tok)
+- `notifications.ts` — Push notification service — Expo Push Notifications (~3899 tok)
 
 ## apps/server/src/__tests__/
 
 - `notifications-match-accepted.test.ts` — Tests for task #134 — Push notification on MatchRequestAccepted (~1303 tok)
 - `notifications-match-declined.test.ts` — Tests for task #135 — Push notification on MatchRequestDeclined (~1377 tok)
+- `notifications-meetup-cancelled.test.ts` — Tests for task #83 — Push notification on MeetupCancelled (~627 tok)
+- `notifications-meetup-confirmed.test.ts` — Tests for task #75 — Push notification on MeetupConfirmed (~1146 tok)
+- `notifications-meetup-counter-proposed.test.ts` — Tests for task #76 — Push notification on MeetupCounterProposed (~983 tok)
+- `notifications-meetup-declined.test.ts` — Tests for task #77 — Push notification on MeetupDeclined (~1012 tok)
 
 ## apps/web/
 
@@ -428,12 +435,13 @@
 ## packages/api/src/
 
 - `context.ts` — Exports CreateContextOptions, createContext, Context (~126 tok)
-- `domain-events.ts` — Exports LanguageProfileUpdatedEvent, InterestProfileUpdatedEvent, ProfileCompletedEvent, MatchReques (~528 tok)
+- `domain-events.ts` — The student who just counter-proposed (new proposer after role swap) (~811 tok)
 - `index.ts` — tRPC router (~156 tok)
 
 ## packages/api/src/__tests__/
 
 - `matching.test.ts` — Tests for: (~758 tok)
+- `meetup-rounds.test.ts` — Tests for task #73 — Enforce max 3 counter-proposal rounds (~256 tok)
 
 ## packages/api/src/routers/
 
@@ -441,7 +449,7 @@
 - `index.ts` — tRPC router: 2 procedures (~221 tok)
 - `matching-utils.ts` — Haversine distance in km between two lat/lng points (~1049 tok)
 - `matching.ts` — tRPC router: 5 procedures (~4728 tok)
-- `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~2933 tok)
+- `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~5974 tok)
 - `profile.ts` — tRPC router: 6 procedures (~4644 tok)
 - `venue-admin.ts` — Exports adminVenueRouter (~1166 tok)
 - `venue.ts` — Zod schemas: venueTagEnum (~1054 tok)

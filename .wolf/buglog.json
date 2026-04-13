@@ -1298,6 +1298,134 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-13T16:14:31.607Z"
+    },
+    {
+      "id": "bug-081",
+      "timestamp": "2026-04-13T16:22:39.784Z",
+      "error_message": "Missing error handling in function",
+      "file": "apps/server/src/notifications.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T16:22:39.784Z"
+    },
+    {
+      "id": "bug-082",
+      "timestamp": "2026-04-13T16:23:52.491Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/meetup.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call | Also: // #77 — Decline a pending proposal → reset to Matched state; declineProposal: protectedProcedure",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T16:26:15.921Z"
+    },
+    {
+      "id": "bug-083",
+      "timestamp": "2026-04-13T16:27:42.139Z",
+      "error_message": "Missing guard clause",
+      "file": "packages/api/src/routers/meetup.ts",
+      "root_cause": "No early return/throw for edge case: !row",
+      "fix": "Added guard clause: if (!row)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T16:27:42.139Z"
+    },
+    {
+      "id": "bug-084",
+      "timestamp": "2026-04-13T16:29:47.581Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Had \"modal\"",
+      "fix": "Changed to \"respond-meetup\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T16:29:47.581Z"
+    },
+    {
+      "id": "bug-085",
+      "timestamp": "2026-04-13T16:33:59.663Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/__tests__/respond-meetup.test.tsx",
+      "root_cause": "Had \"Round 1\"",
+      "fix": "Changed to \") : String(roundChildren);\n    expect(roundText).",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T16:33:59.663Z"
+    },
+    {
+      "id": "bug-086",
+      "timestamp": "2026-04-13T16:39:31.189Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/meetup.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T16:39:31.189Z"
+    },
+    {
+      "id": "bug-087",
+      "timestamp": "2026-04-13T16:39:51.697Z",
+      "error_message": "Missing error handling in function",
+      "file": "apps/server/src/notifications.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T16:39:51.697Z"
+    },
+    {
+      "id": "bug-088",
+      "timestamp": "2026-04-13T17:15:30.232Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Had \"modal\"",
+      "fix": "Changed to \"confirmed-meetups\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T17:15:30.232Z"
     }
   ]
 }
