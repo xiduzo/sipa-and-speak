@@ -72,6 +72,13 @@ export default function ChatScreen() {
         data={messages}
         keyExtractor={(item) => item.id}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+        ListEmptyComponent={
+          <View testID="empty-conversation-state" className="flex-1 items-center justify-center py-16 px-8">
+            <Text className="text-muted-foreground text-center text-base">
+              No messages yet. Say hi to start the conversation!
+            </Text>
+          </View>
+        }
         renderItem={({ item }) => {
           const isMine = item.senderId === currentUserId;
           return (
