@@ -340,3 +340,43 @@ export const matchRequestRelations = relations(matchRequest, ({ one }) => ({
     relationName: "matchReceiver",
   }),
 }));
+
+export const studentMatch = pgTable(
+  "student_match",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    studentAId: text("student_a_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    studentBId: text("student_b_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    matchRequestId: text("match_request_id")
+      .notNull()
+      .references(() => matchRequest.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("student_match_studentA_idx").on(table.studentAId),
+    index("student_match_studentB_idx").on(table.studentBId),
+  ],
+);
+
+export const studentMatchRelations = relations(studentMatch, ({ one }) => ({
+  studentA: one(user, {
+    fields: [studentMatch.studentAId],
+    references: [user.id],
+    relationName: "studentMatchA",
+  }),
+  studentB: one(user, {
+    fields: [studentMatch.studentBId],
+    references: [user.id],
+    relationName: "studentMatchB",
+  }),
+  matchRequest: one(matchRequest, {
+    fields: [studentMatch.matchRequestId],
+    references: [matchRequest.id],
+  }),
+}));
