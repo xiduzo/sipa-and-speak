@@ -323,6 +323,54 @@ export const meetupRouter = router({
       return updated;
     }),
 
+  // #77 — Decline a pending proposal → reset to Matched state, emit MeetupDeclined
+  declineProposal: protectedProcedure
+    .input(z.object({ meetupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      if (existing.receiverId !== userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only the current responder can decline this proposal",
+        });
+      }
+
+      if (existing.status !== "pending") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This proposal has already been responded to",
+        });
+      }
+
+      const [updated] = await db
+        .update(meetup)
+        .set({ status: "declined" })
+        .where(eq(meetup.id, input.meetupId))
+        .returning();
+
+      // Pair returns to Matched state — no DB action needed, Matched state is
+      // derived from studentMatch record existing with no pending meetup.
+      domainEvents.emit("MeetupDeclined", {
+        meetupId: existing.id,
+        proposerId: existing.proposerId,
+        receiverId: existing.receiverId,
+        declinedAt: new Date(),
+      });
+
+      return updated;
+    }),
+
   // #75 — Accept a pending proposal → confirm meetup, emit MeetupConfirmed
   acceptProposal: protectedProcedure
     .input(z.object({ meetupId: z.string() }))
