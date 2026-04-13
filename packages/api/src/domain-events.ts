@@ -144,6 +144,20 @@ export interface MessagingOptInPromptedEvent {
   promptedAt: Date;
 }
 
+export interface MessagingAcceptedEvent {
+  meetupId: string;
+  studentId: string;
+  partnerId: string;
+  respondedAt: Date;
+}
+
+export interface MessagingDeclinedEvent {
+  meetupId: string;
+  studentId: string;
+  partnerId: string;
+  respondedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -163,6 +177,8 @@ type DomainEventMap = {
   SipAndSpeakMomentCompleted: [SipAndSpeakMomentCompletedEvent];
   MeetupNotAttended: [MeetupNotAttendedEvent];
   MessagingOptInPrompted: [MessagingOptInPromptedEvent];
+  MessagingAccepted: [MessagingAcceptedEvent];
+  MessagingDeclined: [MessagingDeclinedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

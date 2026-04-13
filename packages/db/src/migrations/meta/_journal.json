@@ -57,6 +57,13 @@
       "when": 1776105551308,
       "tag": "0007_wooden_texas_twister",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776108828439,
+      "tag": "0008_pink_the_order",
+      "breakpoints": true
     }
   ]
 }
