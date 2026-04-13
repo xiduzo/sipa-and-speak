@@ -19,6 +19,10 @@ export default function PartnerProfileScreen() {
     trpc.profile.getCandidateComments.queryOptions({ candidateUserId: id }),
   );
 
+  const statusQuery = useQuery(
+    trpc.matching.getMatchRequestStatus.queryOptions({ candidateUserId: id }),
+  );
+
   const sendRequestMutation = useMutation(
     trpc.matching.sendMatchRequest.mutationOptions(),
   );
@@ -57,6 +61,9 @@ export default function PartnerProfileScreen() {
 
   const profile = profileQuery.data;
   const comments = commentsQuery.data ?? [];
+  const requestAlreadySent =
+    (statusQuery.data !== undefined && statusQuery.data.matchRequestStatus !== "none") ||
+    sendRequestMutation.isSuccess;
 
   return (
     <Container isScrollable={false}>
@@ -166,22 +173,26 @@ export default function PartnerProfileScreen() {
           )}
         </View>
 
-        {/* #122 — Send Request */}
-        <Button
-          testID="send-request-button"
-          variant="primary"
-          isDisabled={sendRequestMutation.isPending || sendRequestMutation.isSuccess}
-          onPress={() => sendRequestMutation.mutate({ receiverId: id })}
-          className="mb-4"
-        >
-          {sendRequestMutation.isPending ? (
-            <Spinner size="sm" />
-          ) : (
-            <Button.Label>
-              {sendRequestMutation.isSuccess ? "Request Sent" : "Send Request"}
-            </Button.Label>
-          )}
-        </Button>
+        {/* #120/#122 — Contextual Send Request */}
+        {requestAlreadySent ? (
+          <View testID="request-sent-indicator" className="bg-muted rounded-xl p-4 mb-4 items-center">
+            <Text className="text-muted-foreground font-medium">Request Sent</Text>
+          </View>
+        ) : (
+          <Button
+            testID="send-request-button"
+            variant="primary"
+            isDisabled={sendRequestMutation.isPending || statusQuery.isPending}
+            onPress={() => sendRequestMutation.mutate({ receiverId: id })}
+            className="mb-4"
+          >
+            {sendRequestMutation.isPending ? (
+              <Spinner size="sm" />
+            ) : (
+              <Button.Label>Send Request</Button.Label>
+            )}
+          </Button>
+        )}
       </ScrollView>
     </Container>
   );

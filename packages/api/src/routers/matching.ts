@@ -336,6 +336,24 @@ export const matchingRouter = router({
       };
     }),
 
+  getMatchRequestStatus: protectedProcedure
+    .input(z.object({ candidateUserId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const requesterId = ctx.session.user.id;
+      const existing = await db.query.matchRequest.findFirst({
+        where: and(
+          eq(matchRequest.requesterId, requesterId),
+          eq(matchRequest.receiverId, input.candidateUserId),
+        ),
+      });
+      const status = existing?.status;
+      const matchRequestStatus =
+        status === "pending" || status === "accepted" || status === "declined"
+          ? status
+          : ("none" as const);
+      return { matchRequestStatus };
+    }),
+
   sendMatchRequest: protectedProcedure
     .input(z.object({ receiverId: z.string() }))
     .mutation(async ({ ctx, input }) => {
