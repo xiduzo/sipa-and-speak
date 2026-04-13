@@ -6,7 +6,7 @@ import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 import { db } from "@sip-and-speak/db";
 import { meetup, messagingOptIn, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
-import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome } from "./messaging-utils";
+import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome, validateMessageContent } from "./messaging-utils";
 
 export const messagingRouter = router({
   /**
@@ -201,8 +201,15 @@ export const messagingRouter = router({
         content: z.string(),
       }),
     )
-    .mutation(async () => {
-      // Stub — implementation added incrementally in #144, #146, #145
-      return { id: "" as string, conversationId: "" as string, senderId: "" as string, content: "" as string, createdAt: new Date() };
+    .mutation(async ({ input }) => {
+      // #144 — Content validation
+      const validation = validateMessageContent(input.content);
+      if (!validation.valid) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
+      }
+
+      // #146 — Access gate (added in task #146)
+      // #145 — Persistence (added in task #145)
+      return { id: "" as string, conversationId: "" as string, senderId: "" as string, content: validation.trimmed, createdAt: new Date() };
     }),
 });
