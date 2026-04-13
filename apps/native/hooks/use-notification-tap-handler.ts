@@ -25,6 +25,12 @@ export function useNotificationTapHandler() {
       return;
     }
 
+    if (type === "message_received") {
+      const conversationId = typeof data?.conversationId === "string" ? data.conversationId : undefined;
+      if (conversationId) router.push(`/chat/${conversationId}`);
+      return;
+    }
+
     const matchRequestId = typeof data?.matchRequestId === "string" ? data.matchRequestId : undefined;
     const requesterId = typeof data?.requesterId === "string" ? data.requesterId : undefined;
 
