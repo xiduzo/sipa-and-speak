@@ -765,6 +765,7 @@ export const meetupRouter = router({
         proposerId: userId,
         receiverId: existing.proposerId === userId ? existing.receiverId : existing.proposerId,
         venueId: input.venueId,
+        venueName: venueRecord.name,
         date: input.date,
         time: input.time,
         proposedAt: new Date(),
