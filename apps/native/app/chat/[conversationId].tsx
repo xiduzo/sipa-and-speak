@@ -1,6 +1,7 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { authClient } from "@/lib/auth-client";
@@ -21,6 +22,25 @@ export default function ChatScreen() {
   const [showEmptyHint, setShowEmptyHint] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const listRef = useRef<FlatList>(null);
+  const queryClient = useQueryClient();
+
+  const markRead = useMutation(
+    trpc.chat.markRead.mutationOptions(),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      markRead.mutate(
+        { conversationId },
+        {
+          onSuccess: () => {
+            // Invalidate getMessages so isUnread indicators refresh
+            void queryClient.invalidateQueries({ queryKey: ["chat.getMessages"] });
+          },
+        },
+      );
+    }, [conversationId]),
+  );
 
   const { data } = useQuery(
     trpc.chat.getMessages.queryOptions(
