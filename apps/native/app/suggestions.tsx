@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import * as Notifications from "expo-notifications";
 import { Button, Spinner } from "heroui-native";
-import { useState, useCallback } from "react";
-import { FlatList, RefreshControl, Share, Text, View } from "react-native";
+import { useState, useCallback, useEffect } from "react";
+import { FlatList, Platform, RefreshControl, Share, Text, View } from "react-native";
 
 import { CandidateCard } from "@/components/candidate-card";
 import { Container } from "@/components/container";
@@ -33,8 +34,29 @@ function EmptySuggestionState() {
   );
 }
 
+function EnableNotificationsBanner() {
+  return (
+    <View
+      testID="enable-notifications-banner"
+      className="bg-muted border border-border rounded-xl px-4 py-3 mb-4 flex-row items-center gap-3"
+    >
+      <Text className="text-muted-foreground text-sm flex-1">
+        Enable notifications to be alerted instantly when someone wants to meet you.
+      </Text>
+    </View>
+  );
+}
+
 export default function SuggestionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
+  const [notificationsGranted, setNotificationsGranted] = useState(true);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    Notifications.getPermissionsAsync()
+      .then((perm) => setNotificationsGranted(perm.granted))
+      .catch(() => { /* ignore — banner is informational only */ });
+  }, []);
 
   const discoverQuery = useQuery(trpc.matching.discover.queryOptions({}));
 
@@ -60,6 +82,7 @@ export default function SuggestionsScreen() {
     return (
       <Container isScrollable={false}>
         <View className="flex-1 p-4">
+          {!notificationsGranted && <EnableNotificationsBanner />}
           <Text className="text-foreground text-2xl font-bold mb-4">Suggestions</Text>
           <EmptySuggestionState />
         </View>
@@ -77,9 +100,12 @@ export default function SuggestionsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListHeaderComponent={
-          <Text className="text-foreground text-2xl font-bold mb-4">
-            Suggestions
-          </Text>
+          <>
+            {!notificationsGranted && <EnableNotificationsBanner />}
+            <Text className="text-foreground text-2xl font-bold mb-4">
+              Suggestions
+            </Text>
+          </>
         }
         renderItem={({ item }) => (
           <CandidateCard
