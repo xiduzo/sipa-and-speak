@@ -35,6 +35,14 @@ export const unstable_settings = {
   initialRouteName: "(drawer)",
 };
 
+function useNotificationCategories() {
+  useEffect(() => {
+    void Notifications.setNotificationCategoryAsync("match_accepted", [
+      { identifier: "connect_now", buttonTitle: "Connect Now" },
+    ]);
+  }, []);
+}
+
 function useDeviceTokenRegistration(isLoggedIn: boolean) {
   const registerToken = useMutation(trpc.profile.registerDeviceToken.mutationOptions());
 
@@ -60,6 +68,7 @@ function AuthGuard() {
   const router = useRouter();
   const segments = useSegments();
 
+  useNotificationCategories();
   useDeviceTokenRegistration(!!session);
   useNotificationTapHandler();
 

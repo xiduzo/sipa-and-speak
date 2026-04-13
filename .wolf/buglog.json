@@ -1186,6 +1186,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-13T14:03:13.736Z"
+    },
+    {
+      "id": "bug-074",
+      "timestamp": "2026-04-13T14:49:18.812Z",
+      "error_message": "Missing error handling in function",
+      "file": "apps/server/src/notifications.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T14:49:18.812Z"
+    },
+    {
+      "id": "bug-075",
+      "timestamp": "2026-04-13T14:56:20.317Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/task-134-body.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→5 lines (2 removed) | Also: - Backend: push notification handler — new event h; - Database: `userDeviceToken` table (read)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-13T14:56:26.300Z"
     }
   ]
 }
