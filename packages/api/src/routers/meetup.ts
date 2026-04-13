@@ -1032,6 +1032,14 @@ export const meetupRouter = router({
               studentBId: existing.receiverId,
               completedAt: new Date(),
             });
+
+            // #138 — Prompt both Students to opt in to messaging after a completed meetup
+            domainEvents.emit("MessagingOptInPrompted", {
+              meetupId: input.meetupId,
+              studentAId: existing.proposerId,
+              studentBId: existing.receiverId,
+              promptedAt: new Date(),
+            });
           }
         } else {
           // #101 — At least one non-attendance → return pair to Matched (meetup closed)

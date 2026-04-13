@@ -1,12 +1,33 @@
 {
   "session_id": "session-2026-04-13-2001",
   "started": "2026-04-13T18:01:27.274Z",
-  "files_read": {},
+  "files_read": {
+    "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts": {
+      "count": 1,
+      "tokens": 4231,
+      "first_read": "2026-04-13T19:00:30.388Z"
+    },
+    "/Users/sander/personal/sip-and-speak/packages/api/src/routers/meetup.ts": {
+      "count": 2,
+      "tokens": 7091,
+      "first_read": "2026-04-13T19:00:30.729Z"
+    },
+    "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts": {
+      "count": 1,
+      "tokens": 888,
+      "first_read": "2026-04-13T19:00:49.939Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/server/src/__tests__/notifications-meetup-confirmed.test.ts": {
+      "count": 1,
+      "tokens": 1146,
+      "first_read": "2026-04-13T19:00:58.969Z"
+    }
+  },
   "files_written": [],
   "edit_counts": {},
-  "anatomy_hits": 0,
+  "anatomy_hits": 4,
   "anatomy_misses": 0,
-  "repeated_reads_warned": 0,
+  "repeated_reads_warned": 1,
   "cerebrum_warnings": 0,
   "stop_count": 0
 }
