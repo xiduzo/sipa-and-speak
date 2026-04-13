@@ -1,12 +1,12 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T17:24:20.987Z
-> Files: 245 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T18:00:36.014Z
+> Files: 244 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/
 
 - `MEMORY.md` — Memory Index (~73 tok)
-- `project_epic3_loop_progress.md` — Completed (merged to main) (~722 tok)
+- `project_epic3_loop_progress.md` — Completed (merged to main) (~838 tok)
 
 ## ./
 
@@ -364,7 +364,7 @@
 ## apps/server/src/
 
 - `index.ts` — Wire domain event → push notification handlers on server start (~768 tok)
-- `notifications.ts` — Push notification service — Expo Push Notifications (~3899 tok)
+- `notifications.ts` — Push notification service — Expo Push Notifications (~4231 tok)
 
 ## apps/server/src/__tests__/
 
@@ -374,6 +374,7 @@
 - `notifications-meetup-confirmed.test.ts` — Tests for task #75 — Push notification on MeetupConfirmed (~1146 tok)
 - `notifications-meetup-counter-proposed.test.ts` — Tests for task #76 — Push notification on MeetupCounterProposed (~983 tok)
 - `notifications-meetup-declined.test.ts` — Tests for task #77 — Push notification on MeetupDeclined (~1012 tok)
+- `notifications-reschedule-proposed.test.ts` — Tests for task #89 — Push notification on MeetupRescheduleProposed (~777 tok)
 
 ## apps/web/
 
@@ -441,7 +442,7 @@
 ## packages/api/src/
 
 - `context.ts` — Exports CreateContextOptions, createContext, Context (~126 tok)
-- `domain-events.ts` — The student who just counter-proposed (new proposer after role swap) (~811 tok)
+- `domain-events.ts` — The student who just counter-proposed (new proposer after role swap) (~888 tok)
 - `index.ts` — tRPC router (~156 tok)
 
 ## packages/api/src/__tests__/
@@ -455,7 +456,7 @@
 - `index.ts` — tRPC router: 2 procedures (~221 tok)
 - `matching-utils.ts` — Haversine distance in km between two lat/lng points (~1049 tok)
 - `matching.ts` — tRPC router: 5 procedures (~4728 tok)
-- `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~5974 tok)
+- `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~7091 tok)
 - `profile.ts` — tRPC router: 6 procedures (~4644 tok)
 - `venue-admin.ts` — Exports adminVenueRouter (~1166 tok)
 - `venue.ts` — Zod schemas: venueTagEnum (~1054 tok)
