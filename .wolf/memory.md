@@ -399,3 +399,21 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 15:02 | Edited apps/native/app/_layout.tsx | added optional chaining | ~328 |
+| 15:02 | Edited apps/native/app/_layout.tsx | 1→2 lines | ~21 |
+| 15:03 | Created apps/native/__tests__/notification-deep-link.test.tsx | — | ~1507 |
+| 16:03 | Edited apps/native/jest.config.ts | 2→3 lines | ~31 |
+| 16:03 | Created apps/native/jest-mocks/style-mock.ts | — | ~21 |
+| 16:03 | Created apps/native/hooks/use-notification-tap-handler.ts | — | ~350 |
+| 16:03 | Edited apps/native/app/_layout.tsx | added 1 import(s) | ~70 |
+| 16:03 | Edited apps/native/app/_layout.tsx | removed 28 lines | ~17 |
+| 16:04 | Created apps/native/__tests__/notification-deep-link.test.tsx | — | ~984 |
+| 16:04 | Edited apps/native/__tests__/notification-deep-link.test.tsx | 11→14 lines | ~146 |
+| 16:09 | Created apps/native/__tests__/suggestions.test.tsx | — | ~2224 |
+| 16:12 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic2_loop_progress.md | — | ~879 |
+| 16:12 | Session end: 12 writes across 7 files (_layout.tsx, notification-deep-link.test.tsx, jest.config.ts, style-mock.ts, use-notification-tap-handler.ts) | 5 reads | ~11624 tok |
+
+## Session: 2026-04-13 16:12
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|

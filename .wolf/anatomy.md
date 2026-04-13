@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T11:23:02.287Z
-> Files: 224 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T14:12:00.087Z
+> Files: 227 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -17,7 +17,7 @@
 
 ## ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/
 
-- `project_epic2_loop_progress.md` — Completed (implemented + verified + PR merged) (~874 tok)
+- `project_epic2_loop_progress.md` — Completed (implemented + verified + PR merged) (~824 tok)
 
 ## ./
 
@@ -283,7 +283,7 @@
 - `expo-env.d.ts` — / <reference types="expo/types" /> (~32 tok)
 - `global.css` — Styles: 5 rules, 28 vars (~506 tok)
 - `jest-setup.ts` — Expo 55 "winter" installs lazy getters on many globals (structuredClone, etc.) that try to (~252 tok)
-- `jest.config.ts` — Jest test configuration (~309 tok)
+- `jest.config.ts` — Declares config (~324 tok)
 - `metro.config.js` — Declares config (~141 tok)
 - `package.json` — Node.js package manifest (~655 tok)
 - `tsconfig.json` — TypeScript configuration (~75 tok)
@@ -303,12 +303,13 @@
 
 - `candidate-card.test.tsx` — Tests for task #122 — Send Request action on suggestion card (~602 tok)
 - `device-token-registration.test.tsx` — Tests for task #130 — Push notification when MatchRequestSent fires (~722 tok)
+- `notification-deep-link.test.tsx` — Tests for task #132 — Deep-link notification tap to requester's full profile (~1012 tok)
 - `partner-profile.test.tsx` — Tests for tasks: (~2889 tok)
-- `suggestions.test.tsx` — Tests for task #133 — Ensure incoming request appears on home page regardless of notification permis (~958 tok)
+- `suggestions.test.tsx` — Tests for tasks: (~2224 tok)
 
 ## apps/native/app/
 
-- `_layout.tsx` — unstable_settings (~1402 tok)
+- `_layout.tsx` — unstable_settings (~1435 tok)
 - `edit-profile.tsx` — LANGUAGES — uses useRouter, useQuery, useMutation (~3810 tok)
 - `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)
 - `index.tsx` — LANGUAGES (~5398 tok)
@@ -331,6 +332,10 @@
 
 - `app-theme-context.tsx` — AppThemeContext — uses useMemo, useCallback, useContext (~397 tok)
 
+## apps/native/hooks/
+
+- `use-notification-tap-handler.ts` — Exports useNotificationTapHandler (~350 tok)
+
 ## apps/native/jest-mocks/
 
 - `expo-winter.ts` — Stub for Expo 55 "winter" ESM runtime — uses import.meta which is incompatible with Jest CJS (~34 tok)
@@ -338,6 +343,7 @@
 - `react-native-reanimated.ts` — Minimal reanimated mock — avoids native binaries entirely. (~172 tok)
 - `react-native-safe-area-context.ts` — Stub for react-native-safe-area-context in tests (~81 tok)
 - `react-native-worklets.ts` — Stub for react-native-worklets — native binaries not available in jest environment (~31 tok)
+- `style-mock.ts` — Stub for CSS imports in Jest — not needed in tests (~21 tok)
 
 ## apps/native/lib/
 
