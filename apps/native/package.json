@@ -9,7 +9,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest --no-coverage"
   },
   "dependencies": {
     "@better-auth/expo": "catalog:",
@@ -59,9 +60,14 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@babel/runtime": "^7.29.2",
     "@sip-and-speak/config": "workspace:*",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
     "@types/node": "^24.10.0",
     "@types/react": "~19.2.10",
+    "jest": "^30.3.0",
+    "jest-expo": "^55.0.15",
     "typescript": "^5"
   }
 }

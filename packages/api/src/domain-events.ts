@@ -15,10 +15,18 @@ export interface ProfileCompletedEvent {
   completedAt: Date;
 }
 
+export interface MatchRequestSentEvent {
+  matchRequestId: string;
+  requesterId: string;
+  receiverId: string;
+  sentAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
   ProfileCompleted: [ProfileCompletedEvent];
+  MatchRequestSent: [MatchRequestSentEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {
