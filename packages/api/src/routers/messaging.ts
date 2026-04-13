@@ -6,7 +6,8 @@ import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 import { db } from "@sip-and-speak/db";
 import { meetup, messagingOptIn, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
-import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome } from "./messaging-utils";
+import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome, validateMessageContent, checkConversationAccess } from "./messaging-utils";
+import { persistMessage } from "./messaging-persist";
 
 export const messagingRouter = router({
   /**
@@ -188,5 +189,60 @@ export const messagingRouter = router({
       );
 
       return { recorded: true as const };
+    }),
+
+  /**
+   * #143 — Stub: entry point called by the compose UI.
+   * Access-gate added in #146, validation in #144, persistence in #145.
+   */
+  sendMessage: protectedProcedure
+    .input(
+      z.object({
+        conversationId: z.string(),
+        content: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const senderId = ctx.session.user.id;
+
+      // #146 — Access gate: fail fast before any validation or DB write
+      const [conv] = await db
+        .select({
+          id: conversation.id,
+          user1Id: conversation.user1Id,
+          user2Id: conversation.user2Id,
+          status: conversation.status,
+        })
+        .from(conversation)
+        .where(eq(conversation.id, input.conversationId))
+        .limit(1);
+
+      const access = checkConversationAccess(conv, senderId);
+      if (!access.allowed) {
+        const code = access.error === "CONVERSATION_NOT_FOUND" ? "NOT_FOUND" : "FORBIDDEN";
+        console.log(
+          `[messaging] access denied conversationId=${input.conversationId} senderId=${senderId} reason=${access.error}`,
+        );
+        throw new TRPCError({ code, message: access.error });
+      }
+
+      // #144 — Content validation
+      const validation = validateMessageContent(input.content);
+      if (!validation.valid) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: validation.error });
+      }
+
+      // #145 — Persist and return the created message
+      const created = await persistMessage({
+        conversationId: input.conversationId,
+        senderId,
+        content: validation.trimmed,
+      });
+
+      console.log(
+        `[messaging] message sent conversationId=${input.conversationId} senderId=${senderId}`,
+      );
+
+      return created;
     }),
 });

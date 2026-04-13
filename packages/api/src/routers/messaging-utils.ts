@@ -46,6 +46,34 @@ export function isDeclineOutcome(
 }
 
 /**
+ * #146 — Checks whether a sender is allowed to post in a conversation.
+ * Returns `{ allowed: true }` or `{ allowed: false, error }`.
+ */
+export function checkConversationAccess(
+  conv: { user1Id: string; user2Id: string; status: "open" | "suspended" } | undefined,
+  senderId: string,
+): { allowed: true } | { allowed: false; error: "CONVERSATION_NOT_FOUND" | "NOT_A_PARTICIPANT" | "CONVERSATION_NOT_OPEN" } {
+  if (!conv) return { allowed: false, error: "CONVERSATION_NOT_FOUND" };
+  const isParticipant = conv.user1Id === senderId || conv.user2Id === senderId;
+  if (!isParticipant) return { allowed: false, error: "NOT_A_PARTICIPANT" };
+  if (conv.status !== "open") return { allowed: false, error: "CONVERSATION_NOT_OPEN" };
+  return { allowed: true };
+}
+
+/**
+ * #144 — Validates message content before persistence.
+ * Returns `{ valid: true, trimmed }` on success or `{ valid: false, error }` on failure.
+ */
+export function validateMessageContent(
+  content: string,
+): { valid: true; trimmed: string } | { valid: false; error: "EMPTY_CONTENT" | "TOO_LONG" } {
+  const trimmed = content.trim();
+  if (!trimmed) return { valid: false, error: "EMPTY_CONTENT" };
+  if (trimmed.length > 2000) return { valid: false, error: "TOO_LONG" };
+  return { valid: true, trimmed };
+}
+
+/**
  * Derives the partner's ID from a meetup's proposer/receiver pair.
  */
 export function getPartnerId(

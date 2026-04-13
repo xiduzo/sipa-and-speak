@@ -152,6 +152,8 @@ export const conversation = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     // #141 — FK to meetup; unique per meetup (at most one conversation per meetup pair)
     meetupId: text("meetup_id").references(() => meetup.id, { onDelete: "set null" }),
+    // #146 — Trust & Moderation can suspend a conversation; only "open" conversations accept messages
+    status: text("status", { enum: ["open", "suspended"] }).notNull().default("open"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
