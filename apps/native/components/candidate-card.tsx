@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Button, Spinner } from "heroui-native";
+import { useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 
 import { trpc } from "@/utils/trpc";
@@ -23,9 +24,15 @@ export function CandidateCard({
   interests,
 }: CandidateCardProps) {
   const router = useRouter();
-  const sendRequestMutation = useMutation(
-    trpc.matching.sendMatchRequest.mutationOptions(),
-  );
+  const [sendConflictError, setSendConflictError] = useState<string | null>(null);
+  const sendRequestMutation = useMutation({
+    ...trpc.matching.sendMatchRequest.mutationOptions(),
+    onError: (error: { data?: { code?: string } }) => {
+      if (error.data?.code === "CONFLICT") {
+        setSendConflictError("A match request to this candidate already exists.");
+      }
+    },
+  });
 
   function handlePress() {
     router.push(`/partner/${userId}` as never);
@@ -101,6 +108,13 @@ export function CandidateCard({
               </View>
             ))}
           </View>
+        </View>
+      )}
+
+      {/* #123 — Conflict error */}
+      {sendConflictError && (
+        <View testID="conflict-error-message" className="bg-danger/10 rounded-xl p-2 mb-2">
+          <Text className="text-danger text-xs text-center">{sendConflictError}</Text>
         </View>
       )}
 

@@ -189,3 +189,47 @@ describe("#120 — Contextual Send Request action on candidate profile", () => {
     expect(screen.queryByTestId("send-request-button")).toBeNull();
   });
 });
+
+// ─── #123: Duplicate match request prevention ──────────────────────────────
+
+describe("#123 — Duplicate match request prevention on candidate profile", () => {
+  it("shows conflict error message when a second request is attempted", async () => {
+    const conflictError = Object.assign(new Error("Conflict"), {
+      data: { code: "CONFLICT" },
+    });
+    mockSendMatchRequest.mockRejectedValue(conflictError);
+
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("send-request-button"));
+    fireEvent.press(screen.getByTestId("send-request-button"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("conflict-error-message")).toBeTruthy();
+    });
+  });
+
+  it("shows Send Request button (not indicator) when previous request was declined", async () => {
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "declined" });
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("send-request-button")).toBeTruthy();
+    });
+    expect(screen.queryByTestId("request-sent-indicator")).toBeNull();
+  });
+
+  it("allows re-requesting after a decline", async () => {
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "declined" });
+
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("send-request-button"));
+    fireEvent.press(screen.getByTestId("send-request-button"));
+
+    await waitFor(() => {
+      expect(mockSendMatchRequest).toHaveBeenCalledTimes(1);
+    });
+  });
+});
