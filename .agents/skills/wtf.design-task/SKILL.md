@@ -50,13 +50,9 @@ If the `designed` label is **absent**, continue silently.
 
 ### 3. Load the design steering document
 
-Check whether `docs/steering/DESIGN.md` exists:
+Use the Read tool to attempt reading `docs/steering/DESIGN.md`.
 
-```bash
-cat docs/steering/DESIGN.md 2>/dev/null
-```
-
-If the file **exists**: read it and keep it in context. Use its design principles, tokens, component patterns, and accessibility standards to inform every decision in this session. Do not surface it to the user — just apply it silently.
+If the file **exists**: keep its content in context. Use its design principles, tokens, component patterns, and accessibility standards to inform every decision in this session. Do not surface it to the user — just apply it silently.
 
 If the file **does not exist**, call `AskUserQuestion` with:
 
@@ -69,12 +65,12 @@ If the file **does not exist**, call `AskUserQuestion` with:
 
 ### 4. Explore the design system
 
-Use the Agent tool to search the codebase for:
+Use the Agent tool with these concrete searches (run in parallel):
 
-- Existing UI components relevant to this task
-- Design tokens (colors, spacing, typography) in use
-- Patterns from similar screens or flows
-- Any existing Figma references linked in related issues
+- `Glob('src/components/**/*', 'src/**/components/**/*', 'components/**/*')` — existing UI components; note file names that match domain objects or UI states in the Task
+- `Glob('**/{tokens,theme,variables,design-tokens}.{css,scss,ts,js,json}')` + `Grep` for CSS custom property declarations (`--`) or Tailwind config keys — design tokens in use (colors, spacing, typography)
+- `Glob('src/**/*.{stories,story}.{ts,tsx,js,jsx,mdx}')` — Storybook stories as pattern references for similar screens or flows
+- `Grep` for `figma.com` URLs across all `.md`, `.mdx`, and issue body files in the repo — existing Figma references linked in related issues or docs
 
 ### 5. Identify UI states from Gherkin
 
@@ -87,18 +83,39 @@ List these states explicitly — this becomes the design coverage checklist.
 
 ### 6. Ask about design assets
 
-Call `AskUserQuestion` with `question: "Do you have Figma frames ready to link?"`, `header: "Design assets"`, and `options: [{label: "Yes — I have Figma frames", description: "Collect frame URLs and map to UI states"}, {label: "No frames yet — scaffold from Gherkin", description: "Draft a component spec from the scenarios"}, {label: "Partial — some states designed, some not", description: "Collect available frames and scaffold the rest"}]`.
+Call `AskUserQuestion` with `question: "How would you like to handle design assets for this task?"`, `header: "Design assets"`, and `options`:
 
-- If all frames exist: collect frame URLs and map each to a UI state from step 5
-- If no frames exist: draft a component spec using the structure in `references/component-spec-template.md`, listing each state with its required elements and interactions
-- If partial frames exist (some states designed, some not): collect the available frame URLs, map them to the states they cover, and scaffold a component spec for the remaining uncovered states. Note which states are pending design in the Design Reference.
+- `{label: "I have Figma frames", description: "Provide frame URLs — I'll validate coverage against Gherkin scenarios"}`
+- `{label: "Generate designs for me", description: "I'll use Figma MCP to generate frames from the Gherkin scenarios and design system"}`
+- `{label: "Scaffold a spec only", description: "No Figma — produce a text component spec from the scenarios"}`
+- `{label: "Partial — some states designed", description: "Provide available frames; remaining states go to generate or scaffold"}`
+
+**Path A — Human provides frames:**
+Collect frame URLs. For each Gherkin scenario from step 5, check whether a frame covers it. Flag any scenario with no matching frame as a gap. Present the coverage matrix: scenario → frame URL (or ⚠ gap). If gaps exist, call `AskUserQuestion` asking whether to generate the missing frames (route to Path B) or leave them as pending.
+
+**Path B — AI generates via Figma MCP:**
+Check whether the Figma MCP tool `generate_figma_design` is available. If unavailable, warn the user and fall back to Path C (scaffold).
+
+If available: for each uncovered UI state, call `generate_figma_design` with:
+- The Gherkin scenario as the design brief
+- Component patterns and tokens from `docs/steering/DESIGN.md` (loaded in step 3)
+- Any shared components identified in the parent Feature's Design Handoff (if available)
+
+Collect the generated frame URLs and treat them as Path A frames from this point forward.
+
+**Path C — Scaffold spec only:**
+Draft a component spec using the structure in `references/component-spec-template.md`, listing each state with its required UI elements and interactions. No Figma frames — this is a text-only design brief for the developer.
+
+**Partial:**
+Collect available frame URLs, run Path A validation on covered states. For uncovered states, call `AskUserQuestion` asking whether to generate (Path B) or scaffold (Path C) the remainder.
 
 ### 7. Draft the Design Reference
 
 Produce the content for the Design Reference section of the Task:
 
-- Frame URLs mapped to UI states (or scaffolded component spec if no frames yet)
-- Component breakdown: which components are needed, which already exist, which are new
+- Frame URLs mapped to Gherkin scenarios (Path A/B), or scaffolded component spec (Path C)
+- Coverage matrix: scenario → frame URL or ⚠ pending
+- Component breakdown: which exist in codebase, which are new
 - Interaction notes: hover, focus, error states, transitions
 - Responsive behavior if applicable
 - Design tokens to apply
@@ -114,7 +131,7 @@ Apply edits, then proceed.
 > Note: read the current issue body first (`gh issue view <task_number>`), replace only the Design Reference section with the new content, and preserve all other sections unchanged. Write the full updated body to a temp file and use `--body-file`.
 
 ```bash
-gh issue edit <task_number> --body-file /tmp/updated-task-body.md
+gh issue edit <task_number> --body-file /tmp/wtf-design-task-body.md
 ```
 
 Add the `designed` lifecycle label to mark this step complete:

@@ -1,6 +1,6 @@
 ---
 name: wtf.steer-vision
-description: This skill should be used when a team wants to create or refine the project vision document — for example "create the vision document", "write our product constitution", "define the product principles", "document our bounded contexts", "what is our product vision", or "set up the steering docs". Generates docs/steering/VISION.md as a living document capturing product purpose, target users, principles, strategic goals, and bounded contexts. Generated once and refined — not regenerated from scratch.
+description: This skill should be used when a team wants to create or refine the project vision document — for example "create the vision document", "write our product constitution", "define the product principles", "document our bounded contexts", "what is our product vision", "set up the steering docs", "update our vision", "revise the product strategy", "align on product goals", "what are we building and why", "who are our users", "capture our product purpose", or "the vision doc is outdated". Generates docs/steering/VISION.md as a living document capturing product purpose, target users, principles, strategic goals, and bounded contexts. Generated once and refined — not regenerated from scratch.
 ---
 
 # Steer Vision
@@ -13,9 +13,7 @@ See `references/vision-template.md` for the expected document shape.
 
 ### 1. Check if the document already exists
 
-```bash
-cat docs/steering/VISION.md 2>/dev/null
-```
+Use the Read tool to attempt reading `docs/steering/VISION.md`.
 
 If the file **exists**, call `AskUserQuestion` with:
 

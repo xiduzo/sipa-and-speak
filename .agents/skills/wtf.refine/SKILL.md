@@ -61,7 +61,7 @@ Extract comments posted after the issue body was last edited:
 
 ```bash
 gh issue view <issue_number> --json comments,updatedAt \
-  --jq '[.comments[] | select(.createdAt > .updatedAt)] | .[] | "[\(.author.login)] \(.body)"'
+  --jq '.updatedAt as $bodyUpdatedAt | .comments[] | select(.createdAt > $bodyUpdatedAt) | "[\(.author.login)] \(.body)"'
 ```
 
 Read each comment and extract actionable insights — discard discussion noise ("+1", "agreed", "thanks"). Synthesise into concrete change signals (e.g. "Stakeholder comment: settlement must support multi-currency").
@@ -190,13 +190,13 @@ Record the decision for the audit comment in step 8.
 Read the current issue body, merge only the changed sections (preserving all unchanged content), and write the updated body:
 
 ```bash
-gh issue view <issue_number> --json body -q .body > /tmp/refine-body.md
+gh issue view <issue_number> --json body -q .body > /tmp/wtf-refine-body.md
 ```
 
-Use the Edit tool to replace each changed section in `/tmp/refine-body.md` with its updated content. Preserve all other sections verbatim.
+Use the Edit tool to replace each changed section in `/tmp/wtf-refine-body.md` with its updated content. Preserve all other sections verbatim.
 
 ```bash
-gh issue edit <issue_number> --body-file /tmp/refine-body.md
+gh issue edit <issue_number> --body-file /tmp/wtf-refine-body.md
 ```
 
 If stale labels should be stripped (from step 6):

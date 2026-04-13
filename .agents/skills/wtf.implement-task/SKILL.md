@@ -51,13 +51,9 @@ If the `designed` label is present, continue silently.
 
 ### 3. Load the technical steering document
 
-Check whether `docs/steering/TECH.md` exists:
+Use the Read tool to attempt reading `docs/steering/TECH.md`.
 
-```bash
-cat docs/steering/TECH.md 2>/dev/null
-```
-
-If the file **exists**: read it and keep it in context. Use its stack, architecture patterns, key constraints, commands, and ADRs to inform the technical approach and implementation in this session. Do not surface it to the user — just apply it silently.
+If the file **exists**: keep its content in context. Use its stack, architecture patterns, key constraints, commands, and ADRs to inform the technical approach and implementation in this session. Do not surface it to the user — just apply it silently.
 
 If the file **does not exist**, call `AskUserQuestion` with:
 
@@ -70,21 +66,38 @@ If the file **does not exist**, call `AskUserQuestion` with:
 
 ### 4. Set up the branch
 
-Before writing any code, set up a dedicated branch for this task (trunk-based development):
+Before writing any code, set up branches following the trunk-based feature branching strategy:
 
-```bash
-git checkout main
-git pull --rebase origin main
-git checkout -b task/<task-number>-<slug>
+```
+main
+└── feature/<feature-number>-<feature-slug>   (merges → main)
+    └── task/<task-number>-<task-slug>         (merges → feature branch)
 ```
 
-**Slug generation:** Spawn a subagent using the `claude-haiku-4-5` model to generate the slug from the task title. Ask for a 2–4 word kebab-case summary restricted to `[a-z0-9-]` characters (e.g. `date-range-filter`).
+**Slug generation:** For both the feature slug and task slug, spawn a subagent using the `claude-haiku-4-5` model. Pass in the title and ask for a 2–4 word kebab-case summary restricted to `[a-z0-9-]` characters (e.g. `date-range-filter`).
 
-If the branch already exists (resumed work), check it out and rebase on main:
+**Feature branch — create if missing:**
 
 ```bash
-git checkout task/<task-number>-<slug>
-git rebase origin/main
+git fetch origin
+git checkout feature/<feature-number>-<feature-slug> 2>/dev/null || {
+  git checkout main
+  git pull --rebase origin main
+  git checkout -b feature/<feature-number>-<feature-slug>
+  git push -u origin feature/<feature-number>-<feature-slug>
+}
+git pull --rebase origin feature/<feature-number>-<feature-slug>
+```
+
+**Task branch — create or resume:**
+
+```bash
+# Fresh work:
+git checkout -b task/<task-number>-<task-slug>
+
+# Resumed work (branch already exists):
+git checkout task/<task-number>-<task-slug>
+git rebase origin/feature/<feature-number>-<feature-slug>
 ```
 
 Resolve any conflicts before proceeding. Print the branch name.
@@ -101,13 +114,13 @@ Before exploring, identify the test framework setup by reading a sample of exist
 | Run command       | (e.g. `npm test`, `pytest`)                    |
 | Coverage command  | (e.g. `npm run coverage`, `pytest --cov`)      |
 
-Use the Agent tool to search the codebase for:
+Use the Agent tool with these concrete searches (run in parallel):
 
-- Files and modules this task will touch
-- Existing patterns at the integration point
-- Current interfaces that match the contracts defined in the Task
-- Existing tests covering adjacent behavior
-- Dependencies that must exist first
+- `Grep` for the domain nouns and verbs from the Task's Functional Description across `*.{ts,tsx,js,jsx,py,go,rb}` files — finds files and modules this task will touch
+- `Glob` matching the file patterns for each **Impacted Area** listed in the Task (e.g. `src/api/**/*`, `src/features/<feature-slug>/**/*`) — surfaces integration points and existing patterns
+- `Grep` for interface or type names from the Task's Contracts section — finds current interface definitions to implement against
+- `Glob` matching the test file pattern from the scratchpad (e.g. `**/*.test.ts`) near the integration points found above — surfaces existing tests covering adjacent behavior
+- `Grep` for any import of the domain objects or services this task depends on — identifies dependencies that must exist first
 
 Also fetch any relevant wiki pages or in-repo glossary docs for this task's Bounded Context. Use these to ensure the implementation and test naming aligns with the team's Ubiquitous Language.
 
@@ -126,10 +139,10 @@ Show the Technical Approach. Then call `AskUserQuestion` with `question: "Does t
 
 Apply changes. Then update the Task issue with the Technical Approach and Impacted Areas.
 
-> See `references/issue-body-update-pattern.md` for the read-merge-write pattern. Use `/tmp/updated-task-body.md` as the temp file.
+> See `references/issue-body-update-pattern.md` for the read-merge-write pattern. Use `/tmp/wtf-implement-task-approach.md` as the temp file.
 
 ```bash
-gh issue edit <task_number> --body-file /tmp/updated-task-body.md
+gh issue edit <task_number> --body-file /tmp/wtf-implement-task-approach.md
 ```
 
 ### 8. Drive the TDD cycle
@@ -139,13 +152,7 @@ For each Gherkin scenario in the Task, work through them in order. Match the pro
 1. **Write the failing test** for the scenario.
 2. **Implement the minimum code** to make it pass.
 3. **Refactor** if needed — keep functions under 40 lines, no deep nesting.
-4. **Gate** — run linting and type-checking before committing. Check `package.json` for `lint`, `typecheck`, `type-check`, or `check` script keys and run whichever exist:
-
-   ```bash
-   # e.g. npm run lint && npm run typecheck
-   ```
-
-5. **Commit** — create an atomic semantic commit:
+4. **Commit** — create an atomic semantic commit:
 
    ```bash
    git add <changed files>
@@ -158,6 +165,14 @@ For each Gherkin scenario in the Task, work through them in order. Match the pro
    Commit type: `feat` for new behavior, `fix` for bug fixes, `test` for test-only changes, `refactor` for refactors, `chore` for config/build changes.
 
 6. Do not skip ahead — each scenario is a checkpoint.
+
+Once all scenarios are green, run the full lint and type-check gate once across all changes. Check `package.json` for `lint`, `typecheck`, `type-check`, or `check` script keys and run whichever exist:
+
+```bash
+# e.g. npm run lint && npm run typecheck
+```
+
+Fix any issues before proceeding to coverage.
 
 ### 9. Verify coverage
 
@@ -177,10 +192,10 @@ Fill the Test Mapping table in the Task issue with concrete file paths:
 | ----------------- | ----------------------- | ------- |
 | `<scenario name>` | `<test file path:line>` | passing |
 
-> See `references/issue-body-update-pattern.md` for the read-merge-write pattern. Re-fetch the body (do not reuse the temp file from step 6). Use `/tmp/updated-task-body-test-mapping.md` as the temp file.
+> See `references/issue-body-update-pattern.md` for the read-merge-write pattern. Re-fetch the body (do not reuse the temp file from step 6). Use `/tmp/wtf-implement-task-test-mapping.md` as the temp file.
 
 ```bash
-gh issue edit <task_number> --body-file /tmp/updated-task-body-test-mapping.md
+gh issue edit <task_number> --body-file /tmp/wtf-implement-task-test-mapping.md
 ```
 
 Print the updated Task issue URL.

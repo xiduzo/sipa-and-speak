@@ -1,13 +1,13 @@
 ---
 name: wtf.reflect
-description: This skill should be used when a developer wants to capture learnings from a difficult session, record what Claude got wrong, save implementation gotchas, or update the steering docs with hard-won knowledge — for example "let's reflect", "capture what we learned", "that was painful, save this", "update the steering docs with what went wrong", or when prompted by the intervention tracker after multiple corrections. Routes each learning into the right steering doc (TECH, QA, DESIGN, or VISION) under a "Hard-Won Lessons" section.
+description: This skill should be used when a developer wants to capture learnings from a difficult session, record what Claude got wrong, save implementation gotchas, or update the steering docs with hard-won knowledge — for example "let's reflect", "capture what we learned", "that was painful, save this", "update the steering docs with what went wrong", "I need to debrief", "what went wrong today", "log this lesson", "save this gotcha", "document this mistake", "I want to write this down before I forget", "add this to the steering docs", or when prompted by the intervention tracker after multiple corrections. Routes each learning into the right steering doc (TECH, QA, DESIGN, or VISION) under a "Hard-Won Lessons" section.
 ---
 
 # WTF Reflect
 
 Capture learnings from this session and route them into the right steering document. Every hard-won insight — especially about where the AI went wrong or where implementation was harder than expected — belongs in a steering doc so it guides future work automatically.
 
-**Intervention tracker:** The `hooks/track-interventions.sh` hook runs automatically on every `UserPromptSubmit` event and increments `/tmp/wtf-interventions-$(whoami)` when it detects correction or frustration language (e.g. "no,", "wrong", "actually", "stop that"). When the counter reaches 3, the hook prints a reminder at the end of the session to run `reflect`. Step 6 of this skill resets the counter to zero. No manual tracking is needed — the hook handles it.
+**Intervention tracker:** The `hooks/track-interventions.sh` hook runs automatically on every `UserPromptSubmit` event and increments `/tmp/wtf-interventions-$(whoami)-$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")` when it detects correction or frustration language (e.g. "no,", "wrong", "actually", "stop that"). When the counter reaches 3, the hook prints a reminder at the end of the session to run `reflect`. Step 6 of this skill resets the counter to zero. No manual tracking is needed — the hook handles it.
 
 ## Process
 
@@ -112,7 +112,7 @@ git commit -m "docs(steering): add hard-won lessons from $(date +%Y-%m-%d) sessi
 ### 6. Reset the intervention counter
 
 ```bash
-echo "0" > /tmp/wtf-interventions-$(whoami)
+echo "0" > /tmp/wtf-interventions-$(whoami)-$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
 ```
 
 ### 7. Close the loop
