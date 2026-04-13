@@ -6,7 +6,7 @@ import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 import { db } from "@sip-and-speak/db";
 import { meetup, messagingOptIn, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
-import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted } from "./messaging-utils";
+import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome } from "./messaging-utils";
 
 export const messagingRouter = router({
   /**
@@ -167,6 +167,20 @@ export const messagingRouter = router({
           partnerId,
           respondedAt: created!.respondedAt,
         });
+
+        // #142 — Check if both have now responded; if any declined, emit outcome
+        const declineResponses = await db
+          .select({ response: messagingOptIn.response })
+          .from(messagingOptIn)
+          .where(eq(messagingOptIn.meetupId, input.meetupId));
+
+        if (isDeclineOutcome(declineResponses)) {
+          domainEvents.emit("MessagingDeclineOutcome", {
+            meetupId: input.meetupId,
+            studentAId: studentId,
+            studentBId: partnerId,
+          });
+        }
       }
 
       console.log(

@@ -35,6 +35,17 @@ export function bothAccepted(
 }
 
 /**
+ * Returns true when both Students have responded and at least one declined.
+ * Used to determine whether to send the decline-outcome notifications.
+ * Note: does NOT reveal which Student declined — callers must not expose that.
+ */
+export function isDeclineOutcome(
+  responses: Array<{ response: "accept" | "decline" }>,
+): boolean {
+  return responses.length === 2 && !responses.every((r) => r.response === "accept");
+}
+
+/**
  * Derives the partner's ID from a meetup's proposer/receiver pair.
  */
 export function getPartnerId(
