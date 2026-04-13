@@ -1,5 +1,6 @@
 import { and, desc, eq, lt, or } from "drizzle-orm";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
 import {
   conversation,
@@ -7,6 +8,7 @@ import {
   messageReadStatus,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
+import { checkReadAccess } from "./messaging-utils";
 import { protectedProcedure, router } from "../index";
 
 export const chatRouter = router({
@@ -103,8 +105,9 @@ export const chatRouter = router({
         )
         .limit(1);
 
-      if (conv.length === 0) {
-        throw new Error("Conversation not found");
+      const access = checkReadAccess(conv[0], userId);
+      if (!access.allowed) {
+        throw new TRPCError({ code: "FORBIDDEN", message: access.error });
       }
 
       const conditions = [eq(message.conversationId, input.conversationId)];
