@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Image, ScrollView, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
-import { trpc } from "@/utils/trpc";
+import { queryClient, trpc } from "@/utils/trpc";
 
 export default function PartnerProfileScreen() {
   const { id, matchRequestId } = useLocalSearchParams<{ id: string; matchRequestId?: string }>();
@@ -31,6 +31,13 @@ export default function PartnerProfileScreen() {
       if (error.data?.code === "CONFLICT") {
         setSendConflictError("A match request to this candidate already exists.");
       }
+    },
+  });
+
+  const acceptMutation = useMutation({
+    ...trpc.matching.acceptMatchRequest.mutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matching.getIncomingRequests"] });
     },
   });
 
@@ -211,9 +218,14 @@ export default function PartnerProfileScreen() {
               testID="accept-button"
               variant="primary"
               className="flex-1"
-              onPress={() => {/* T15.3 — wired in Accept action task */}}
+              isDisabled={acceptMutation.isPending || acceptMutation.isSuccess}
+              onPress={() => {
+                if (matchRequestId) {
+                  acceptMutation.mutate({ matchRequestId });
+                }
+              }}
             >
-              <Button.Label>Accept</Button.Label>
+              <Button.Label>{acceptMutation.isSuccess ? "Accepted" : "Accept"}</Button.Label>
             </Button>
           </View>
         ) : (

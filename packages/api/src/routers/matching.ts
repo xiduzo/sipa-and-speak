@@ -7,6 +7,7 @@ import {
   userLanguage,
   userInterest,
   matchRequest,
+  studentMatch,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
@@ -425,5 +426,53 @@ export const matchingRouter = router({
       });
 
       return { matchRequestId: created.id, status: "pending" as const };
+    }),
+
+  acceptMatchRequest: protectedProcedure
+    .input(z.object({ matchRequestId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const receiverId = ctx.session.user.id;
+
+      const request = await db.query.matchRequest.findFirst({
+        where: eq(matchRequest.id, input.matchRequestId),
+      });
+
+      if (!request) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Match request not found." });
+      }
+
+      if (request.receiverId !== receiverId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only the designated receiver may accept this request." });
+      }
+
+      if (request.status !== "pending") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending requests can be accepted." });
+      }
+
+      await db
+        .update(matchRequest)
+        .set({ status: "accepted" })
+        .where(eq(matchRequest.id, input.matchRequestId));
+
+      await db.insert(studentMatch).values({
+        studentAId: request.requesterId,
+        studentBId: receiverId,
+        matchRequestId: input.matchRequestId,
+      });
+
+      console.info("[MatchRequestAccepted]", {
+        matchRequestId: input.matchRequestId,
+        requesterId: request.requesterId,
+        receiverId,
+      });
+
+      domainEvents.emit("MatchRequestAccepted", {
+        matchRequestId: input.matchRequestId,
+        requesterId: request.requesterId,
+        receiverId,
+        acceptedAt: new Date(),
+      });
+
+      return { status: "accepted" as const, matchedWithUserId: request.requesterId };
     }),
 });
