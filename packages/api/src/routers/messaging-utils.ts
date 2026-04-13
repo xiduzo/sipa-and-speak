@@ -46,6 +46,21 @@ export function isDeclineOutcome(
 }
 
 /**
+ * #146 — Checks whether a sender is allowed to post in a conversation.
+ * Returns `{ allowed: true }` or `{ allowed: false, error }`.
+ */
+export function checkConversationAccess(
+  conv: { user1Id: string; user2Id: string; status: "open" | "suspended" } | undefined,
+  senderId: string,
+): { allowed: true } | { allowed: false; error: "CONVERSATION_NOT_FOUND" | "NOT_A_PARTICIPANT" | "CONVERSATION_NOT_OPEN" } {
+  if (!conv) return { allowed: false, error: "CONVERSATION_NOT_FOUND" };
+  const isParticipant = conv.user1Id === senderId || conv.user2Id === senderId;
+  if (!isParticipant) return { allowed: false, error: "NOT_A_PARTICIPANT" };
+  if (conv.status !== "open") return { allowed: false, error: "CONVERSATION_NOT_OPEN" };
+  return { allowed: true };
+}
+
+/**
  * #144 — Validates message content before persistence.
  * Returns `{ valid: true, trimmed }` on success or `{ valid: false, error }` on failure.
  */

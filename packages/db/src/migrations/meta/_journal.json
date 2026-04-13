@@ -78,6 +78,13 @@
       "when": 1776109533625,
       "tag": "0010_kind_reaper",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1776111000946,
+      "tag": "0011_gigantic_prima",
+      "breakpoints": true
     }
   ]
 }
