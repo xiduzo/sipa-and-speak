@@ -158,6 +158,14 @@ export interface MessagingDeclinedEvent {
   respondedAt: Date;
 }
 
+export interface ConversationOpenedEvent {
+  conversationId: string;
+  meetupId: string;
+  studentAId: string;
+  studentBId: string;
+  openedAt: Date;
+}
+
 export interface MessagingNudgeNeededEvent {
   meetupId: string;
   /** The student who accepted and triggered the nudge */
@@ -188,6 +196,7 @@ type DomainEventMap = {
   MessagingAccepted: [MessagingAcceptedEvent];
   MessagingDeclined: [MessagingDeclinedEvent];
   MessagingNudgeNeeded: [MessagingNudgeNeededEvent];
+  ConversationOpened: [ConversationOpenedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

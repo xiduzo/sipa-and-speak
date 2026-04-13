@@ -5,8 +5,8 @@ import { and, eq, isNull } from "drizzle-orm";
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 import { db } from "@sip-and-speak/db";
-import { meetup, messagingOptIn } from "@sip-and-speak/db/schema/sip-and-speak";
-import { hasAlreadyResponded, getPartnerId, shouldSendNudge } from "./messaging-utils";
+import { meetup, messagingOptIn, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
+import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted } from "./messaging-utils";
 
 export const messagingRouter = router({
   /**
@@ -125,6 +125,38 @@ export const messagingRouter = router({
               meetupId: input.meetupId,
               acceptingStudentId: studentId,
               pendingStudentId: partnerId,
+            });
+          }
+        }
+
+        // #141 — Check if both Students have now accepted; if so, open the conversation
+        const allResponses = await db
+          .select({ response: messagingOptIn.response })
+          .from(messagingOptIn)
+          .where(eq(messagingOptIn.meetupId, input.meetupId));
+
+        if (bothAccepted(allResponses)) {
+          // Use INSERT ... ON CONFLICT DO NOTHING to guard against race conditions
+          const [newConversation] = await db
+            .insert(conversation)
+            .values({
+              user1Id: studentId,
+              user2Id: partnerId,
+              meetupId: input.meetupId,
+            })
+            .onConflictDoNothing({ target: conversation.meetupId })
+            .returning();
+
+          if (newConversation) {
+            console.log(
+              `[messaging] conversation opened conversationId=${newConversation.id} meetupId=${input.meetupId}`,
+            );
+            domainEvents.emit("ConversationOpened", {
+              conversationId: newConversation.id,
+              meetupId: input.meetupId,
+              studentAId: studentId,
+              studentBId: partnerId,
+              openedAt: newConversation.createdAt,
             });
           }
         }
