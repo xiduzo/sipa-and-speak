@@ -59,8 +59,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
-  '/partner/$id': typeof PartnerIdRoute
   '/admin/locations': typeof AdminLocationsRoute
+  '/partner/$id': typeof PartnerIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,8 +68,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
-  '/partner/$id': typeof PartnerIdRoute
   '/admin/locations': typeof AdminLocationsRoute
+  '/partner/$id': typeof PartnerIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -78,8 +78,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
-  '/partner/$id': typeof PartnerIdRoute
   '/admin/locations': typeof AdminLocationsRoute
+  '/partner/$id': typeof PartnerIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -89,8 +89,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/success'
     | '/suggestions'
-    | '/partner/$id'
     | '/admin/locations'
+    | '/partner/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -98,8 +98,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/success'
     | '/suggestions'
-    | '/partner/$id'
     | '/admin/locations'
+    | '/partner/$id'
   id:
     | '__root__'
     | '/'
@@ -107,8 +107,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/success'
     | '/suggestions'
-    | '/partner/$id'
     | '/admin/locations'
+    | '/partner/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,8 +117,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SuccessRoute: typeof SuccessRoute
   SuggestionsRoute: typeof SuggestionsRoute
-  PartnerIdRoute: typeof PartnerIdRoute
   AdminLocationsRoute: typeof AdminLocationsRoute
+  PartnerIdRoute: typeof PartnerIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -181,8 +181,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SuccessRoute: SuccessRoute,
   SuggestionsRoute: SuggestionsRoute,
-  PartnerIdRoute: PartnerIdRoute,
   AdminLocationsRoute: AdminLocationsRoute,
+  PartnerIdRoute: PartnerIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
