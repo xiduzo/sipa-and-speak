@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -385,6 +385,9 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("ConversationOpened", (event) => {
     void handleConversationOpened(event);
   });
+  domainEvents.on("MessagingDeclineOutcome", (event) => {
+    void handleMessagingDeclineOutcome(event);
+  });
 }
 
 // #91 — Notify both Students when a reschedule is accepted and meetup details are updated
@@ -653,6 +656,33 @@ export async function handleConversationOpened(event: ConversationOpenedEvent): 
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send ConversationOpened notification", { conversationId, meetupId, err });
+  }
+}
+
+// #142 — Notify both Students when messaging won't be available (decline outcome)
+export async function handleMessagingDeclineOutcome(event: MessagingDeclineOutcomeEvent): Promise<void> {
+  const { meetupId, studentAId, studentBId } = event;
+
+  const [tokensA, tokensB] = await Promise.all([
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, studentAId)),
+    db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, studentBId)),
+  ]);
+
+  const messages: ExpoPushMessage[] = [
+    ...tokensA.map(({ token }) => ({ to: token, title: "Messaging not available", body: "One of you decided not to connect via messages — that's OK!", data: { meetupId, type: "messaging_decline_outcome" } })),
+    ...tokensB.map(({ token }) => ({ to: token, title: "Messaging not available", body: "One of you decided not to connect via messages — that's OK!", data: { meetupId, type: "messaging_decline_outcome" } })),
+  ];
+
+  if (messages.length === 0) {
+    console.info("[push] No tokens — skipping decline-outcome notification", { meetupId });
+    return;
+  }
+
+  console.info("[push] Sending MessagingDeclineOutcome notification", { meetupId, tokenCount: messages.length });
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MessagingDeclineOutcome notification", { meetupId, err });
   }
 }
 
