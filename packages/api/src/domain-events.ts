@@ -137,6 +137,13 @@ export interface MeetupNotAttendedEvent {
   recordedAt: Date;
 }
 
+export interface MessagingOptInPromptedEvent {
+  meetupId: string;
+  studentAId: string;
+  studentBId: string;
+  promptedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -155,6 +162,7 @@ type DomainEventMap = {
   AttendanceReported: [AttendanceReportedEvent];
   SipAndSpeakMomentCompleted: [SipAndSpeakMomentCompletedEvent];
   MeetupNotAttended: [MeetupNotAttendedEvent];
+  MessagingOptInPrompted: [MessagingOptInPromptedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

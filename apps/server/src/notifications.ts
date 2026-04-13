@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -376,6 +376,9 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("MeetupNotAttended", (event) => {
     void handleMeetupNotAttended(event);
   });
+  domainEvents.on("MessagingOptInPrompted", (event) => {
+    void handleMessagingOptInPrompted(event);
+  });
 }
 
 // #91 — Notify both Students when a reschedule is accepted and meetup details are updated
@@ -495,6 +498,60 @@ async function handleSipAndSpeakMomentCompleted(event: SipAndSpeakMomentComplete
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send SipAndSpeakMomentCompleted notification", { meetupId, err });
+  }
+}
+
+// #138 — Prompt both Students to opt in to messaging after a completed meetup
+export async function handleMessagingOptInPrompted(event: MessagingOptInPromptedEvent): Promise<void> {
+  const { meetupId, studentAId, studentBId } = event;
+
+  const [studentAResult, studentBResult, tokensA, tokensB] = await Promise.all([
+    db.select({ name: user.name }).from(user).where(eq(user.id, studentAId)).limit(1),
+    db.select({ name: user.name }).from(user).where(eq(user.id, studentBId)).limit(1),
+    db
+      .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+      .from(userDeviceToken)
+      .where(eq(userDeviceToken.userId, studentAId)),
+    db
+      .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+      .from(userDeviceToken)
+      .where(eq(userDeviceToken.userId, studentBId)),
+  ]);
+
+  const studentAName = studentAResult[0]?.name ?? "Your match";
+  const studentBName = studentBResult[0]?.name ?? "Your match";
+
+  const messages: ExpoPushMessage[] = [];
+
+  for (const { token } of tokensA) {
+    messages.push({
+      to: token,
+      title: "Want to keep in touch?",
+      body: `${studentBName} completed a S&S moment with you — would you like to message them?`,
+      data: { meetupId, type: "messaging_opt_in", deepLink: `/messaging/opt-in/${meetupId}` },
+    });
+  }
+
+  for (const { token } of tokensB) {
+    messages.push({
+      to: token,
+      title: "Want to keep in touch?",
+      body: `${studentAName} completed a S&S moment with you — would you like to message them?`,
+      data: { meetupId, type: "messaging_opt_in", deepLink: `/messaging/opt-in/${meetupId}` },
+    });
+  }
+
+  if (messages.length === 0) {
+    console.info("[push] No device tokens for either student — skipping opt-in notification", { meetupId });
+    return;
+  }
+
+  console.info("[push] Sending MessagingOptInPrompted notification", { meetupId, tokenCount: messages.length });
+
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send MessagingOptInPrompted notification", { meetupId, err });
   }
 }
 
