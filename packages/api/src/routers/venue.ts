@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { venue } from "@sip-and-speak/db/schema/sip-and-speak";
 import { protectedProcedure, router } from "../index";
@@ -18,7 +19,10 @@ export const venueRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const allVenues = await db.select().from(venue);
+      const allVenues = await db
+        .select()
+        .from(venue)
+        .where(eq(venue.isActive, true));
 
       // Filter by tags if provided
       let filtered = allVenues;
@@ -58,7 +62,10 @@ export const venueRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const allVenues = await db.select().from(venue);
+      const allVenues = await db
+        .select()
+        .from(venue)
+        .where(eq(venue.isActive, true));
 
       let radiusKm = input.radiusKm;
       let expandedSearch = false;
@@ -90,4 +97,14 @@ export const venueRouter = router({
 
       return { venues, expandedSearch, radiusKm };
     }),
+
+  // Used by the proposal form to gate entry: if false, no proposals can be created
+  hasActiveLocations: protectedProcedure.query(async () => {
+    const result = await db
+      .select({ id: venue.id })
+      .from(venue)
+      .where(eq(venue.isActive, true))
+      .limit(1);
+    return result.length > 0;
+  }),
 });
