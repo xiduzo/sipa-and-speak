@@ -14,6 +14,7 @@ import { Route as SuccessRouteImport } from './routes/success'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PartnerIdRouteImport } from './routes/partner/$id'
 
 const SuggestionsRoute = SuggestionsRouteImport.update({
   id: '/suggestions',
@@ -40,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PartnerIdRoute = PartnerIdRouteImport.update({
+  id: '/partner/$id',
+  path: '/partner/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
+  '/partner/$id': typeof PartnerIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
+  '/partner/$id': typeof PartnerIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,33 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
+  '/partner/$id': typeof PartnerIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/success' | '/suggestions'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/success'
+    | '/suggestions'
+    | '/partner/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/success' | '/suggestions'
-  id: '__root__' | '/' | '/dashboard' | '/login' | '/success' | '/suggestions'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/success'
+    | '/suggestions'
+    | '/partner/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/success'
+    | '/suggestions'
+    | '/partner/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +105,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SuccessRoute: typeof SuccessRoute
   SuggestionsRoute: typeof SuggestionsRoute
+  PartnerIdRoute: typeof PartnerIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/partner/$id': {
+      id: '/partner/$id'
+      path: '/partner/$id'
+      fullPath: '/partner/$id'
+      preLoaderRoute: typeof PartnerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SuccessRoute: SuccessRoute,
   SuggestionsRoute: SuggestionsRoute,
+  PartnerIdRoute: PartnerIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
