@@ -46,6 +46,19 @@ export function isDeclineOutcome(
 }
 
 /**
+ * #144 — Validates message content before persistence.
+ * Returns `{ valid: true, trimmed }` on success or `{ valid: false, error }` on failure.
+ */
+export function validateMessageContent(
+  content: string,
+): { valid: true; trimmed: string } | { valid: false; error: "EMPTY_CONTENT" | "TOO_LONG" } {
+  const trimmed = content.trim();
+  if (!trimmed) return { valid: false, error: "EMPTY_CONTENT" };
+  if (trimmed.length > 2000) return { valid: false, error: "TOO_LONG" };
+  return { valid: true, trimmed };
+}
+
+/**
  * Derives the partner's ID from a meetup's proposer/receiver pair.
  */
 export function getPartnerId(
