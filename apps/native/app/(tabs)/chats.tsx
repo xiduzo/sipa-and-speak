@@ -51,7 +51,7 @@ export default function ChatsScreen() {
           >
             <Text className="text-foreground text-xl font-bold mb-2">No conversations yet</Text>
             <Text className="text-muted-foreground text-center">
-              Once you connect with a match, your conversations will appear here.
+              Messaging unlocks after completing a Sip & Speak moment with your match.
             </Text>
           </View>
         }
