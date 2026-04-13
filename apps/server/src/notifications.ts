@@ -6,8 +6,10 @@
  */
 import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { userDeviceToken } from "@sip-and-speak/db/schema/sip-and-speak";
+import { userDeviceToken, userLanguage } from "@sip-and-speak/db/schema/sip-and-speak";
+import { user } from "@sip-and-speak/db/schema/auth";
 import { domainEvents, type MatchRequestSentEvent } from "@sip-and-speak/api/domain-events";
+import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
@@ -43,24 +45,40 @@ async function sendExpoPushNotification(
 }
 
 async function handleMatchRequestSent(event: MatchRequestSentEvent): Promise<void> {
-  const { matchRequestId, receiverId } = event;
+  const { matchRequestId, requesterId, receiverId } = event;
 
-  // Look up receiver's device tokens
-  const tokens = await db
-    .select({ id: userDeviceToken.id, token: userDeviceToken.token })
-    .from(userDeviceToken)
-    .where(eq(userDeviceToken.userId, receiverId));
+  // Fetch requester's name and primary languages in parallel with device token lookup
+  const [requesterResult, requesterLanguages, tokens] = await Promise.all([
+    db
+      .select({ name: user.name })
+      .from(user)
+      .where(eq(user.id, requesterId))
+      .limit(1),
+    db
+      .select({ language: userLanguage.language, type: userLanguage.type })
+      .from(userLanguage)
+      .where(eq(userLanguage.userId, requesterId)),
+    db
+      .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+      .from(userDeviceToken)
+      .where(eq(userDeviceToken.userId, receiverId)),
+  ]);
 
   if (tokens.length === 0) {
     console.info("[push] No device token for receiver — skipping", { matchRequestId, receiverId });
     return;
   }
 
+  const requesterName = requesterResult[0]?.name ?? "Someone";
+  const offeredLanguage = requesterLanguages.find((l) => l.type === "spoken")?.language ?? null;
+  const targetedLanguage = requesterLanguages.find((l) => l.type === "learning")?.language ?? null;
+  const notificationBody = buildMatchRequestNotificationBody(requesterName, offeredLanguage, targetedLanguage);
+
   const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
     to: token,
-    title: "Someone wants to meet you!",
-    body: "Open the app to see who sent you a match request.",
-    data: { matchRequestId },
+    title: "New match request",
+    body: notificationBody,
+    data: { matchRequestId, requesterId },
   }));
 
   console.info("[push] Sending MatchRequestSent notification", {
