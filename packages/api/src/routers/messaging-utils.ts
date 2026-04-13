@@ -46,6 +46,15 @@ export function isDeclineOutcome(
 }
 
 /**
+ * #149 — Computes the new lastReadAt timestamp for a mark-as-read operation.
+ * lastReadAt can only move forward — returns the later of existing and now.
+ */
+export function computeMarkReadAt(existingLastReadAt: Date | null, now: Date): Date {
+  if (existingLastReadAt === null) return now;
+  return now > existingLastReadAt ? now : existingLastReadAt;
+}
+
+/**
  * #146 — Checks whether a sender is allowed to post in a conversation.
  * Returns `{ allowed: true }` or `{ allowed: false, error }`.
  */
