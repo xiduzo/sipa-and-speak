@@ -6,6 +6,7 @@ import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 import { db } from "@sip-and-speak/db";
 import { meetup, messagingOptIn, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
+import { user } from "@sip-and-speak/db/schema/auth";
 import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome, validateMessageContent, checkConversationAccess } from "./messaging-utils";
 import { persistMessage } from "./messaging-persist";
 
@@ -233,10 +234,23 @@ export const messagingRouter = router({
       }
 
       // #145 — Persist and return the created message
-      const created = await persistMessage({
+      const [created, senderResult] = await Promise.all([
+        persistMessage({
+          conversationId: input.conversationId,
+          senderId,
+          content: validation.trimmed,
+        }),
+        db.select({ name: user.name }).from(user).where(eq(user.id, senderId)).limit(1),
+      ]);
+
+      // #152 — Notify recipient about new message
+      const recipientId = conv!.user1Id === senderId ? conv!.user2Id : conv!.user1Id;
+      const senderName = senderResult[0]?.name ?? "Your match";
+      domainEvents.emit("MessageSent", {
         conversationId: input.conversationId,
         senderId,
-        content: validation.trimmed,
+        recipientId,
+        senderName,
       });
 
       console.log(
