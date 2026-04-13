@@ -5,6 +5,7 @@ import { db } from "@sip-and-speak/db";
 import { meetup, venue, studentMatch } from "@sip-and-speak/db/schema/sip-and-speak";
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
+import { isMeetupInThePast, isRescheduleNoOp } from "./meetup-utils";
 
 /** All bookable half-hour slots from 08:00 to 20:00 */
 const ALL_SLOTS = Array.from({ length: 25 }, (_, i) => {
@@ -667,6 +668,247 @@ export const meetupRouter = router({
       isPast: new Date(`${row.meetup.date}T${row.meetup.time}:00`) <= new Date(),
       venue: row.venue,
       partner: row.partner,
+      // #86 — Reschedule proposal state
+      reschedulePending: row.meetup.rescheduleProposerId !== null,
+      rescheduleIsFromMe: row.meetup.rescheduleProposerId === userId,
+      reschedule: row.meetup.rescheduleProposerId !== null
+        ? {
+            venueId: row.meetup.rescheduleVenueId!,
+            date: row.meetup.rescheduleDate!,
+            time: row.meetup.rescheduleTime!,
+          }
+        : null,
     }));
   }),
+
+  // #91 — Accept a reschedule proposal → update meetup details, emit MeetupRescheduled, notify both
+  acceptReschedule: protectedProcedure
+    .input(z.object({ meetupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .innerJoin(venue, eq(meetup.venueId, venue.id))
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      const isParticipant =
+        existing.meetup.proposerId === userId || existing.meetup.receiverId === userId;
+      if (!isParticipant) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this meetup" });
+      }
+
+      if (existing.meetup.status !== "confirmed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only confirmed meetups can have a reschedule accepted" });
+      }
+
+      if (existing.meetup.rescheduleProposerId === null) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No reschedule proposal is pending for this meetup" });
+      }
+
+      if (existing.meetup.rescheduleProposerId === userId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You cannot accept your own reschedule proposal" });
+      }
+
+      // Fetch the reschedule venue for the notification body
+      const [rescheduleVenue] = await db
+        .select({ id: venue.id, name: venue.name })
+        .from(venue)
+        .where(eq(venue.id, existing.meetup.rescheduleVenueId!))
+        .limit(1);
+
+      // Atomic update: only succeeds if rescheduleProposerId is still set (race-condition guard)
+      const [updated] = await db
+        .update(meetup)
+        .set({
+          venueId: existing.meetup.rescheduleVenueId!,
+          date: existing.meetup.rescheduleDate!,
+          time: existing.meetup.rescheduleTime!,
+          rescheduleProposerId: null,
+          rescheduleVenueId: null,
+          rescheduleDate: null,
+          rescheduleTime: null,
+        })
+        .where(and(eq(meetup.id, input.meetupId), sql`${meetup.rescheduleProposerId} IS NOT NULL`))
+        .returning();
+
+      if (!updated) {
+        throw new TRPCError({ code: "CONFLICT", message: "The reschedule proposal was already handled by another request" });
+      }
+
+      domainEvents.emit("MeetupRescheduled", {
+        meetupId: existing.meetup.id,
+        proposerId: existing.meetup.proposerId,
+        receiverId: existing.meetup.receiverId,
+        venueName: rescheduleVenue?.name ?? existing.venue.name,
+        newDate: existing.meetup.rescheduleDate!,
+        newTime: existing.meetup.rescheduleTime!,
+        rescheduledAt: new Date(),
+      });
+
+      return updated;
+    }),
+
+  // #93 — Decline a reschedule proposal → retain original details, emit MeetupRescheduleDeclined, notify both
+  declineReschedule: protectedProcedure
+    .input(z.object({ meetupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .innerJoin(venue, eq(meetup.venueId, venue.id))
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      const isParticipant =
+        existing.meetup.proposerId === userId || existing.meetup.receiverId === userId;
+      if (!isParticipant) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this meetup" });
+      }
+
+      if (existing.meetup.status !== "confirmed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only confirmed meetups can have a reschedule declined" });
+      }
+
+      if (existing.meetup.rescheduleProposerId === null) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No reschedule proposal is pending for this meetup" });
+      }
+
+      if (existing.meetup.rescheduleProposerId === userId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You cannot decline your own reschedule proposal" });
+      }
+
+      // Atomic update: only clears reschedule columns if rescheduleProposerId is still set
+      const [updated] = await db
+        .update(meetup)
+        .set({
+          rescheduleProposerId: null,
+          rescheduleVenueId: null,
+          rescheduleDate: null,
+          rescheduleTime: null,
+        })
+        .where(and(eq(meetup.id, input.meetupId), sql`${meetup.rescheduleProposerId} IS NOT NULL`))
+        .returning();
+
+      if (!updated) {
+        throw new TRPCError({ code: "CONFLICT", message: "The reschedule proposal was already handled by another request" });
+      }
+
+      domainEvents.emit("MeetupRescheduleDeclined", {
+        meetupId: existing.meetup.id,
+        proposerId: existing.meetup.proposerId,
+        receiverId: existing.meetup.receiverId,
+        venueName: existing.venue.name,
+        originalDate: existing.meetup.date,
+        originalTime: existing.meetup.time,
+        declinedAt: new Date(),
+      });
+
+      return updated;
+    }),
+
+  // #86 — Propose a reschedule for a confirmed meetup
+  proposeReschedule: protectedProcedure
+    .input(
+      z.object({
+        meetupId: z.string(),
+        venueId: z.string(),
+        date: z.string(),
+        time: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const [existing] = await db
+        .select()
+        .from(meetup)
+        .where(eq(meetup.id, input.meetupId))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      const isParticipant = existing.proposerId === userId || existing.receiverId === userId;
+      if (!isParticipant) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You are not a participant in this meetup" });
+      }
+
+      if (existing.status !== "confirmed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only confirmed meetups can be rescheduled" });
+      }
+
+      // #87 — Meetup has already occurred
+      if (isMeetupInThePast(existing.date, existing.time)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This meetup has already taken place and cannot be rescheduled" });
+      }
+
+      // #87 — Proposed date/time must be in the future
+      if (isMeetupInThePast(input.date, input.time)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The rescheduled date and time must be in the future" });
+      }
+
+      // #87 — No-op: proposed details identical to current confirmed meetup
+      if (isRescheduleNoOp(
+        { venueId: existing.venueId, date: existing.date, time: existing.time },
+        { venueId: input.venueId, date: input.date, time: input.time },
+      )) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The proposed reschedule is identical to the current meetup. Please change at least one detail." });
+      }
+
+      // #87 — Race condition: another reschedule is already pending
+      if (existing.rescheduleProposerId !== null) {
+        throw new TRPCError({ code: "CONFLICT", message: "A reschedule request is already pending for this meetup. Please wait for your partner to respond." });
+      }
+
+      // #87 — Active location check
+      const [venueRecord] = await db
+        .select({ id: venue.id, name: venue.name, isActive: venue.isActive })
+        .from(venue)
+        .where(eq(venue.id, input.venueId))
+        .limit(1);
+      if (!venueRecord) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Location not found" });
+      }
+      if (!venueRecord.isActive) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This location is no longer available. Please choose another." });
+      }
+
+      const [updated] = await db
+        .update(meetup)
+        .set({
+          rescheduleProposerId: userId,
+          rescheduleVenueId: input.venueId,
+          rescheduleDate: input.date,
+          rescheduleTime: input.time,
+        })
+        .where(eq(meetup.id, input.meetupId))
+        .returning();
+
+      domainEvents.emit("MeetupRescheduleProposed", {
+        meetupId: existing.id,
+        proposerId: userId,
+        receiverId: existing.proposerId === userId ? existing.receiverId : existing.proposerId,
+        venueId: input.venueId,
+        venueName: venueRecord.name,
+        date: input.date,
+        time: input.time,
+        proposedAt: new Date(),
+      });
+
+      return updated;
+    }),
 });

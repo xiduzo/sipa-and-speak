@@ -83,6 +83,37 @@ export interface MeetupCancelledEvent {
   cancelledAt: Date;
 }
 
+export interface MeetupRescheduleProposedEvent {
+  meetupId: string;
+  proposerId: string;
+  receiverId: string;
+  venueId: string;
+  venueName: string;
+  date: string;
+  time: string;
+  proposedAt: Date;
+}
+
+export interface MeetupRescheduledEvent {
+  meetupId: string;
+  proposerId: string;
+  receiverId: string;
+  venueName: string;
+  newDate: string;
+  newTime: string;
+  rescheduledAt: Date;
+}
+
+export interface MeetupRescheduleDeclinedEvent {
+  meetupId: string;
+  proposerId: string;
+  receiverId: string;
+  venueName: string;
+  originalDate: string;
+  originalTime: string;
+  declinedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -95,6 +126,9 @@ type DomainEventMap = {
   MeetupCounterProposed: [MeetupCounterProposedEvent];
   MeetupDeclined: [MeetupDeclinedEvent];
   MeetupCancelled: [MeetupCancelledEvent];
+  MeetupRescheduleProposed: [MeetupRescheduleProposedEvent];
+  MeetupRescheduled: [MeetupRescheduledEvent];
+  MeetupRescheduleDeclined: [MeetupRescheduleDeclinedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {
