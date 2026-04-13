@@ -119,6 +119,11 @@ export const meetup = pgTable(
       .notNull()
       .default("pending"),
     round: integer("round").default(1).notNull(),
+    // #86 — Reschedule proposal (nullable; set when a Student proposes rescheduling a confirmed meetup)
+    rescheduleProposerId: text("reschedule_proposer_id").references(() => user.id, { onDelete: "set null" }),
+    rescheduleVenueId: text("reschedule_venue_id").references(() => venue.id, { onDelete: "set null" }),
+    rescheduleDate: text("reschedule_date"),
+    rescheduleTime: text("reschedule_time"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
