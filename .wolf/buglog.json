@@ -1426,6 +1426,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-13T17:15:30.232Z"
+    },
+    {
+      "id": "bug-089",
+      "timestamp": "2026-04-13T17:18:50.122Z",
+      "error_message": "Null/undefined access in ",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T17:18:50.122Z"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T17:16:27.877Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T17:18:57.076Z
 > Files: 240 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/
@@ -301,7 +301,7 @@
 
 ## apps/native/app/
 
-- `_layout.tsx` — unstable_settings (~1556 tok)
+- `_layout.tsx` — unstable_settings (~1601 tok)
 - `confirmed-meetups.tsx` — ConfirmedMeetupsScreen (~996 tok)
 - `edit-profile.tsx` — LANGUAGES — uses useRouter, useQuery, useMutation (~3810 tok)
 - `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)

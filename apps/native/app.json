@@ -8,10 +8,18 @@
     },
     "name": "sip-and-speak",
     "slug": "sip-and-speak",
-    "plugins": ["expo-font"],
+    "plugins": [
+      "expo-font"
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5ee3618a-905a-4824-91ab-90472bb0329f"
+      }
+    },
+    "owner": "xiduzo"
   }
 }

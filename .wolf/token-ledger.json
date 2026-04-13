@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-10T10:02:44.507Z",
   "lifetime": {
-    "total_tokens_estimated": 579686,
-    "total_reads": 357,
-    "total_writes": 519,
-    "total_sessions": 32,
-    "anatomy_hits": 285,
+    "total_tokens_estimated": 583006,
+    "total_reads": 359,
+    "total_writes": 523,
+    "total_sessions": 34,
+    "anatomy_hits": 287,
     "anatomy_misses": 72,
-    "repeated_reads_blocked": 89,
-    "estimated_savings_vs_bare_cli": 315321
+    "repeated_reads_blocked": 91,
+    "estimated_savings_vs_bare_cli": 318899
   },
   "sessions": [
     {
@@ -5477,6 +5477,72 @@
         "writes_count": 24,
         "repeated_reads_blocked": 10,
         "anatomy_lookups": 13
+      }
+    },
+    {
+      "id": "session-2026-04-13-1918",
+      "started": "2026-04-13T17:18:30.664Z",
+      "ended": "2026-04-13T17:19:14.896Z",
+      "reads": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1589,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 53,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 18,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1589,
+        "output_tokens_estimated": 71,
+        "reads_count": 1,
+        "writes_count": 2,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-13-1918",
+      "started": "2026-04-13T17:18:30.664Z",
+      "ended": "2026-04-13T17:20:15.328Z",
+      "reads": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1589,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 53,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 18,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1589,
+        "output_tokens_estimated": 71,
+        "reads_count": 1,
+        "writes_count": 2,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
       }
     }
   ],

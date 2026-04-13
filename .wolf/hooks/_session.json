@@ -1,10 +1,16 @@
 {
-  "session_id": "session-2026-04-13-1916",
-  "started": "2026-04-13T17:16:44.047Z",
-  "files_read": {},
+  "session_id": "session-2026-04-13-1920",
+  "started": "2026-04-13T17:20:58.966Z",
+  "files_read": {
+    "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx": {
+      "count": 1,
+      "tokens": 1601,
+      "first_read": "2026-04-13T17:21:17.831Z"
+    }
+  },
   "files_written": [],
   "edit_counts": {},
-  "anatomy_hits": 0,
+  "anatomy_hits": 1,
   "anatomy_misses": 0,
   "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,

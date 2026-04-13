@@ -1,4 +1,5 @@
 import "@/global.css";
+import Constants from "expo-constants";
 import {
   Manrope_400Regular,
   Manrope_500Medium,
@@ -53,7 +54,8 @@ function useDeviceTokenRegistration(isLoggedIn: boolean) {
       const { status } = await Notifications.requestPermissionsAsync();
       if (status !== "granted") return;
 
-      const tokenData = await Notifications.getExpoPushTokenAsync();
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
       const platform = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
       registerToken.mutate({ token: tokenData.data, platform });
     }
