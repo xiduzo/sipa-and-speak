@@ -950,7 +950,11 @@ export const meetupRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Only confirmed meetups can receive attendance reports" });
       }
 
-      // #96 — Time guard will be added in task #96
+      // #96 — Reject self-report before the meetup's scheduled time has passed
+      if (!isMeetupInThePast(existing.date, existing.time)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "You can only report attendance after the meetup's scheduled time has passed" });
+      }
+
       // Check for duplicate report
       const [existingReport] = await db
         .select({ id: attendanceReport.id })
