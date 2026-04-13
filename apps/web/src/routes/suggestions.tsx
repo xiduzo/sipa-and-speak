@@ -101,6 +101,39 @@ function CandidateCard({
   );
 }
 
+const APP_SHARE_URL = "https://sip-and-speak.app";
+const APP_SHARE_MESSAGE =
+  "I'm using Sip&Speak to find a language exchange partner at TU/e — you should join too! " +
+  APP_SHARE_URL;
+
+async function handleWebShare() {
+  if (navigator.share) {
+    await navigator.share({ title: "Sip&Speak", text: APP_SHARE_MESSAGE, url: APP_SHARE_URL });
+  } else {
+    await navigator.clipboard.writeText(APP_SHARE_URL);
+    // Toast not available here without additional setup — inline alert as fallback
+    alert("App link copied to clipboard!");
+  }
+}
+
+function EmptySuggestionState() {
+  return (
+    <div data-testid="empty-suggestion-state" className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+      <p className="text-foreground text-xl font-semibold">No matches yet</p>
+      <p className="text-muted-foreground max-w-sm">
+        We couldn't find a match for your language yet — would you like to share this app with a friend?
+      </p>
+      <button
+        data-testid="share-action"
+        onClick={handleWebShare}
+        className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+      >
+        Share the app
+      </button>
+    </div>
+  );
+}
+
 function RouteComponent() {
   const discoverQuery = useQuery(trpc.matching.discover.queryOptions({}));
 
@@ -110,6 +143,15 @@ function RouteComponent() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!discoverQuery.isPending && partners.length === 0) {
+    return (
+      <div className="p-6 max-w-2xl mx-auto">
+        <h1 className="text-foreground text-2xl font-bold mb-6">Suggestions</h1>
+        <EmptySuggestionState />
       </div>
     );
   }
