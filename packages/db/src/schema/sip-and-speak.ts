@@ -7,6 +7,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { user } from "./auth";
@@ -400,6 +401,28 @@ export const studentMatch = pgTable(
   (table) => [
     index("student_match_studentA_idx").on(table.studentAId),
     index("student_match_studentB_idx").on(table.studentBId),
+  ],
+);
+
+// #97 — Attendance report: each Student independently reports after a meetup
+export const attendanceReport = pgTable(
+  "attendance_report",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    meetupId: text("meetup_id")
+      .notNull()
+      .references(() => meetup.id, { onDelete: "cascade" }),
+    studentId: text("student_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    attended: boolean("attended").notNull(),
+    reportedAt: timestamp("reported_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique("attendance_report_meetup_student_unique").on(table.meetupId, table.studentId),
+    index("attendance_report_meetupId_idx").on(table.meetupId),
   ],
 );
 

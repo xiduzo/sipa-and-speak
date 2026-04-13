@@ -43,6 +43,13 @@
       "when": 1776101817801,
       "tag": "0005_nifty_next_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776104822671,
+      "tag": "0006_eager_vulcan",
+      "breakpoints": true
     }
   ]
 }
