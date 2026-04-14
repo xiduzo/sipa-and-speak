@@ -9,7 +9,10 @@ import {
   checkSelfFlag,
   checkDuplicateOpenFlag,
   FLAG_VALIDATION_MESSAGES,
+  buildStudentFlaggedEvent,
 } from "./moderation-utils";
+import { persistFlag } from "./moderation-persist";
+import { domainEvents } from "../domain-events";
 
 export const flagReasonSchema = z.enum([
   "OFFENSIVE_LANGUAGE",
@@ -75,7 +78,19 @@ export const moderationRouter = router({
         });
       }
 
-      // Stub — persistence implemented in task #72
+      // #72 — Persist the flag and emit domain event
+      const flag = await persistFlag({
+        reporterId,
+        targetId: input.targetId,
+        reason: input.reason,
+        detail: input.detail,
+      });
+
+      domainEvents.emit(
+        "StudentFlagged",
+        buildStudentFlaggedEvent(flag.id, { reporterId, targetId: input.targetId, reason: input.reason }, flag.createdAt),
+      );
+
       return { ok: true as const };
     }),
 });
