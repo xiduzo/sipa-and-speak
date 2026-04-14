@@ -15,6 +15,7 @@ const baseFlag = {
   id: "flag-abc",
   targetId: "user-2",
   targetName: "Jane Doe",
+  targetStatus: "active" as string | null,
   reason: "Disruptive behaviour",
   detail: "Kept interrupting",
   createdAt: new Date("2026-04-10T09:15:00Z"),
@@ -25,7 +26,7 @@ describe("#80 — buildFlagDetail", () => {
     const result = buildFlagDetail(baseFlag, []);
 
     expect(result.flagId).toBe("flag-abc");
-    expect(result.flaggedStudent).toEqual({ id: "user-2", name: "Jane Doe", removed: false });
+    expect(result.flaggedStudent).toEqual({ id: "user-2", name: "Jane Doe", removed: false, suspended: false });
     expect(result.reason).toBe("Disruptive behaviour");
     expect(result.detail).toBe("Kept interrupting");
     expect(result.submittedAt).toBe("2026-04-10T09:15:00.000Z");
@@ -53,7 +54,7 @@ describe("#80 — buildFlagDetail", () => {
   });
 
   it("sets removed: true when flagged Student's name is null (user record absent)", () => {
-    const removedStudentFlag = { ...baseFlag, targetName: null };
+    const removedStudentFlag = { ...baseFlag, targetName: null, targetStatus: null };
 
     const result = buildFlagDetail(removedStudentFlag, []);
 

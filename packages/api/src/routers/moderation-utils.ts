@@ -127,6 +127,7 @@ export interface FlagDetailRow {
   id: string;
   targetId: string;
   targetName: string | null;
+  targetStatus: string | null; // #100 — studentStatus from user table
   reason: string;
   detail: string | null;
   createdAt: Date;
@@ -141,7 +142,6 @@ export interface PriorFlagRow {
 
 export interface FlagDetailEntry {
   flagId: string;
-  // #88 — `suspended` added; always false until Feature #33 adds the DB column
   flaggedStudent: { id: string; name: string | null; removed: boolean; suspended: boolean };
   reason: string;
   detail: string | null;
@@ -151,8 +151,8 @@ export interface FlagDetailEntry {
 
 /**
  * Builds the flag detail API response from DB rows.
- * `removed` is true when the flagged Student's user record is absent (null name + no match).
- * `suspended` is always false until Feature #33 adds a DB-level suspended status.
+ * `removed` is true when the flagged Student's user record is absent.
+ * `suspended` is true when studentStatus is 'suspended'.
  */
 export function buildFlagDetail(
   flag: FlagDetailRow,
@@ -164,7 +164,7 @@ export function buildFlagDetail(
       id: flag.targetId,
       name: flag.targetName,
       removed: flag.targetName === null,
-      suspended: false, // Feature #33 will set this from the DB
+      suspended: flag.targetStatus === "suspended",
     },
     reason: flag.reason,
     detail: flag.detail,
@@ -244,10 +244,69 @@ export const STUDENT_INACTIVE_MESSAGE =
   "Action no longer available — Student is suspended or removed";
 
 /**
- * Returns true if the Student can receive a warn action.
+ * Returns true if the Student can receive a warn/suspend action.
  * `exists` — user record found in DB (false = removed).
- * `suspended` — suspended flag (always false until Feature #33 adds DB column).
+ * `suspended` — true when studentStatus is 'suspended'.
  */
 export function checkStudentActive(exists: boolean, suspended: boolean): boolean {
   return exists && !suspended;
+}
+
+// #100 — Pure helpers for the suspend flow
+
+export interface SuspendFlagValues {
+  status: "resolved";
+  outcome: "suspended";
+  moderatorId: string;
+  resolvedAt: Date;
+}
+
+/**
+ * Builds the DB update payload for resolving a flag with outcome 'suspended'.
+ */
+export function buildSuspendFlagValues(moderatorId: string, resolvedAt: Date): SuspendFlagValues {
+  return {
+    status: "resolved",
+    outcome: "suspended",
+    moderatorId,
+    resolvedAt,
+  };
+}
+
+export interface StudentSuspendedPayload {
+  flagId: string;
+  targetId: string;
+  moderatorId: string;
+  suspendedAt: Date;
+}
+
+/**
+ * Builds the StudentSuspended domain event payload.
+ */
+export function buildStudentSuspendedEvent(
+  flagId: string,
+  targetId: string,
+  moderatorId: string,
+  suspendedAt: Date,
+): StudentSuspendedPayload {
+  return { flagId, targetId, moderatorId, suspendedAt };
+}
+
+// #105 — Pure helpers for the lift suspension flow
+
+export interface SuspensionLiftedPayload {
+  targetId: string;
+  moderatorId: string;
+  liftedAt: Date;
+}
+
+/**
+ * Builds the SuspensionLifted domain event payload.
+ */
+export function buildSuspensionLiftedEvent(
+  targetId: string,
+  moderatorId: string,
+  liftedAt: Date,
+): SuspensionLiftedPayload {
+  return { targetId, moderatorId, liftedAt };
 }
