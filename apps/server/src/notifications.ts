@@ -404,6 +404,7 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("StudentRemoved", (event) => {
     void handleStudentRemovedCancelProposals(event); // #110 — cancel proposals + notify peers
     void handleStudentRemovedCloseConversations(event); // #111 — close open conversations
+    void handleStudentRemovedNotify(event); // #112 — notify removed Student
   });
 }
 
@@ -991,5 +992,34 @@ async function handleSuspensionLifted(event: SuspensionLiftedEvent): Promise<voi
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send SuspensionLifted notification", { targetId, err });
+  }
+}
+
+// #112 — Notify the permanently removed Student of the outcome
+async function handleStudentRemovedNotify(event: StudentRemovedEvent): Promise<void> {
+  const { targetId } = event;
+
+  const tokens = await db
+    .select({ token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(eq(userDeviceToken.userId, targetId));
+
+  if (tokens.length === 0) {
+    console.info("[push] No device tokens for removed Student — skipping notification", { targetId });
+    return;
+  }
+
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: "Your account has been removed",
+    body: "Your Sip & Speak account has been permanently removed. You can no longer access the platform.",
+    data: { type: "student_removed" },
+  }));
+
+  try {
+    await sendExpoPushNotification(messages);
+    console.info("[push] Sent StudentRemoved notification", { targetId });
+  } catch (err) {
+    console.error("[push] Failed to send StudentRemoved notification — removal stands", { targetId, err });
   }
 }

@@ -1,11 +1,12 @@
 /**
- * Tests for task #108 — Deactivate removed Student's account (block login)
+ * Tests for tasks #108 and #112 — Deactivate removed Student's account and resolve flag
  *
  * Covers pure helpers — no DB interaction.
  *
  *   - buildRemoveFlagValues: status='resolved', outcome='removed', moderatorId, resolvedAt
  *   - buildStudentRemovedEvent: correct payload shape
  *   - buildFlagDetail: removed field reflects studentStatus='removed'
+ *   - buildFlagDetail: removal recorded in flag history with outcome 'removed'
  *   - checkStudentRemoved: idempotency guard
  */
 import { describe, it, expect } from "bun:test";
@@ -93,5 +94,32 @@ describe("#108 — buildFlagDetail removed field (via studentStatus)", () => {
   it("Returns removed=true when targetName is null (legacy removed proxy still works)", () => {
     const result = buildFlagDetail({ ...base, targetName: null, targetStatus: null }, []);
     expect(result.flaggedStudent.removed).toBe(true);
+  });
+});
+
+describe("#112 — removal recorded in flag history", () => {
+  const base = {
+    id: "flag-1",
+    targetId: "student-1",
+    targetName: "Jane Doe",
+    targetStatus: "removed" as const,
+    reason: "HARASSMENT",
+    detail: null,
+    createdAt: new Date("2026-01-01"),
+  };
+
+  it("prior flag with outcome 'removed' appears in priorFlags history", () => {
+    const resolvedAt = new Date("2026-04-14T12:00:00Z");
+    const priorFlag = { reason: "HARASSMENT", outcome: "removed" as const, resolvedAt, createdAt: new Date("2026-01-01") };
+    const result = buildFlagDetail(base, [priorFlag]);
+    expect(result.priorFlags).toHaveLength(1);
+    expect(result.priorFlags[0]!.outcome).toBe("removed");
+    expect(result.priorFlags[0]!.resolvedAt).toBe(resolvedAt.toISOString());
+  });
+
+  it("flag resolved with outcome removed no longer appears in open queue (status=resolved)", () => {
+    const resolvedValues = buildRemoveFlagValues("mod-1", new Date());
+    expect(resolvedValues.status).toBe("resolved");
+    expect(resolvedValues.outcome).toBe("removed");
   });
 });
