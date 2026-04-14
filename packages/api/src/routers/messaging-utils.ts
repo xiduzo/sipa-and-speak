@@ -59,7 +59,7 @@ export function computeMarkReadAt(existingLastReadAt: Date | null, now: Date): D
  * Returns `{ allowed: true }` or `{ allowed: false, error }`.
  */
 export function checkConversationAccess(
-  conv: { user1Id: string; user2Id: string; status: "open" | "suspended" } | undefined,
+  conv: { user1Id: string; user2Id: string; status: "open" | "suspended" | "closed" } | undefined,
   senderId: string,
 ): { allowed: true } | { allowed: false; error: "CONVERSATION_NOT_FOUND" | "NOT_A_PARTICIPANT" | "CONVERSATION_NOT_OPEN" } {
   if (!conv) return { allowed: false, error: "CONVERSATION_NOT_FOUND" };
@@ -103,7 +103,7 @@ export function computeIsUnread(
  * avoid leaking whether the conversation exists.
  */
 export function checkReadAccess(
-  conv: { user1Id: string; user2Id: string; status: "open" | "suspended" } | undefined,
+  conv: { user1Id: string; user2Id: string; status: "open" | "suspended" | "closed" } | undefined,
   readerId: string,
 ): { allowed: true } | { allowed: false; error: "NOT_A_PARTICIPANT" } {
   if (!conv) return { allowed: false, error: "NOT_A_PARTICIPANT" };

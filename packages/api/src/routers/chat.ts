@@ -8,7 +8,7 @@ import {
   messageReadStatus,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { checkReadAccess, computeIsUnread, computeMarkReadAt } from "./messaging-utils";
+import { checkConversationAccess, checkReadAccess, computeIsUnread, computeMarkReadAt } from "./messaging-utils";
 import { protectedProcedure, router } from "../index";
 
 export const chatRouter = router({
@@ -187,8 +187,10 @@ export const chatRouter = router({
         )
         .limit(1);
 
-      if (conv.length === 0) {
-        throw new Error("Conversation not found");
+      // #111 — Guard: reject sends on non-open conversations (suspended or closed)
+      const access = checkConversationAccess(conv[0], userId);
+      if (!access.allowed) {
+        throw new TRPCError({ code: "FORBIDDEN", message: access.error });
       }
 
       const [newMessage] = await db
