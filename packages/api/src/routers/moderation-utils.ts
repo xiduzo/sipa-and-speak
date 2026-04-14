@@ -76,6 +76,51 @@ export interface StudentFlaggedPayload {
 /**
  * Builds the StudentFlagged domain event payload from the persisted flag row.
  */
+// #78 — Pure helpers for the Moderator flag queue
+
+export interface FlagQueueRow {
+  id: string;
+  targetId: string;
+  targetName: string | null;
+  reason: string;
+  createdAt: Date;
+}
+
+export interface FlagQueueEntry {
+  flagId: string;
+  flaggedStudent: { id: string; name: string | null };
+  reason: string;
+  submittedAt: string;
+}
+
+/**
+ * Maps a DB row (userFlag joined with user) to the API queue entry shape.
+ */
+export function buildFlagQueueEntry(row: FlagQueueRow): FlagQueueEntry {
+  return {
+    flagId: row.id,
+    flaggedStudent: { id: row.targetId, name: row.targetName },
+    reason: row.reason,
+    submittedAt: row.createdAt.toISOString(),
+  };
+}
+
+/**
+ * Sorts an array of flag rows oldest-first (ascending createdAt).
+ * Returns a new array — does not mutate the original.
+ */
+export function sortFlagsOldestFirst<T extends { createdAt: Date }>(flags: T[]): T[] {
+  return [...flags].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+}
+
+/**
+ * Returns true only when status is exactly 'open'.
+ * Drives the WHERE status='open' filter at the DB layer.
+ */
+export function isOpenFlag(status: string): boolean {
+  return status === "open";
+}
+
 export function buildStudentFlaggedEvent(
   flagId: string,
   input: { reporterId: string; targetId: string; reason: string },
