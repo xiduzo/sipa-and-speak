@@ -195,6 +195,14 @@ export interface StudentFlaggedEvent {
   flaggedAt: Date;
 }
 
+// #90
+export interface StudentWarnedEvent {
+  flagId: string;
+  targetId: string;
+  moderatorId: string;
+  warnedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -221,6 +229,7 @@ type DomainEventMap = {
   MessagingDeclineOutcome: [MessagingDeclineOutcomeEvent];
   MessageSent: [MessageSentEvent];
   StudentFlagged: [StudentFlaggedEvent];
+  StudentWarned: [StudentWarnedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

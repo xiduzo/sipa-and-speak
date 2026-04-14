@@ -136,11 +136,13 @@ export interface PriorFlagRow {
   reason: string;
   outcome: string | null;
   createdAt: Date;
+  resolvedAt?: Date | null; // #90 — actual resolution timestamp; falls back to createdAt for legacy rows
 }
 
 export interface FlagDetailEntry {
   flagId: string;
-  flaggedStudent: { id: string; name: string | null; removed: boolean };
+  // #88 — `suspended` added; always false until Feature #33 adds the DB column
+  flaggedStudent: { id: string; name: string | null; removed: boolean; suspended: boolean };
   reason: string;
   detail: string | null;
   submittedAt: string;
@@ -150,6 +152,7 @@ export interface FlagDetailEntry {
 /**
  * Builds the flag detail API response from DB rows.
  * `removed` is true when the flagged Student's user record is absent (null name + no match).
+ * `suspended` is always false until Feature #33 adds a DB-level suspended status.
  */
 export function buildFlagDetail(
   flag: FlagDetailRow,
@@ -161,6 +164,7 @@ export function buildFlagDetail(
       id: flag.targetId,
       name: flag.targetName,
       removed: flag.targetName === null,
+      suspended: false, // Feature #33 will set this from the DB
     },
     reason: flag.reason,
     detail: flag.detail,
@@ -168,7 +172,7 @@ export function buildFlagDetail(
     priorFlags: priorFlags.map((p) => ({
       reason: p.reason,
       outcome: p.outcome,
-      resolvedAt: p.createdAt.toISOString(),
+      resolvedAt: (p.resolvedAt ?? p.createdAt).toISOString(),
     })),
   };
 }
@@ -185,4 +189,65 @@ export function buildStudentFlaggedEvent(
     reason: input.reason,
     flaggedAt,
   };
+}
+
+// #90 — Pure helpers for the warn resolution flow
+
+export interface WarnFlagValues {
+  status: "resolved";
+  outcome: "warned";
+  moderatorId: string;
+  resolvedAt: Date;
+}
+
+/**
+ * Builds the DB update payload for resolving a flag with outcome 'warned'.
+ */
+export function buildWarnFlagValues(moderatorId: string, resolvedAt: Date): WarnFlagValues {
+  return {
+    status: "resolved",
+    outcome: "warned",
+    moderatorId,
+    resolvedAt,
+  };
+}
+
+export interface StudentWarnedPayload {
+  flagId: string;
+  targetId: string;
+  moderatorId: string;
+  warnedAt: Date;
+}
+
+/**
+ * Builds the StudentWarned domain event payload from the resolved flag.
+ */
+export function buildStudentWarnedEvent(
+  flagId: string,
+  targetId: string,
+  moderatorId: string,
+  warnedAt: Date,
+): StudentWarnedPayload {
+  return { flagId, targetId, moderatorId, warnedAt };
+}
+
+/**
+ * Returns true if the given flag status allows a warn action (must be 'open').
+ */
+export function canWarnFlag(status: string): boolean {
+  return status === "open";
+}
+
+// #92 — Guard: Student must be active before warn is applied
+
+export const STUDENT_INACTIVE_MESSAGE =
+  "Action no longer available — Student is suspended or removed";
+
+/**
+ * Returns true if the Student can receive a warn action.
+ * `exists` — user record found in DB (false = removed).
+ * `suspended` — suspended flag (always false until Feature #33 adds DB column).
+ */
+export function checkStudentActive(exists: boolean, suspended: boolean): boolean {
+  return exists && !suspended;
 }
