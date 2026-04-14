@@ -45,6 +45,14 @@ function FlagDetailScreen() {
     }),
   );
 
+  const liftSuspensionMutation = useMutation(
+    trpc.moderation.liftSuspension.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.moderation.getFlagDetail.queryOptions({ flagId }));
+      },
+    }),
+  );
+
   const warnError = warnMutation.isError
     ? "Action no longer available. The flag may have already been resolved."
     : undefined;
@@ -176,6 +184,12 @@ function FlagDetailScreen() {
         </p>
       ) : null}
 
+      {liftSuspensionMutation.isSuccess ? (
+        <div className="rounded-md border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-700" data-testid="lift-suspension-success">
+          Suspension lifted. Student is now active again.
+        </div>
+      ) : null}
+
       <section className="flex gap-3 pt-2">
         <span title={disabledReason}>
           <button
@@ -203,6 +217,16 @@ function FlagDetailScreen() {
         >
           Remove
         </button>
+        {flag.flaggedStudent.suspended ? (
+          <button
+            data-testid="btn-lift-suspension"
+            disabled={liftSuspensionMutation.isPending || liftSuspensionMutation.isSuccess}
+            onClick={() => liftSuspensionMutation.mutate({ targetId: flag.flaggedStudent.id })}
+            className="rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {liftSuspensionMutation.isPending ? "Lifting…" : "Lift Suspension"}
+          </button>
+        ) : null}
       </section>
     </div>
   );

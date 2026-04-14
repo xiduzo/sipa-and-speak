@@ -34,6 +34,9 @@ vi.mock("@/utils/trpc", () => ({
       suspendStudent: {
         mutationOptions: vi.fn((opts) => ({ mutationKey: ["suspendStudent"], ...opts })),
       },
+      liftSuspension: {
+        mutationOptions: vi.fn((opts) => ({ mutationKey: ["liftSuspension"], ...opts })),
+      },
     },
   },
 }));
@@ -396,6 +399,62 @@ describe("#98 — Suspend action on flag detail view", () => {
     render(<SuspendActionView flag={suspendFlag} suspendError="Action no longer available. The flag may have already been resolved." onSuspend={vi.fn()} />);
 
     expect(screen.getByTestId("suspend-error")).toHaveTextContent("Action no longer available");
+  });
+});
+
+// #105 — Lift suspension inline component
+function LiftSuspensionView({
+  flag,
+  liftPending = false,
+  liftSuccess = false,
+  onLift,
+}: {
+  flag: { flagId: string; flaggedStudent: { id: string; suspended: boolean } };
+  liftPending?: boolean;
+  liftSuccess?: boolean;
+  onLift: () => void;
+}) {
+  if (!flag.flaggedStudent.suspended) return null;
+  return (
+    <div>
+      {liftSuccess ? (
+        <p data-testid="lift-suspension-success">Suspension lifted. Student is now active again.</p>
+      ) : (
+        <button data-testid="btn-lift-suspension" disabled={liftPending || liftSuccess} onClick={onLift}>
+          {liftPending ? "Lifting…" : "Lift Suspension"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+describe("#105 — Lift suspension action", () => {
+  const suspendedFlag = {
+    flagId: "flag-abc",
+    flaggedStudent: { id: "user-2", suspended: true },
+  };
+
+  it("Lift Suspension button visible for suspended Student", () => {
+    render(<LiftSuspensionView flag={suspendedFlag} onLift={vi.fn()} />);
+    expect(screen.getByTestId("btn-lift-suspension")).toBeInTheDocument();
+    expect(screen.getByTestId("btn-lift-suspension")).not.toBeDisabled();
+  });
+
+  it("Lift Suspension button not shown for active Student", () => {
+    const activeFlag = { ...suspendedFlag, flaggedStudent: { ...suspendedFlag.flaggedStudent, suspended: false } };
+    render(<LiftSuspensionView flag={activeFlag} onLift={vi.fn()} />);
+    expect(screen.queryByTestId("btn-lift-suspension")).not.toBeInTheDocument();
+  });
+
+  it("shows loading state while lift is pending", () => {
+    render(<LiftSuspensionView flag={suspendedFlag} liftPending={true} onLift={vi.fn()} />);
+    expect(screen.getByTestId("btn-lift-suspension")).toBeDisabled();
+    expect(screen.getByTestId("btn-lift-suspension")).toHaveTextContent("Lifting…");
+  });
+
+  it("shows success confirmation after lift", () => {
+    render(<LiftSuspensionView flag={suspendedFlag} liftSuccess={true} onLift={vi.fn()} />);
+    expect(screen.getByTestId("lift-suspension-success")).toHaveTextContent("Suspension lifted");
   });
 });
 
