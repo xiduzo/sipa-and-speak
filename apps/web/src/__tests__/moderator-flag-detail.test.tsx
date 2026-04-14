@@ -31,6 +31,9 @@ vi.mock("@/utils/trpc", () => ({
       getFlagDetail: {
         queryOptions: vi.fn((input) => ({ queryKey: ["getFlagDetail", input] })),
       },
+      suspendStudent: {
+        mutationOptions: vi.fn((opts) => ({ mutationKey: ["suspendStudent"], ...opts })),
+      },
     },
   },
 }));
@@ -284,6 +287,115 @@ describe("#88 — Warn action on flag detail view", () => {
       "Warning issued. The flag has been resolved.",
     );
     expect(screen.queryByTestId("btn-warn")).not.toBeInTheDocument();
+  });
+});
+
+// #98 — Suspend action inline component
+function SuspendActionView({
+  flag,
+  suspendPending = false,
+  suspendSuccess = false,
+  suspendError,
+  onSuspend,
+}: {
+  flag: {
+    flagId: string;
+    flaggedStudent: { id: string; name: string | null; removed: boolean; suspended: boolean };
+  };
+  suspendPending?: boolean;
+  suspendSuccess?: boolean;
+  suspendError?: string;
+  onSuspend: () => void;
+}) {
+  if (suspendSuccess) {
+    return <p data-testid="suspend-success">Student suspended. The flag has been resolved.</p>;
+  }
+
+  const studentDisabled = flag.flaggedStudent.suspended || flag.flaggedStudent.removed;
+  const disabledReason = flag.flaggedStudent.removed
+    ? "Student has already been removed"
+    : flag.flaggedStudent.suspended
+      ? "Student is already suspended"
+      : undefined;
+
+  return (
+    <div>
+      {suspendError ? (
+        <p data-testid="suspend-error">{suspendError}</p>
+      ) : null}
+      <span title={disabledReason}>
+        <button
+          data-testid="btn-suspend"
+          disabled={studentDisabled || suspendPending}
+          onClick={onSuspend}
+        >
+          {suspendPending ? "Suspending…" : "Suspend"}
+        </button>
+      </span>
+    </div>
+  );
+}
+
+describe("#98 — Suspend action on flag detail view", () => {
+  const suspendFlag = {
+    flagId: "flag-abc",
+    flaggedStudent: { id: "user-2", name: "Jane Doe", removed: false, suspended: false },
+  };
+
+  it("Suspend button is visible and enabled for an active Student", () => {
+    render(<SuspendActionView flag={suspendFlag} onSuspend={vi.fn()} />);
+
+    const btn = screen.getByTestId("btn-suspend");
+    expect(btn).toBeInTheDocument();
+    expect(btn).not.toBeDisabled();
+    expect(btn).toHaveTextContent("Suspend");
+  });
+
+  it("Suspend button is disabled with tooltip for an already-suspended Student", () => {
+    const suspendedFlag = {
+      ...suspendFlag,
+      flaggedStudent: { ...suspendFlag.flaggedStudent, suspended: true },
+    };
+
+    render(<SuspendActionView flag={suspendedFlag} onSuspend={vi.fn()} />);
+
+    expect(screen.getByTestId("btn-suspend")).toBeDisabled();
+    expect(screen.getByTitle("Student is already suspended")).toBeInTheDocument();
+  });
+
+  it("Suspend button is disabled with tooltip for a removed Student", () => {
+    const removedFlag = {
+      ...suspendFlag,
+      flaggedStudent: { ...suspendFlag.flaggedStudent, removed: true },
+    };
+
+    render(<SuspendActionView flag={removedFlag} onSuspend={vi.fn()} />);
+
+    expect(screen.getByTestId("btn-suspend")).toBeDisabled();
+    expect(screen.getByTitle("Student has already been removed")).toBeInTheDocument();
+  });
+
+  it("shows loading state while suspend is pending", () => {
+    render(<SuspendActionView flag={suspendFlag} suspendPending={true} onSuspend={vi.fn()} />);
+
+    const btn = screen.getByTestId("btn-suspend");
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveTextContent("Suspending…");
+  });
+
+  it("shows resolved confirmation on suspend success", () => {
+    render(<SuspendActionView flag={suspendFlag} suspendSuccess={true} onSuspend={vi.fn()} />);
+
+    expect(screen.getByTestId("suspend-success")).toHaveTextContent(
+      "Student suspended. The flag has been resolved.",
+    );
+    expect(screen.queryByTestId("btn-suspend")).not.toBeInTheDocument();
+  });
+
+  it("shows error message when suspend action is no longer available", () => {
+    render(<SuspendActionView flag={suspendFlag} suspendError="Action no longer available. The flag may have already been resolved." onSuspend={vi.fn()} />);
+
+    expect(screen.getByTestId("suspend-error")).toHaveTextContent("Action no longer available");
   });
 });
 
