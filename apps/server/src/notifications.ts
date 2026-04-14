@@ -6,7 +6,7 @@
  */
 import { and, eq, inArray, or } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { userDeviceToken, userLanguage, conversationPresence, meetup } from "@sip-and-speak/db/schema/sip-and-speak";
+import { userDeviceToken, userLanguage, conversationPresence, meetup, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent, type StudentWarnedEvent, type StudentSuspendedEvent, type SuspensionLiftedEvent, type StudentRemovedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
@@ -403,6 +403,7 @@ export function registerNotificationHandlers(): void {
   });
   domainEvents.on("StudentRemoved", (event) => {
     void handleStudentRemovedCancelProposals(event); // #110 — cancel proposals + notify peers
+    void handleStudentRemovedCloseConversations(event); // #111 — close open conversations
   });
 }
 
@@ -941,6 +942,35 @@ async function handleStudentRemovedCancelProposals(event: StudentRemovedEvent): 
       console.error("[push] Failed to send removal proposal cancellation notification", { targetId, err });
     }
   }
+}
+
+// #111 — Close all open conversations involving a permanently removed Student
+async function handleStudentRemovedCloseConversations(event: StudentRemovedEvent): Promise<void> {
+  const { targetId } = event;
+
+  const openConversations = await db
+    .select({ id: conversation.id })
+    .from(conversation)
+    .where(
+      and(
+        or(eq(conversation.user1Id, targetId), eq(conversation.user2Id, targetId)),
+        eq(conversation.status, "open"),
+      ),
+    );
+
+  if (openConversations.length === 0) return;
+
+  await db
+    .update(conversation)
+    .set({ status: "closed" })
+    .where(
+      and(
+        or(eq(conversation.user1Id, targetId), eq(conversation.user2Id, targetId)),
+        eq(conversation.status, "open"),
+      ),
+    );
+
+  console.info("[moderation] Closed conversations on removal", { targetId, count: openConversations.length });
 }
 
 // #106 — Notify Student when their suspension is lifted
