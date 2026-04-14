@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native";
 import { useState } from "react";
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { Container } from "@/components/container";
 import { trpc } from "@/utils/trpc";
@@ -29,24 +29,40 @@ export default function FlagUserScreen() {
   const [selectedReason, setSelectedReason] = useState<FlagReason | null>(null);
   const [detail, setDetail] = useState("");
   const [noReasonError, setNoReasonError] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const flagMutation = useMutation(
     trpc.moderation.flagStudent.mutationOptions({
       onSuccess: () => {
-        Alert.alert(
-          "Report submitted",
-          "Thank you. A Moderator will review your report.",
-        );
-        router.back();
+        setSubmitted(true);
       },
       onError: (err) => {
-        Alert.alert("Something went wrong", err.message);
+        setSubmitError(err.message);
       },
     }),
   );
 
   const detailTooLong = detail.length > DETAIL_MAX;
   const isDisabled = flagMutation.isPending || detailTooLong;
+
+  if (submitted) {
+    return (
+      <Container>
+        <View testID="flag-confirmation" className="flex-1 items-center justify-center px-8">
+          <Text className="text-foreground text-2xl font-bold mb-4 text-center">
+            Report submitted
+          </Text>
+          <Text className="text-muted-foreground text-base text-center mb-8">
+            Thank you. A Moderator will review your report.
+          </Text>
+          <Button testID="flag-confirmation-done" onPress={() => router.back()}>
+            <Button.Label>Done</Button.Label>
+          </Button>
+        </View>
+      </Container>
+    );
+  }
 
   function handleSubmit() {
     if (!selectedReason) {
@@ -128,6 +144,12 @@ export default function FlagUserScreen() {
           {detail.length}/{DETAIL_MAX}
           {detailTooLong ? " — too long" : ""}
         </Text>
+
+        {submitError && (
+          <Text testID="flag-submit-error" className="text-destructive text-sm mb-4">
+            {submitError}
+          </Text>
+        )}
 
         <Button
           testID="flag-submit-btn"
