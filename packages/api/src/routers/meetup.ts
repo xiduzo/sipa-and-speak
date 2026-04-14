@@ -3,6 +3,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
 import { meetup, venue, studentMatch, attendanceReport } from "@sip-and-speak/db/schema/sip-and-speak";
+import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
 import { isMeetupInThePast, isRescheduleNoOp } from "./meetup-utils";
@@ -62,6 +63,16 @@ export const meetupRouter = router({
 
       if (userId === input.partnerId) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot propose a meetup with yourself" });
+      }
+
+      // #100 — Guard: suspended Students cannot create meetup proposals
+      const [proposer] = await db
+        .select({ studentStatus: user.studentStatus })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1);
+      if (proposer?.studentStatus === "suspended") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Suspended Students cannot create meetup proposals." });
       }
 
       // #68: Matched state check

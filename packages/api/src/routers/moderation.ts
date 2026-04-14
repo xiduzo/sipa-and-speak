@@ -12,12 +12,14 @@ import {
   FLAG_VALIDATION_MESSAGES,
   buildStudentFlaggedEvent,
   buildStudentWarnedEvent,
+  buildStudentSuspendedEvent,
+  buildSuspensionLiftedEvent,
   buildFlagQueueEntry,
   buildFlagDetail,
   checkStudentActive,
   STUDENT_INACTIVE_MESSAGE,
 } from "./moderation-utils";
-import { persistFlag, persistWarnFlag } from "./moderation-persist";
+import { persistFlag, persistWarnFlag, persistSuspendStudent, persistLiftSuspension } from "./moderation-persist";
 import { domainEvents } from "../domain-events";
 
 export const flagReasonSchema = z.enum([
@@ -73,6 +75,7 @@ export const moderationRouter = router({
           id: userFlag.id,
           targetId: userFlag.targetId,
           targetName: user.name,
+          targetStatus: user.studentStatus,
           reason: userFlag.reason,
           detail: userFlag.detail,
           createdAt: userFlag.createdAt,
@@ -132,14 +135,14 @@ export const moderationRouter = router({
         throw new TRPCError({ code: "CONFLICT", message: "Flag already resolved." });
       }
 
-      // #92 — Guard: reject if Student is removed (suspended deferred to Feature #33)
+      // #92 — Guard: reject if Student is removed or suspended
       const studentRows = await db
-        .select({ id: user.id })
+        .select({ id: user.id, studentStatus: user.studentStatus })
         .from(user)
         .where(eq(user.id, flagRows[0].targetId))
         .limit(1);
 
-      if (!checkStudentActive(!!studentRows[0], false)) {
+      if (!checkStudentActive(!!studentRows[0], studentRows[0]?.studentStatus === "suspended")) {
         throw new TRPCError({ code: "BAD_REQUEST", message: STUDENT_INACTIVE_MESSAGE });
       }
 
@@ -148,6 +151,85 @@ export const moderationRouter = router({
       domainEvents.emit(
         "StudentWarned",
         buildStudentWarnedEvent(input.flagId, flagRows[0].targetId, moderatorId, warnedAt),
+      );
+
+      return { success: true as const };
+    }),
+
+  /**
+   * #100/#103 — Suspend a flagged Student.
+   * Sets studentStatus to 'suspended', resolves flag with outcome 'suspended',
+   * and emits the StudentSuspended domain event.
+   */
+  suspendStudent: protectedProcedure
+    .input(z.object({ flagId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const moderatorId = ctx.session.user.id;
+
+      const flagRows = await db
+        .select({ id: userFlag.id, status: userFlag.status, targetId: userFlag.targetId })
+        .from(userFlag)
+        .where(eq(userFlag.id, input.flagId))
+        .limit(1);
+
+      if (!flagRows[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Flag not found." });
+      }
+      if (flagRows[0].status !== "open") {
+        throw new TRPCError({ code: "CONFLICT", message: "Flag already resolved." });
+      }
+
+      const studentRows = await db
+        .select({ id: user.id, studentStatus: user.studentStatus })
+        .from(user)
+        .where(eq(user.id, flagRows[0].targetId))
+        .limit(1);
+
+      if (!checkStudentActive(!!studentRows[0], studentRows[0]?.studentStatus === "suspended")) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: STUDENT_INACTIVE_MESSAGE });
+      }
+
+      const { targetId, suspendedAt } = await persistSuspendStudent(
+        input.flagId,
+        flagRows[0].targetId,
+        moderatorId,
+      );
+
+      domainEvents.emit(
+        "StudentSuspended",
+        buildStudentSuspendedEvent(input.flagId, targetId, moderatorId, suspendedAt),
+      );
+
+      return { success: true as const };
+    }),
+
+  /**
+   * #105 — Lift a Student's suspension.
+   * Resets studentStatus to 'active' and emits SuspensionLifted event.
+   */
+  liftSuspension: protectedProcedure
+    .input(z.object({ targetId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const moderatorId = ctx.session.user.id;
+
+      const studentRows = await db
+        .select({ id: user.id, studentStatus: user.studentStatus })
+        .from(user)
+        .where(eq(user.id, input.targetId))
+        .limit(1);
+
+      if (!studentRows[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Student not found." });
+      }
+      if (studentRows[0].studentStatus !== "suspended") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Student is not suspended." });
+      }
+
+      const { liftedAt } = await persistLiftSuspension(input.targetId);
+
+      domainEvents.emit(
+        "SuspensionLifted",
+        buildSuspensionLiftedEvent(input.targetId, moderatorId, liftedAt),
       );
 
       return { success: true as const };

@@ -162,6 +162,16 @@ export const chatRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
+      // #100 — Guard: suspended Students cannot send messages
+      const [sender] = await db
+        .select({ studentStatus: user.studentStatus })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1);
+      if (sender?.studentStatus === "suspended") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Suspended Students cannot send messages." });
+      }
+
       // Verify user is part of this conversation
       const conv = await db
         .select()
