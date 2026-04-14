@@ -218,6 +218,14 @@ export interface SuspensionLiftedEvent {
   liftedAt: Date;
 }
 
+// #108
+export interface StudentRemovedEvent {
+  flagId: string;
+  targetId: string;
+  moderatorId: string;
+  removedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -247,6 +255,7 @@ type DomainEventMap = {
   StudentWarned: [StudentWarnedEvent];
   StudentSuspended: [StudentSuspendedEvent];
   SuspensionLifted: [SuspensionLiftedEvent];
+  StudentRemoved: [StudentRemovedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {
