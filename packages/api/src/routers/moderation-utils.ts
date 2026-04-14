@@ -35,3 +35,57 @@ export const FLAG_VALIDATION_MESSAGES: Record<"SELF_FLAG" | "DUPLICATE_OPEN_FLAG
   SELF_FLAG: "You cannot flag yourself.",
   DUPLICATE_OPEN_FLAG: "A report against this Student is already under review.",
 };
+
+// #72 — Pure helpers for flag persistence
+
+export interface FlagValues {
+  reporterId: string;
+  targetId: string;
+  reason: string;
+  detail: string | undefined;
+  status: "open";
+}
+
+/**
+ * Builds the DB insert payload for a new flag.
+ * Status is always 'open' on creation.
+ */
+export function buildFlagValues(input: {
+  reporterId: string;
+  targetId: string;
+  reason: string;
+  detail?: string;
+}): FlagValues {
+  return {
+    reporterId: input.reporterId,
+    targetId: input.targetId,
+    reason: input.reason,
+    detail: input.detail,
+    status: "open",
+  };
+}
+
+export interface StudentFlaggedPayload {
+  flagId: string;
+  reporterId: string;
+  targetId: string;
+  reason: string;
+  flaggedAt: Date;
+}
+
+/**
+ * Builds the StudentFlagged domain event payload from the persisted flag row.
+ */
+export function buildStudentFlaggedEvent(
+  flagId: string,
+  input: { reporterId: string; targetId: string; reason: string },
+  flaggedAt: Date,
+): StudentFlaggedPayload {
+  return {
+    flagId,
+    reporterId: input.reporterId,
+    targetId: input.targetId,
+    reason: input.reason,
+    flaggedAt,
+  };
+}

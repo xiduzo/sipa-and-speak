@@ -187,6 +187,14 @@ export interface MessageSentEvent {
   senderName: string;
 }
 
+export interface StudentFlaggedEvent {
+  flagId: string;
+  reporterId: string;
+  targetId: string;
+  reason: string;
+  flaggedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -212,6 +220,7 @@ type DomainEventMap = {
   ConversationOpened: [ConversationOpenedEvent];
   MessagingDeclineOutcome: [MessagingDeclineOutcomeEvent];
   MessageSent: [MessageSentEvent];
+  StudentFlagged: [StudentFlaggedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {
