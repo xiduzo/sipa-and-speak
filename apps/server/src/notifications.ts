@@ -8,7 +8,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage, conversationPresence } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent, type StudentWarnedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -390,6 +390,9 @@ export function registerNotificationHandlers(): void {
   });
   domainEvents.on("MessageSent", (event) => {
     void handleMessageSent(event);
+  });
+  domainEvents.on("StudentWarned", (event) => {
+    void handleStudentWarned(event);
   });
 }
 
@@ -785,5 +788,26 @@ async function handleMeetupCancelled(event: MeetupCancelledEvent): Promise<void>
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupCancelled notification", { meetupId, err });
+  }
+}
+
+// #94 — Notify warned Student of the moderation decision
+async function handleStudentWarned(event: StudentWarnedEvent): Promise<void> {
+  const { flagId, targetId } = event;
+  const tokens = await db
+    .select({ id: userDeviceToken.id, token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(eq(userDeviceToken.userId, targetId));
+  if (tokens.length === 0) return;
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: "Moderation notice",
+    body: "A formal warning has been recorded on your account. Please review the community guidelines.",
+    data: { flagId, type: "student_warned" },
+  }));
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send StudentWarned notification", { flagId, err });
   }
 }
