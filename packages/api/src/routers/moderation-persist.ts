@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@sip-and-speak/db";
 import { userFlag } from "@sip-and-speak/db/schema/sip-and-speak";
-import { buildFlagValues, buildWarnFlagValues, buildSuspendFlagValues } from "./moderation-utils";
+import { buildFlagValues, buildWarnFlagValues, buildSuspendFlagValues, buildRemoveFlagValues } from "./moderation-utils";
 import { user } from "@sip-and-speak/db/schema/auth";
 
 export interface PersistFlagInput {
@@ -62,6 +62,26 @@ export async function persistSuspendStudent(flagId: string, targetId: string, mo
     .returning({ targetId: userFlag.targetId, suspendedAt: userFlag.resolvedAt });
 
   return { targetId: updated!.targetId, suspendedAt };
+}
+
+/**
+ * #108 — Permanently removes a Student.
+ * Sets user.studentStatus = 'removed' and resolves the flag with outcome 'removed'.
+ */
+export async function persistRemoveStudent(flagId: string, targetId: string, moderatorId: string) {
+  const removedAt = new Date();
+  await db
+    .update(user)
+    .set({ studentStatus: "removed" })
+    .where(eq(user.id, targetId));
+
+  const [updated] = await db
+    .update(userFlag)
+    .set(buildRemoveFlagValues(moderatorId, removedAt))
+    .where(eq(userFlag.id, flagId))
+    .returning({ targetId: userFlag.targetId });
+
+  return { targetId: updated!.targetId, removedAt };
 }
 
 /**

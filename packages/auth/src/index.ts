@@ -6,6 +6,7 @@ import { env } from "@sip-and-speak/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { emailOTP } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
 
 import { polarClient } from "./lib/payments";
 
@@ -19,6 +20,22 @@ export function createAuth() {
       schema: schema,
     }),
     databaseHooks: {
+      session: {
+        create: {
+          before: async (sessionData) => {
+            // #108 — Block login for permanently removed Students
+            const [userRow] = await db
+              .select({ studentStatus: schema.user.studentStatus })
+              .from(schema.user)
+              .where(eq(schema.user.id, sessionData.userId))
+              .limit(1);
+
+            if (userRow?.studentStatus === "removed") {
+              throw new Error("Your account is no longer active.");
+            }
+          },
+        },
+      },
       user: {
         create: {
           after: async (user) => {
