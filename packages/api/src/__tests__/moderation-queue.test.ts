@@ -89,3 +89,77 @@ describe("#78 — isOpenFlag", () => {
     expect(isOpenFlag("suspended")).toBe(false);
   });
 });
+
+// Helpers that mirror what listOpenFlags does: filter → sort → map
+function simulateListOpenFlags(
+  rows: Array<{
+    id: string;
+    targetId: string;
+    targetName: string | null;
+    reason: string;
+    createdAt: Date;
+    status: string;
+  }>,
+) {
+  return sortFlagsOldestFirst(rows.filter((r) => isOpenFlag(r.status))).map(
+    buildFlagQueueEntry,
+  );
+}
+
+describe("#82 — Exclude resolved flags from the open queue", () => {
+  it("resolved flag does not appear in the open queue", () => {
+    const rows = [
+      {
+        id: "flag-resolved",
+        targetId: "user-1",
+        targetName: "Jane Doe",
+        reason: "SPAM",
+        createdAt: new Date("2026-04-10T09:00:00Z"),
+        status: "resolved",
+      },
+      {
+        id: "flag-open",
+        targetId: "user-2",
+        targetName: "Bob Smith",
+        reason: "HARASSMENT",
+        createdAt: new Date("2026-04-11T10:00:00Z"),
+        status: "open",
+      },
+    ];
+
+    const result = simulateListOpenFlags(rows);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]!.flagId).toBe("flag-open");
+    expect(result[0]!.flaggedStudent.name).toBe("Bob Smith");
+  });
+
+  it("flag disappears from queue after its status changes to resolved", () => {
+    const flag = {
+      id: "flag-1",
+      targetId: "user-1",
+      targetName: "Alice",
+      reason: "SPAM",
+      createdAt: new Date("2026-04-10T09:00:00Z"),
+      status: "open",
+    };
+
+    const beforeResolution = simulateListOpenFlags([flag]);
+    expect(beforeResolution).toHaveLength(1);
+
+    const afterResolution = simulateListOpenFlags([{ ...flag, status: "resolved" }]);
+    expect(afterResolution).toHaveLength(0);
+  });
+
+  it("all open flags remain visible when none are resolved", () => {
+    const rows = [
+      { id: "flag-1", targetId: "u1", targetName: "A", reason: "SPAM", createdAt: new Date("2026-04-10T09:00:00Z"), status: "open" },
+      { id: "flag-2", targetId: "u2", targetName: "B", reason: "HARASSMENT", createdAt: new Date("2026-04-11T09:00:00Z"), status: "open" },
+      { id: "flag-3", targetId: "u3", targetName: "C", reason: "OTHER", createdAt: new Date("2026-04-12T09:00:00Z"), status: "open" },
+    ];
+
+    const result = simulateListOpenFlags(rows);
+
+    expect(result).toHaveLength(3);
+  });
+});
