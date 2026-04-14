@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PartnerIdRouteImport } from './routes/partner/$id'
 import { Route as ModeratorFlagsRouteImport } from './routes/moderator/flags'
 import { Route as AdminLocationsRouteImport } from './routes/admin/locations'
+import { Route as ModeratorFlagsFlagIdRouteImport } from './routes/moderator/flags.$flagId'
 
 const SuggestionsRoute = SuggestionsRouteImport.update({
   id: '/suggestions',
@@ -58,6 +59,11 @@ const AdminLocationsRoute = AdminLocationsRouteImport.update({
   path: '/admin/locations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ModeratorFlagsFlagIdRoute = ModeratorFlagsFlagIdRouteImport.update({
+  id: '/$flagId',
+  path: '/$flagId',
+  getParentRoute: () => ModeratorFlagsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,8 +72,9 @@ export interface FileRoutesByFullPath {
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
   '/admin/locations': typeof AdminLocationsRoute
-  '/moderator/flags': typeof ModeratorFlagsRoute
+  '/moderator/flags': typeof ModeratorFlagsRouteWithChildren
   '/partner/$id': typeof PartnerIdRoute
+  '/moderator/flags/$flagId': typeof ModeratorFlagsFlagIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,8 +83,9 @@ export interface FileRoutesByTo {
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
   '/admin/locations': typeof AdminLocationsRoute
-  '/moderator/flags': typeof ModeratorFlagsRoute
+  '/moderator/flags': typeof ModeratorFlagsRouteWithChildren
   '/partner/$id': typeof PartnerIdRoute
+  '/moderator/flags/$flagId': typeof ModeratorFlagsFlagIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,8 +95,9 @@ export interface FileRoutesById {
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
   '/admin/locations': typeof AdminLocationsRoute
-  '/moderator/flags': typeof ModeratorFlagsRoute
+  '/moderator/flags': typeof ModeratorFlagsRouteWithChildren
   '/partner/$id': typeof PartnerIdRoute
+  '/moderator/flags/$flagId': typeof ModeratorFlagsFlagIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/admin/locations'
     | '/moderator/flags'
     | '/partner/$id'
+    | '/moderator/flags/$flagId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/admin/locations'
     | '/moderator/flags'
     | '/partner/$id'
+    | '/moderator/flags/$flagId'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/admin/locations'
     | '/moderator/flags'
     | '/partner/$id'
+    | '/moderator/flags/$flagId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -130,7 +142,7 @@ export interface RootRouteChildren {
   SuccessRoute: typeof SuccessRoute
   SuggestionsRoute: typeof SuggestionsRoute
   AdminLocationsRoute: typeof AdminLocationsRoute
-  ModeratorFlagsRoute: typeof ModeratorFlagsRoute
+  ModeratorFlagsRoute: typeof ModeratorFlagsRouteWithChildren
   PartnerIdRoute: typeof PartnerIdRoute
 }
 
@@ -192,8 +204,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLocationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/moderator/flags/$flagId': {
+      id: '/moderator/flags/$flagId'
+      path: '/$flagId'
+      fullPath: '/moderator/flags/$flagId'
+      preLoaderRoute: typeof ModeratorFlagsFlagIdRouteImport
+      parentRoute: typeof ModeratorFlagsRoute
+    }
   }
 }
+
+interface ModeratorFlagsRouteChildren {
+  ModeratorFlagsFlagIdRoute: typeof ModeratorFlagsFlagIdRoute
+}
+
+const ModeratorFlagsRouteChildren: ModeratorFlagsRouteChildren = {
+  ModeratorFlagsFlagIdRoute: ModeratorFlagsFlagIdRoute,
+}
+
+const ModeratorFlagsRouteWithChildren = ModeratorFlagsRoute._addFileChildren(
+  ModeratorFlagsRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -202,7 +233,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuccessRoute: SuccessRoute,
   SuggestionsRoute: SuggestionsRoute,
   AdminLocationsRoute: AdminLocationsRoute,
-  ModeratorFlagsRoute: ModeratorFlagsRoute,
+  ModeratorFlagsRoute: ModeratorFlagsRouteWithChildren,
   PartnerIdRoute: PartnerIdRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, eq, count, asc } from "drizzle-orm";
+import { and, eq, count, asc, ne } from "drizzle-orm";
 
 import { protectedProcedure, router } from "../index";
 import { db } from "@sip-and-speak/db";
@@ -12,6 +12,7 @@ import {
   FLAG_VALIDATION_MESSAGES,
   buildStudentFlaggedEvent,
   buildFlagQueueEntry,
+  buildFlagDetail,
 } from "./moderation-utils";
 import { persistFlag } from "./moderation-persist";
 import { domainEvents } from "../domain-events";
@@ -56,6 +57,52 @@ export const moderationRouter = router({
 
     return rows.map(buildFlagQueueEntry);
   }),
+
+  /**
+   * #80 — Get full flag detail for Moderator review.
+   * Returns flag info, flagged Student identity, and prior resolved flag history.
+   */
+  getFlagDetail: protectedProcedure
+    .input(z.object({ flagId: z.string() }))
+    .query(async ({ input }) => {
+      const flagRows = await db
+        .select({
+          id: userFlag.id,
+          targetId: userFlag.targetId,
+          targetName: user.name,
+          reason: userFlag.reason,
+          detail: userFlag.detail,
+          createdAt: userFlag.createdAt,
+        })
+        .from(userFlag)
+        .leftJoin(user, eq(userFlag.targetId, user.id))
+        .where(eq(userFlag.id, input.flagId))
+        .limit(1);
+
+      const flag = flagRows[0];
+      if (!flag) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Flag not found." });
+      }
+
+      // Prior resolved flags for the same Student (excluding the current flag)
+      const priorRows = await db
+        .select({
+          reason: userFlag.reason,
+          outcome: userFlag.status,
+          createdAt: userFlag.createdAt,
+        })
+        .from(userFlag)
+        .where(
+          and(
+            eq(userFlag.targetId, flag.targetId),
+            eq(userFlag.status, "resolved"),
+            ne(userFlag.id, input.flagId),
+          ),
+        )
+        .orderBy(asc(userFlag.createdAt));
+
+      return buildFlagDetail(flag, priorRows);
+    }),
 
   /**
    * #65/#67 — Flag submission with validation.
