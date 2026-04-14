@@ -504,6 +504,19 @@ export const conversationPresence = pgTable(
   ],
 );
 
+// #109 — Blocked email: removed Students cannot re-register with the same institutional email
+export const blockedEmail = pgTable(
+  "blocked_email",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    email: text("email").notNull().unique(),
+    blockedAt: timestamp("blocked_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("blocked_email_email_idx").on(table.email)],
+);
+
 // #67/#72 — Flag: a Student reports a peer as disruptive for Moderator review
 export const userFlag = pgTable(
   "user_flag",

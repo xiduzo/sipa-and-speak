@@ -5,8 +5,8 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "@sip-and-speak/db";
-import { userFlag } from "@sip-and-speak/db/schema/sip-and-speak";
-import { buildFlagValues, buildWarnFlagValues, buildSuspendFlagValues, buildRemoveFlagValues } from "./moderation-utils";
+import { userFlag, blockedEmail } from "@sip-and-speak/db/schema/sip-and-speak";
+import { buildFlagValues, buildWarnFlagValues, buildSuspendFlagValues, buildRemoveFlagValues, normalizeEmail } from "./moderation-utils";
 import { user } from "@sip-and-speak/db/schema/auth";
 
 export interface PersistFlagInput {
@@ -82,6 +82,28 @@ export async function persistRemoveStudent(flagId: string, targetId: string, mod
     .returning({ targetId: userFlag.targetId });
 
   return { targetId: updated!.targetId, removedAt };
+}
+
+/**
+ * #109 — Adds an email to the blocked list (idempotent via onConflictDoNothing).
+ */
+export async function addEmailToBlocklist(email: string) {
+  await db
+    .insert(blockedEmail)
+    .values({ email: normalizeEmail(email) })
+    .onConflictDoNothing();
+}
+
+/**
+ * #109 — Returns true if the email is on the blocklist.
+ */
+export async function isEmailBlocklisted(email: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: blockedEmail.id })
+    .from(blockedEmail)
+    .where(eq(blockedEmail.email, normalizeEmail(email)))
+    .limit(1);
+  return rows.length > 0;
 }
 
 /**
