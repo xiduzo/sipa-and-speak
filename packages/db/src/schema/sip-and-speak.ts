@@ -503,3 +503,28 @@ export const conversationPresence = pgTable(
     index("conversation_presence_studentId_idx").on(table.studentId),
   ],
 );
+
+// #67/#72 — Flag: a Student reports a peer as disruptive for Moderator review
+export const userFlag = pgTable(
+  "user_flag",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    reporterId: text("reporter_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    targetId: text("target_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    reason: text("reason").notNull(),
+    detail: text("detail"),
+    status: text("status").notNull().default("open"), // open | resolved
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("user_flag_reporter_idx").on(table.reporterId),
+    index("user_flag_target_idx").on(table.targetId),
+    index("user_flag_status_idx").on(table.status),
+  ],
+);
