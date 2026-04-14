@@ -292,6 +292,22 @@ export function buildStudentSuspendedEvent(
   return { flagId, targetId, moderatorId, suspendedAt };
 }
 
+// #109 — Pure helpers for the email blocklist flow
+
+/**
+ * Normalises an email address to lowercase + trimmed for blocklist storage and comparison.
+ */
+export function normalizeEmail(email: string): string {
+  return email.toLowerCase().trim();
+}
+
+/**
+ * Returns true if the email should be rejected at registration (it is blocked).
+ */
+export function isBlockedEmailRejection(blocked: boolean): boolean {
+  return blocked;
+}
+
 // #108 — Pure helpers for the permanent remove flow
 
 export interface RemoveFlagValues {
