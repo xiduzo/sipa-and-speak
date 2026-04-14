@@ -520,6 +520,10 @@ export const userFlag = pgTable(
     reason: text("reason").notNull(),
     detail: text("detail"),
     status: text("status").notNull().default("open"), // open | resolved
+    // #90 — Resolution metadata (null until flag is resolved)
+    outcome: text("outcome"),          // warned | suspended | removed
+    moderatorId: text("moderator_id").references(() => user.id, { onDelete: "set null" }),
+    resolvedAt: timestamp("resolved_at"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
