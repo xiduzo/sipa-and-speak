@@ -140,7 +140,8 @@ export interface PriorFlagRow {
 
 export interface FlagDetailEntry {
   flagId: string;
-  flaggedStudent: { id: string; name: string | null; removed: boolean };
+  // #88 — `suspended` added; always false until Feature #33 adds the DB column
+  flaggedStudent: { id: string; name: string | null; removed: boolean; suspended: boolean };
   reason: string;
   detail: string | null;
   submittedAt: string;
@@ -150,6 +151,7 @@ export interface FlagDetailEntry {
 /**
  * Builds the flag detail API response from DB rows.
  * `removed` is true when the flagged Student's user record is absent (null name + no match).
+ * `suspended` is always false until Feature #33 adds a DB-level suspended status.
  */
 export function buildFlagDetail(
   flag: FlagDetailRow,
@@ -161,6 +163,7 @@ export function buildFlagDetail(
       id: flag.targetId,
       name: flag.targetName,
       removed: flag.targetName === null,
+      suspended: false, // Feature #33 will set this from the DB
     },
     reason: flag.reason,
     detail: flag.detail,

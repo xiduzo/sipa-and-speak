@@ -105,6 +105,27 @@ export const moderationRouter = router({
     }),
 
   /**
+   * #88 — Warn a flagged Student.
+   * Stub: validates the flag exists and is open, returns success.
+   * Recording the warning and emitting the domain event is deferred to Task #90.
+   */
+  warnStudent: protectedProcedure
+    .input(z.object({ flagId: z.string() }))
+    .mutation(async ({ input }) => {
+      const rows = await db
+        .select({ id: userFlag.id })
+        .from(userFlag)
+        .where(and(eq(userFlag.id, input.flagId), eq(userFlag.status, "open")))
+        .limit(1);
+
+      if (!rows[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Flag not found or already resolved." });
+      }
+
+      return { success: true as const };
+    }),
+
+  /**
    * #65/#67 — Flag submission with validation.
    * Persistence (#72) is implemented in a subsequent task.
    */
