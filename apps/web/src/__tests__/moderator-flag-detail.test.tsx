@@ -114,6 +114,7 @@ function WarnActionView({
   flag,
   warnPending = false,
   warnSuccess = false,
+  warnError,
   onWarn,
 }: {
   flag: {
@@ -122,6 +123,7 @@ function WarnActionView({
   };
   warnPending?: boolean;
   warnSuccess?: boolean;
+  warnError?: string;
   onWarn: () => void;
 }) {
   if (warnSuccess) {
@@ -136,15 +138,20 @@ function WarnActionView({
       : undefined;
 
   return (
-    <span title={disabledReason}>
-      <button
-        data-testid="btn-warn"
-        disabled={studentDisabled || warnPending}
-        onClick={onWarn}
-      >
-        {warnPending ? "Warning…" : "Warn"}
-      </button>
-    </span>
+    <div>
+      {warnError ? (
+        <p data-testid="warn-error">{warnError}</p>
+      ) : null}
+      <span title={disabledReason}>
+        <button
+          data-testid="btn-warn"
+          disabled={studentDisabled || warnPending}
+          onClick={onWarn}
+        >
+          {warnPending ? "Warning…" : "Warn"}
+        </button>
+      </span>
+    </div>
   );
 }
 
@@ -277,5 +284,20 @@ describe("#88 — Warn action on flag detail view", () => {
       "Warning issued. The flag has been resolved.",
     );
     expect(screen.queryByTestId("btn-warn")).not.toBeInTheDocument();
+  });
+});
+
+describe("#88 — Edge cases", () => {
+  const warnFlag = {
+    flagId: "flag-abc",
+    flaggedStudent: { id: "user-2", name: "Jane Doe", removed: false, suspended: false },
+  };
+
+  it("shows error message when warn action is no longer available (stale click)", () => {
+    render(<WarnActionView flag={warnFlag} warnError="Action no longer available. The flag may have already been resolved." onWarn={vi.fn()} />);
+
+    expect(screen.getByTestId("warn-error")).toHaveTextContent(
+      "Action no longer available",
+    );
   });
 });

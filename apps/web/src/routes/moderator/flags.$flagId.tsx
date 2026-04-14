@@ -35,6 +35,10 @@ function FlagDetailScreen() {
     }),
   );
 
+  const warnError = warnMutation.isError
+    ? "Action no longer available. The flag may have already been resolved."
+    : undefined;
+
   if (isLoading) {
     return <p className="p-6 text-muted-foreground">Loading flag detail…</p>;
   }
@@ -129,6 +133,12 @@ function FlagDetailScreen() {
           </ul>
         )}
       </section>
+
+      {warnError ? (
+        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive" data-testid="warn-error">
+          {warnError}
+        </p>
+      ) : null}
 
       <section className="flex gap-3 pt-2">
         <span title={disabledReason}>
