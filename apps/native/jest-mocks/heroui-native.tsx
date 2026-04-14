@@ -13,7 +13,12 @@ function Button({ children, onPress, isDisabled, testID, ...rest }: {
   [key: string]: unknown;
 }) {
   return (
-    <Pressable testID={testID} onPress={!isDisabled ? onPress : undefined} {...rest}>
+    <Pressable
+      testID={testID}
+      onPress={!isDisabled ? onPress : undefined}
+      accessibilityState={{ disabled: isDisabled ?? false }}
+      {...rest}
+    >
       {children}
     </Pressable>
   );
