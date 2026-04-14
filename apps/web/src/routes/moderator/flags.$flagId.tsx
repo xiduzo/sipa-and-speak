@@ -1,5 +1,6 @@
 // #80 — Moderator flag detail view
 // #88 — Warn action with loading/success states
+// #98 — Suspend action with loading/success states
 // TODO: Tighten auth guard to Moderator role once role field is added to user schema
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,7 +36,28 @@ function FlagDetailScreen() {
     }),
   );
 
+  const suspendMutation = useMutation(
+    trpc.moderation.suspendStudent.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.moderation.getFlagDetail.queryOptions({ flagId }));
+        queryClient.invalidateQueries(trpc.moderation.listOpenFlags.queryOptions());
+      },
+    }),
+  );
+
+  const liftSuspensionMutation = useMutation(
+    trpc.moderation.liftSuspension.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.moderation.getFlagDetail.queryOptions({ flagId }));
+      },
+    }),
+  );
+
   const warnError = warnMutation.isError
+    ? "Action no longer available. The flag may have already been resolved."
+    : undefined;
+
+  const suspendError = suspendMutation.isError
     ? "Action no longer available. The flag may have already been resolved."
     : undefined;
 
@@ -58,6 +80,22 @@ function FlagDetailScreen() {
           data-testid="warn-success"
         >
           Warning issued. The flag has been resolved.
+        </div>
+      </div>
+    );
+  }
+
+  if (suspendMutation.isSuccess) {
+    return (
+      <div className="p-6 space-y-4 max-w-2xl">
+        <Link to="/moderator/flags" className="text-sm text-muted-foreground hover:underline">
+          ← Back to queue
+        </Link>
+        <div
+          className="rounded-md border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-700"
+          data-testid="suspend-success"
+        >
+          Student suspended. The flag has been resolved.
         </div>
       </div>
     );
@@ -140,6 +178,18 @@ function FlagDetailScreen() {
         </p>
       ) : null}
 
+      {suspendError ? (
+        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive" data-testid="suspend-error">
+          {suspendError}
+        </p>
+      ) : null}
+
+      {liftSuspensionMutation.isSuccess ? (
+        <div className="rounded-md border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-700" data-testid="lift-suspension-success">
+          Suspension lifted. Student is now active again.
+        </div>
+      ) : null}
+
       <section className="flex gap-3 pt-2">
         <span title={disabledReason}>
           <button
@@ -151,18 +201,32 @@ function FlagDetailScreen() {
             {warnMutation.isPending ? "Warning…" : "Warn"}
           </button>
         </span>
-        <button
-          disabled
-          className="rounded-md border px-4 py-2 text-sm font-medium opacity-50 cursor-not-allowed"
-        >
-          Suspend
-        </button>
+        <span title={disabledReason}>
+          <button
+            data-testid="btn-suspend"
+            disabled={studentDisabled || suspendMutation.isPending}
+            onClick={() => suspendMutation.mutate({ flagId })}
+            className="rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {suspendMutation.isPending ? "Suspending…" : "Suspend"}
+          </button>
+        </span>
         <button
           disabled={flag.flaggedStudent.removed}
           className="rounded-md border px-4 py-2 text-sm font-medium opacity-50 cursor-not-allowed"
         >
           Remove
         </button>
+        {flag.flaggedStudent.suspended ? (
+          <button
+            data-testid="btn-lift-suspension"
+            disabled={liftSuspensionMutation.isPending || liftSuspensionMutation.isSuccess}
+            onClick={() => liftSuspensionMutation.mutate({ targetId: flag.flaggedStudent.id })}
+            className="rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {liftSuspensionMutation.isPending ? "Lifting…" : "Lift Suspension"}
+          </button>
+        ) : null}
       </section>
     </div>
   );

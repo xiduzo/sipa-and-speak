@@ -92,6 +92,13 @@
       "when": 1776157965717,
       "tag": "0012_striped_victor_mancha",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1776163744198,
+      "tag": "0013_slim_marvel_zombies",
+      "breakpoints": true
     }
   ]
 }

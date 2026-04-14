@@ -21,6 +21,10 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+  // #100 — Trust & Moderation: student participation status
+  studentStatus: text("student_status", { enum: ["active", "suspended", "removed"] })
+    .notNull()
+    .default("active"),
 });
 
 export const session = pgTable(

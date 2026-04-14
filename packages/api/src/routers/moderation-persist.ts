@@ -6,7 +6,8 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@sip-and-speak/db";
 import { userFlag } from "@sip-and-speak/db/schema/sip-and-speak";
-import { buildFlagValues, buildWarnFlagValues } from "./moderation-utils";
+import { buildFlagValues, buildWarnFlagValues, buildSuspendFlagValues } from "./moderation-utils";
+import { user } from "@sip-and-speak/db/schema/auth";
 
 export interface PersistFlagInput {
   reporterId: string;
@@ -41,4 +42,38 @@ export async function persistWarnFlag(flagId: string, moderatorId: string) {
     .returning({ targetId: userFlag.targetId, warnedAt: userFlag.resolvedAt });
 
   return { targetId: updated!.targetId, warnedAt };
+}
+
+/**
+ * #100/#103 — Transitions a Student to suspended state and resolves the flag.
+ * Sets user.studentStatus = 'suspended' and resolves the flag with outcome 'suspended'.
+ */
+export async function persistSuspendStudent(flagId: string, targetId: string, moderatorId: string) {
+  const suspendedAt = new Date();
+  await db
+    .update(user)
+    .set({ studentStatus: "suspended" })
+    .where(eq(user.id, targetId));
+
+  const [updated] = await db
+    .update(userFlag)
+    .set(buildSuspendFlagValues(moderatorId, suspendedAt))
+    .where(eq(userFlag.id, flagId))
+    .returning({ targetId: userFlag.targetId, suspendedAt: userFlag.resolvedAt });
+
+  return { targetId: updated!.targetId, suspendedAt };
+}
+
+/**
+ * #105 — Lifts a Student's suspension.
+ * Sets user.studentStatus back to 'active'.
+ */
+export async function persistLiftSuspension(targetId: string) {
+  const liftedAt = new Date();
+  await db
+    .update(user)
+    .set({ studentStatus: "active" })
+    .where(eq(user.id, targetId));
+
+  return { liftedAt };
 }

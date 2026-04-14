@@ -118,11 +118,11 @@ export const matchingRouter = router({
         .from(userInterest)
         .where(inArray(userInterest.userId, otherUserIds));
 
-      // Fetch user info (name, image) for candidates
+      // Fetch user info (name, image) for candidates — exclude suspended Students (#100)
       const allUsers = await db
         .select({ id: user.id, name: user.name, image: user.image })
         .from(user)
-        .where(inArray(user.id, otherUserIds));
+        .where(and(inArray(user.id, otherUserIds), ne(user.studentStatus, "suspended")));
 
       const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
