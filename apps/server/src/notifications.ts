@@ -4,11 +4,11 @@
  * Wires domain events to Expo Push API calls.
  * Fire-and-forget: errors are logged but never thrown to callers.
  */
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, or } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { userDeviceToken, userLanguage, conversationPresence } from "@sip-and-speak/db/schema/sip-and-speak";
+import { userDeviceToken, userLanguage, conversationPresence, meetup } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent, type StudentWarnedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent, type StudentWarnedEvent, type StudentSuspendedEvent, type SuspensionLiftedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -393,6 +393,13 @@ export function registerNotificationHandlers(): void {
   });
   domainEvents.on("StudentWarned", (event) => {
     void handleStudentWarned(event);
+  });
+  domainEvents.on("StudentSuspended", (event) => {
+    void handleStudentSuspended(event);        // #102 — cancel proposals + notify peers
+    void handleStudentSuspendedNotify(event);  // #104 — notify the suspended Student
+  });
+  domainEvents.on("SuspensionLifted", (event) => {
+    void handleSuspensionLifted(event);
   });
 }
 
@@ -809,5 +816,97 @@ async function handleStudentWarned(event: StudentWarnedEvent): Promise<void> {
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send StudentWarned notification", { flagId, err });
+  }
+}
+
+// #102 — Cancel active meetup proposals when a Student is suspended; notify affected peers
+async function handleStudentSuspended(event: StudentSuspendedEvent): Promise<void> {
+  const { flagId, targetId } = event;
+
+  const activeProposals = await db
+    .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
+    .from(meetup)
+    .where(
+      and(
+        or(eq(meetup.proposerId, targetId), eq(meetup.receiverId, targetId)),
+        inArray(meetup.status, ["pending", "confirmed"]),
+      ),
+    );
+
+  if (activeProposals.length > 0) {
+    await db
+      .update(meetup)
+      .set({ status: "cancelled" })
+      .where(
+        and(
+          or(eq(meetup.proposerId, targetId), eq(meetup.receiverId, targetId)),
+          inArray(meetup.status, ["pending", "confirmed"]),
+        ),
+      );
+
+    const peerIds = [...new Set(
+      activeProposals.map((p) => p.proposerId === targetId ? p.receiverId : p.proposerId),
+    )];
+
+    const tokens = await db
+      .select({ token: userDeviceToken.token })
+      .from(userDeviceToken)
+      .where(inArray(userDeviceToken.userId, peerIds));
+
+    if (tokens.length > 0) {
+      const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+        to: token,
+        title: "Meetup proposal cancelled",
+        body: "Your meetup proposal has been cancelled.",
+        data: { type: "proposal_cancelled" },
+      }));
+      try {
+        await sendExpoPushNotification(messages);
+      } catch (err) {
+        console.error("[push] Failed to send proposal cancellation notification", { flagId, err });
+      }
+    }
+  }
+}
+
+// #104 — Notify suspended Student of the moderation decision
+async function handleStudentSuspendedNotify(event: StudentSuspendedEvent): Promise<void> {
+  const { flagId, targetId } = event;
+  const tokens = await db
+    .select({ token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(eq(userDeviceToken.userId, targetId));
+  if (tokens.length === 0) return;
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: "Account suspended",
+    body: "Your account has been temporarily suspended. You will not be able to participate until the suspension is lifted.",
+    data: { flagId, type: "student_suspended" },
+  }));
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send StudentSuspended notification", { flagId, err });
+  }
+}
+
+// #106 — Notify Student when their suspension is lifted
+async function handleSuspensionLifted(event: SuspensionLiftedEvent): Promise<void> {
+  const { targetId } = event;
+  const tokens = await db
+    .select({ token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(eq(userDeviceToken.userId, targetId));
+  if (tokens.length === 0) return;
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: "Suspension lifted",
+    body: "Your suspension has been lifted. You can now participate in Sip & Speak again.",
+    data: { type: "suspension_lifted" },
+  }));
+  try {
+    await sendExpoPushNotification(messages);
+  } catch (err) {
+    console.error("[push] Failed to send SuspensionLifted notification", { targetId, err });
   }
 }
