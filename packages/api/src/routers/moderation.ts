@@ -14,6 +14,8 @@ import {
   buildStudentWarnedEvent,
   buildFlagQueueEntry,
   buildFlagDetail,
+  checkStudentActive,
+  STUDENT_INACTIVE_MESSAGE,
 } from "./moderation-utils";
 import { persistFlag, persistWarnFlag } from "./moderation-persist";
 import { domainEvents } from "../domain-events";
@@ -128,6 +130,17 @@ export const moderationRouter = router({
       }
       if (flagRows[0].status !== "open") {
         throw new TRPCError({ code: "CONFLICT", message: "Flag already resolved." });
+      }
+
+      // #92 — Guard: reject if Student is removed (suspended deferred to Feature #33)
+      const studentRows = await db
+        .select({ id: user.id })
+        .from(user)
+        .where(eq(user.id, flagRows[0].targetId))
+        .limit(1);
+
+      if (!checkStudentActive(!!studentRows[0], false)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: STUDENT_INACTIVE_MESSAGE });
       }
 
       const { warnedAt } = await persistWarnFlag(input.flagId, moderatorId);

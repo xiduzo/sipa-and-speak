@@ -237,3 +237,17 @@ export function buildStudentWarnedEvent(
 export function canWarnFlag(status: string): boolean {
   return status === "open";
 }
+
+// #92 — Guard: Student must be active before warn is applied
+
+export const STUDENT_INACTIVE_MESSAGE =
+  "Action no longer available — Student is suspended or removed";
+
+/**
+ * Returns true if the Student can receive a warn action.
+ * `exists` — user record found in DB (false = removed).
+ * `suspended` — suspended flag (always false until Feature #33 adds DB column).
+ */
+export function checkStudentActive(exists: boolean, suspended: boolean): boolean {
+  return exists && !suspended;
+}
