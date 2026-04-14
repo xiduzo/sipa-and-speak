@@ -85,6 +85,13 @@
       "when": 1776111000946,
       "tag": "0011_gigantic_prima",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1776157965717,
+      "tag": "0012_striped_victor_mancha",
+      "breakpoints": true
     }
   ]
 }

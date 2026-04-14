@@ -11,10 +11,11 @@ import {
   checkDuplicateOpenFlag,
   FLAG_VALIDATION_MESSAGES,
   buildStudentFlaggedEvent,
+  buildStudentWarnedEvent,
   buildFlagQueueEntry,
   buildFlagDetail,
 } from "./moderation-utils";
-import { persistFlag } from "./moderation-persist";
+import { persistFlag, persistWarnFlag } from "./moderation-persist";
 import { domainEvents } from "../domain-events";
 
 export const flagReasonSchema = z.enum([
@@ -88,8 +89,9 @@ export const moderationRouter = router({
       const priorRows = await db
         .select({
           reason: userFlag.reason,
-          outcome: userFlag.status,
+          outcome: userFlag.outcome,
           createdAt: userFlag.createdAt,
+          resolvedAt: userFlag.resolvedAt,
         })
         .from(userFlag)
         .where(
@@ -105,22 +107,35 @@ export const moderationRouter = router({
     }),
 
   /**
-   * #88 — Warn a flagged Student.
-   * Stub: validates the flag exists and is open, returns success.
-   * Recording the warning and emitting the domain event is deferred to Task #90.
+   * #88/#90 — Warn a flagged Student.
+   * Resolves the flag with outcome 'warned', records moderator identity + timestamp,
+   * and emits the StudentWarned domain event.
    */
   warnStudent: protectedProcedure
     .input(z.object({ flagId: z.string() }))
-    .mutation(async ({ input }) => {
-      const rows = await db
-        .select({ id: userFlag.id })
+    .mutation(async ({ ctx, input }) => {
+      const moderatorId = ctx.session.user.id;
+
+      // Two-step guard: distinguish "not found" from "already resolved"
+      const flagRows = await db
+        .select({ id: userFlag.id, status: userFlag.status, targetId: userFlag.targetId })
         .from(userFlag)
-        .where(and(eq(userFlag.id, input.flagId), eq(userFlag.status, "open")))
+        .where(eq(userFlag.id, input.flagId))
         .limit(1);
 
-      if (!rows[0]) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Flag not found or already resolved." });
+      if (!flagRows[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Flag not found." });
       }
+      if (flagRows[0].status !== "open") {
+        throw new TRPCError({ code: "CONFLICT", message: "Flag already resolved." });
+      }
+
+      const { warnedAt } = await persistWarnFlag(input.flagId, moderatorId);
+
+      domainEvents.emit(
+        "StudentWarned",
+        buildStudentWarnedEvent(input.flagId, flagRows[0].targetId, moderatorId, warnedAt),
+      );
 
       return { success: true as const };
     }),
