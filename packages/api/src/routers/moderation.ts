@@ -236,6 +236,29 @@ export const moderationRouter = router({
     }),
 
   /**
+   * #107 (stub) — Permanent remove action.
+   * Accepts flagId, validates flag is open. Full removal logic in Task #108.
+   */
+  removeStudent: protectedProcedure
+    .input(z.object({ flagId: z.string() }))
+    .mutation(async ({ input }) => {
+      const flagRows = await db
+        .select({ id: userFlag.id, status: userFlag.status, targetId: userFlag.targetId })
+        .from(userFlag)
+        .where(eq(userFlag.id, input.flagId))
+        .limit(1);
+
+      if (!flagRows[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Flag not found." });
+      }
+      if (flagRows[0].status !== "open") {
+        throw new TRPCError({ code: "CONFLICT", message: "Flag already resolved." });
+      }
+
+      return { success: true as const };
+    }),
+
+  /**
    * #65/#67 — Flag submission with validation.
    * Persistence (#72) is implemented in a subsequent task.
    */

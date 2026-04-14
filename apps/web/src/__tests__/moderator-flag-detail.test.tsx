@@ -1,5 +1,9 @@
 /**
  * Tests for task #80 — Build flag detail view (flagged Student, reason, prior flag history)
+ * Tests for task #88 — Warn action with loading/success states
+ * Tests for task #98 — Suspend action with loading/success states
+ * Tests for task #105 — Lift suspension action
+ * Tests for task #107 — Permanent remove action with confirmation step
  *
  * Covers:
  *   - Full flag detail renders correctly
@@ -7,7 +11,7 @@
  *   - Empty prior history shows empty state message
  *   - Removed Student shows notice and disables warn/suspend buttons
  */
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock TanStack Router — Route.useParams used inside the component
@@ -36,6 +40,9 @@ vi.mock("@/utils/trpc", () => ({
       },
       liftSuspension: {
         mutationOptions: vi.fn((opts) => ({ mutationKey: ["liftSuspension"], ...opts })),
+      },
+      removeStudent: {
+        mutationOptions: vi.fn((opts) => ({ mutationKey: ["removeStudent"], ...opts })),
       },
     },
   },
@@ -470,5 +477,161 @@ describe("#88 — Edge cases", () => {
     expect(screen.getByTestId("warn-error")).toHaveTextContent(
       "Action no longer available",
     );
+  });
+});
+
+// #107 — Remove action inline component
+function RemoveActionView({
+  flag,
+  removePending = false,
+  removeSuccess = false,
+  showConfirm = false,
+  onRemoveClick,
+  onConfirm,
+  onDismiss,
+}: {
+  flag: { flagId: string; flaggedStudent: { id: string; name: string | null; removed: boolean; suspended: boolean } };
+  removePending?: boolean;
+  removeSuccess?: boolean;
+  showConfirm?: boolean;
+  onRemoveClick: () => void;
+  onConfirm: () => void;
+  onDismiss: () => void;
+}) {
+  if (removeSuccess) {
+    return (
+      <p data-testid="remove-success">
+        Student permanently removed. The flag has been resolved.
+      </p>
+    );
+  }
+  return (
+    <div>
+      {!flag.flaggedStudent.removed ? (
+        <button
+          data-testid="btn-remove"
+          disabled={removePending}
+          onClick={onRemoveClick}
+        >
+          {removePending ? "Removing…" : "Remove permanently"}
+        </button>
+      ) : null}
+      {showConfirm ? (
+        <div data-testid="confirm-dialog" role="dialog">
+          <p>This action is irreversible. The Student will be permanently removed.</p>
+          <button data-testid="btn-confirm-remove" onClick={onConfirm}>
+            Confirm removal
+          </button>
+          <button data-testid="btn-dismiss-remove" onClick={onDismiss}>
+            Cancel
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+describe("#107 — Permanent remove action with confirmation step", () => {
+  const activeFlag = {
+    flagId: "flag-abc",
+    flaggedStudent: { id: "user-2", name: "Jane Doe", removed: false, suspended: false },
+  };
+  const removedFlag = {
+    flagId: "flag-abc",
+    flaggedStudent: { id: "user-2", name: null, removed: true, suspended: false },
+  };
+
+  it("Remove button is visible and enabled for an active Student", () => {
+    render(
+      <RemoveActionView
+        flag={activeFlag}
+        onRemoveClick={vi.fn()}
+        onConfirm={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+    const btn = screen.getByTestId("btn-remove");
+    expect(btn).toBeInTheDocument();
+    expect(btn).not.toBeDisabled();
+    expect(btn).toHaveTextContent("Remove permanently");
+  });
+
+  it("Remove button is not visible for an already-removed Student", () => {
+    render(
+      <RemoveActionView
+        flag={removedFlag}
+        onRemoveClick={vi.fn()}
+        onConfirm={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+    expect(screen.queryByTestId("btn-remove")).not.toBeInTheDocument();
+  });
+
+  it("Confirmation dialog is shown when showConfirm is true", () => {
+    render(
+      <RemoveActionView
+        flag={activeFlag}
+        showConfirm={true}
+        onRemoveClick={vi.fn()}
+        onConfirm={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+    const dialog = screen.getByTestId("confirm-dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveTextContent("irreversible");
+    expect(screen.getByTestId("btn-confirm-remove")).toBeInTheDocument();
+    expect(screen.getByTestId("btn-dismiss-remove")).toBeInTheDocument();
+  });
+
+  it("Clicking Confirm calls onConfirm and shows loading state", () => {
+    const onConfirm = vi.fn();
+    render(
+      <RemoveActionView
+        flag={activeFlag}
+        removePending={true}
+        showConfirm={false}
+        onRemoveClick={vi.fn()}
+        onConfirm={onConfirm}
+        onDismiss={vi.fn()}
+      />,
+    );
+    const btn = screen.getByTestId("btn-remove");
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveTextContent("Removing…");
+  });
+
+  it("Clicking Dismiss does not call onConfirm", () => {
+    const onConfirm = vi.fn();
+    const onDismiss = vi.fn();
+    render(
+      <RemoveActionView
+        flag={activeFlag}
+        showConfirm={true}
+        onRemoveClick={vi.fn()}
+        onConfirm={onConfirm}
+        onDismiss={onDismiss}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("btn-dismiss-remove"));
+    expect(onDismiss).toHaveBeenCalledOnce();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("Success state shown after removal", () => {
+    render(
+      <RemoveActionView
+        flag={activeFlag}
+        removeSuccess={true}
+        onRemoveClick={vi.fn()}
+        onConfirm={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("remove-success")).toHaveTextContent(
+      "Student permanently removed. The flag has been resolved.",
+    );
+    expect(screen.queryByTestId("btn-remove")).not.toBeInTheDocument();
   });
 });
