@@ -1,9 +1,14 @@
 import { trpcServer } from "@hono/trpc-server";
+import { domainEvents } from "@sip-and-speak/api/domain-events";
 import { createContext } from "@sip-and-speak/api/context";
 import { appRouter } from "@sip-and-speak/api/routers/index";
+import { addEmailToBlocklist, isEmailBlocklisted } from "@sip-and-speak/api/routers/moderation-persist";
 import { auth } from "@sip-and-speak/auth";
 import { isAlumniEmail, ALUMNI_REGISTRY_ERROR, ALUMNI_REGISTRY_UNAVAILABLE_ERROR } from "@sip-and-speak/auth/alumni-registry";
 import { validateTueDomain } from "@sip-and-speak/auth/domain-validation";
+import { db } from "@sip-and-speak/db";
+import { user } from "@sip-and-speak/db/schema/auth";
+import { eq } from "drizzle-orm";
 import { env } from "@sip-and-speak/env/server";
 import { Hono } from "hono";
 import type { Context } from "hono";
@@ -13,6 +18,18 @@ import { registerNotificationHandlers } from "./notifications";
 
 // Wire domain event → push notification handlers on server start
 registerNotificationHandlers();
+
+// #109 — Block removed Student's email from re-registration
+domainEvents.on("StudentRemoved", async (event) => {
+  const [userRow] = await db
+    .select({ email: user.email })
+    .from(user)
+    .where(eq(user.id, event.targetId))
+    .limit(1);
+  if (userRow?.email) {
+    await addEmailToBlocklist(userRow.email);
+  }
+});
 
 const app = new Hono();
 
@@ -34,6 +51,11 @@ async function handleSendOtp(c: Context): Promise<Response> {
     try { return (JSON.parse(rawBody) as { email?: string }).email ?? ""; }
     catch { return ""; }
   })();
+
+  // #109 — Block removed Students from re-registering
+  if (await isEmailBlocklisted(email)) {
+    return c.json({ message: "This email is not eligible for registration" }, 400);
+  }
 
   if (validateTueDomain(email)) {
     // Valid TU/e institutional email — proceed to OTP dispatch

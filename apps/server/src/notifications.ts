@@ -6,9 +6,9 @@
  */
 import { and, eq, inArray, or } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { userDeviceToken, userLanguage, conversationPresence, meetup } from "@sip-and-speak/db/schema/sip-and-speak";
+import { userDeviceToken, userLanguage, conversationPresence, meetup, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent, type StudentWarnedEvent, type StudentSuspendedEvent, type SuspensionLiftedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent, type StudentWarnedEvent, type StudentSuspendedEvent, type SuspensionLiftedEvent, type StudentRemovedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -400,6 +400,11 @@ export function registerNotificationHandlers(): void {
   });
   domainEvents.on("SuspensionLifted", (event) => {
     void handleSuspensionLifted(event);
+  });
+  domainEvents.on("StudentRemoved", (event) => {
+    void handleStudentRemovedCancelProposals(event); // #110 — cancel proposals + notify peers
+    void handleStudentRemovedCloseConversations(event); // #111 — close open conversations
+    void handleStudentRemovedNotify(event); // #112 — notify removed Student
   });
 }
 
@@ -890,6 +895,85 @@ async function handleStudentSuspendedNotify(event: StudentSuspendedEvent): Promi
   }
 }
 
+// #110 — Cancel active meetup proposals when a Student is permanently removed
+async function handleStudentRemovedCancelProposals(event: StudentRemovedEvent): Promise<void> {
+  const { targetId } = event;
+
+  const activeProposals = await db
+    .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
+    .from(meetup)
+    .where(
+      and(
+        or(eq(meetup.proposerId, targetId), eq(meetup.receiverId, targetId)),
+        inArray(meetup.status, ["pending", "confirmed"]),
+      ),
+    );
+
+  if (activeProposals.length === 0) return;
+
+  await db
+    .update(meetup)
+    .set({ status: "cancelled" })
+    .where(
+      and(
+        or(eq(meetup.proposerId, targetId), eq(meetup.receiverId, targetId)),
+        inArray(meetup.status, ["pending", "confirmed"]),
+      ),
+    );
+
+  const peerIds = [...new Set(
+    activeProposals.map((p) => p.proposerId === targetId ? p.receiverId : p.proposerId),
+  )];
+
+  const tokens = await db
+    .select({ token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(inArray(userDeviceToken.userId, peerIds));
+
+  if (tokens.length > 0) {
+    const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+      to: token,
+      title: "Meetup proposal cancelled",
+      body: "Your meetup proposal has been cancelled.",
+      data: { type: "proposal_cancelled" },
+    }));
+    try {
+      await sendExpoPushNotification(messages);
+    } catch (err) {
+      console.error("[push] Failed to send removal proposal cancellation notification", { targetId, err });
+    }
+  }
+}
+
+// #111 — Close all open conversations involving a permanently removed Student
+async function handleStudentRemovedCloseConversations(event: StudentRemovedEvent): Promise<void> {
+  const { targetId } = event;
+
+  const openConversations = await db
+    .select({ id: conversation.id })
+    .from(conversation)
+    .where(
+      and(
+        or(eq(conversation.user1Id, targetId), eq(conversation.user2Id, targetId)),
+        eq(conversation.status, "open"),
+      ),
+    );
+
+  if (openConversations.length === 0) return;
+
+  await db
+    .update(conversation)
+    .set({ status: "closed" })
+    .where(
+      and(
+        or(eq(conversation.user1Id, targetId), eq(conversation.user2Id, targetId)),
+        eq(conversation.status, "open"),
+      ),
+    );
+
+  console.info("[moderation] Closed conversations on removal", { targetId, count: openConversations.length });
+}
+
 // #106 — Notify Student when their suspension is lifted
 async function handleSuspensionLifted(event: SuspensionLiftedEvent): Promise<void> {
   const { targetId } = event;
@@ -908,5 +992,34 @@ async function handleSuspensionLifted(event: SuspensionLiftedEvent): Promise<voi
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send SuspensionLifted notification", { targetId, err });
+  }
+}
+
+// #112 — Notify the permanently removed Student of the outcome
+async function handleStudentRemovedNotify(event: StudentRemovedEvent): Promise<void> {
+  const { targetId } = event;
+
+  const tokens = await db
+    .select({ token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(eq(userDeviceToken.userId, targetId));
+
+  if (tokens.length === 0) {
+    console.info("[push] No device tokens for removed Student — skipping notification", { targetId });
+    return;
+  }
+
+  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    to: token,
+    title: "Your account has been removed",
+    body: "Your Sip & Speak account has been permanently removed. You can no longer access the platform.",
+    data: { type: "student_removed" },
+  }));
+
+  try {
+    await sendExpoPushNotification(messages);
+    console.info("[push] Sent StudentRemoved notification", { targetId });
+  } catch (err) {
+    console.error("[push] Failed to send StudentRemoved notification — removal stands", { targetId, err });
   }
 }

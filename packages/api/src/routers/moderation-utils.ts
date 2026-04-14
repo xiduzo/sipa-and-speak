@@ -151,7 +151,7 @@ export interface FlagDetailEntry {
 
 /**
  * Builds the flag detail API response from DB rows.
- * `removed` is true when the flagged Student's user record is absent.
+ * `removed` is true when studentStatus is 'removed' OR targetName is null (legacy proxy).
  * `suspended` is true when studentStatus is 'suspended'.
  */
 export function buildFlagDetail(
@@ -163,7 +163,7 @@ export function buildFlagDetail(
     flaggedStudent: {
       id: flag.targetId,
       name: flag.targetName,
-      removed: flag.targetName === null,
+      removed: flag.targetStatus === "removed" || flag.targetName === null,
       suspended: flag.targetStatus === "suspended",
     },
     reason: flag.reason,
@@ -290,6 +290,69 @@ export function buildStudentSuspendedEvent(
   suspendedAt: Date,
 ): StudentSuspendedPayload {
   return { flagId, targetId, moderatorId, suspendedAt };
+}
+
+// #109 — Pure helpers for the email blocklist flow
+
+/**
+ * Normalises an email address to lowercase + trimmed for blocklist storage and comparison.
+ */
+export function normalizeEmail(email: string): string {
+  return email.toLowerCase().trim();
+}
+
+/**
+ * Returns true if the email should be rejected at registration (it is blocked).
+ */
+export function isBlockedEmailRejection(blocked: boolean): boolean {
+  return blocked;
+}
+
+// #108 — Pure helpers for the permanent remove flow
+
+export interface RemoveFlagValues {
+  status: "resolved";
+  outcome: "removed";
+  moderatorId: string;
+  resolvedAt: Date;
+}
+
+/**
+ * Builds the DB update payload for resolving a flag with outcome 'removed'.
+ */
+export function buildRemoveFlagValues(moderatorId: string, resolvedAt: Date): RemoveFlagValues {
+  return {
+    status: "resolved",
+    outcome: "removed",
+    moderatorId,
+    resolvedAt,
+  };
+}
+
+export interface StudentRemovedPayload {
+  flagId: string;
+  targetId: string;
+  moderatorId: string;
+  removedAt: Date;
+}
+
+/**
+ * Builds the StudentRemoved domain event payload.
+ */
+export function buildStudentRemovedEvent(
+  flagId: string,
+  targetId: string,
+  moderatorId: string,
+  removedAt: Date,
+): StudentRemovedPayload {
+  return { flagId, targetId, moderatorId, removedAt };
+}
+
+/**
+ * Returns true if the Student is already removed (idempotency guard).
+ */
+export function checkStudentRemoved(studentStatus: string | null | undefined): boolean {
+  return studentStatus === "removed";
 }
 
 // #105 — Pure helpers for the lift suspension flow

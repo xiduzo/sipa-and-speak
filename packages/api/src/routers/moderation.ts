@@ -13,13 +13,15 @@ import {
   buildStudentFlaggedEvent,
   buildStudentWarnedEvent,
   buildStudentSuspendedEvent,
+  buildStudentRemovedEvent,
   buildSuspensionLiftedEvent,
   buildFlagQueueEntry,
   buildFlagDetail,
   checkStudentActive,
+  checkStudentRemoved,
   STUDENT_INACTIVE_MESSAGE,
 } from "./moderation-utils";
-import { persistFlag, persistWarnFlag, persistSuspendStudent, persistLiftSuspension } from "./moderation-persist";
+import { persistFlag, persistWarnFlag, persistSuspendStudent, persistRemoveStudent, persistLiftSuspension } from "./moderation-persist";
 import { domainEvents } from "../domain-events";
 
 export const flagReasonSchema = z.enum([
@@ -230,6 +232,54 @@ export const moderationRouter = router({
       domainEvents.emit(
         "SuspensionLifted",
         buildSuspensionLiftedEvent(input.targetId, moderatorId, liftedAt),
+      );
+
+      return { success: true as const };
+    }),
+
+  /**
+   * #107/#108 — Permanently remove a flagged Student.
+   * Sets studentStatus to 'removed', resolves flag with outcome 'removed',
+   * and emits the StudentRemoved domain event.
+   */
+  removeStudent: protectedProcedure
+    .input(z.object({ flagId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const moderatorId = ctx.session.user.id;
+
+      const flagRows = await db
+        .select({ id: userFlag.id, status: userFlag.status, targetId: userFlag.targetId })
+        .from(userFlag)
+        .where(eq(userFlag.id, input.flagId))
+        .limit(1);
+
+      if (!flagRows[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Flag not found." });
+      }
+      if (flagRows[0].status !== "open") {
+        throw new TRPCError({ code: "CONFLICT", message: "Flag already resolved." });
+      }
+
+      const studentRows = await db
+        .select({ id: user.id, studentStatus: user.studentStatus })
+        .from(user)
+        .where(eq(user.id, flagRows[0].targetId))
+        .limit(1);
+
+      if (checkStudentRemoved(studentRows[0]?.studentStatus)) {
+        // Idempotent — already removed, return success without side effects
+        return { success: true as const };
+      }
+
+      const { targetId, removedAt } = await persistRemoveStudent(
+        input.flagId,
+        flagRows[0].targetId,
+        moderatorId,
+      );
+
+      domainEvents.emit(
+        "StudentRemoved",
+        buildStudentRemovedEvent(input.flagId, targetId, moderatorId, removedAt),
       );
 
       return { success: true as const };

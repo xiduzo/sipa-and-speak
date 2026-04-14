@@ -153,7 +153,8 @@ export const conversation = pgTable(
     // #141 — FK to meetup; unique per meetup (at most one conversation per meetup pair)
     meetupId: text("meetup_id").references(() => meetup.id, { onDelete: "set null" }),
     // #146 — Trust & Moderation can suspend a conversation; only "open" conversations accept messages
-    status: text("status", { enum: ["open", "suspended"] }).notNull().default("open"),
+    // #111 — Permanently removed Students cause conversations to be "closed" (read-only, history preserved)
+    status: text("status", { enum: ["open", "suspended", "closed"] }).notNull().default("open"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
@@ -502,6 +503,19 @@ export const conversationPresence = pgTable(
     unique("conversation_presence_student_conv_unique").on(table.studentId, table.conversationId),
     index("conversation_presence_studentId_idx").on(table.studentId),
   ],
+);
+
+// #109 — Blocked email: removed Students cannot re-register with the same institutional email
+export const blockedEmail = pgTable(
+  "blocked_email",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    email: text("email").notNull().unique(),
+    blockedAt: timestamp("blocked_at").defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("blocked_email_email_idx").on(table.email)],
 );
 
 // #67/#72 — Flag: a Student reports a peer as disruptive for Moderator review
