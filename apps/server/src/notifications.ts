@@ -8,7 +8,7 @@ import { and, eq, inArray, or } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken, userLanguage, conversationPresence, meetup } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent, type StudentWarnedEvent, type StudentSuspendedEvent, type SuspensionLiftedEvent } from "@sip-and-speak/api/domain-events";
+import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent, type StudentWarnedEvent, type StudentSuspendedEvent, type SuspensionLiftedEvent, type StudentRemovedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -400,6 +400,9 @@ export function registerNotificationHandlers(): void {
   });
   domainEvents.on("SuspensionLifted", (event) => {
     void handleSuspensionLifted(event);
+  });
+  domainEvents.on("StudentRemoved", (event) => {
+    void handleStudentRemovedCancelProposals(event); // #110 — cancel proposals + notify peers
   });
 }
 
@@ -887,6 +890,56 @@ async function handleStudentSuspendedNotify(event: StudentSuspendedEvent): Promi
     await sendExpoPushNotification(messages);
   } catch (err) {
     console.error("[push] Failed to send StudentSuspended notification", { flagId, err });
+  }
+}
+
+// #110 — Cancel active meetup proposals when a Student is permanently removed
+async function handleStudentRemovedCancelProposals(event: StudentRemovedEvent): Promise<void> {
+  const { targetId } = event;
+
+  const activeProposals = await db
+    .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
+    .from(meetup)
+    .where(
+      and(
+        or(eq(meetup.proposerId, targetId), eq(meetup.receiverId, targetId)),
+        inArray(meetup.status, ["pending", "confirmed"]),
+      ),
+    );
+
+  if (activeProposals.length === 0) return;
+
+  await db
+    .update(meetup)
+    .set({ status: "cancelled" })
+    .where(
+      and(
+        or(eq(meetup.proposerId, targetId), eq(meetup.receiverId, targetId)),
+        inArray(meetup.status, ["pending", "confirmed"]),
+      ),
+    );
+
+  const peerIds = [...new Set(
+    activeProposals.map((p) => p.proposerId === targetId ? p.receiverId : p.proposerId),
+  )];
+
+  const tokens = await db
+    .select({ token: userDeviceToken.token })
+    .from(userDeviceToken)
+    .where(inArray(userDeviceToken.userId, peerIds));
+
+  if (tokens.length > 0) {
+    const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+      to: token,
+      title: "Meetup proposal cancelled",
+      body: "Your meetup proposal has been cancelled.",
+      data: { type: "proposal_cancelled" },
+    }));
+    try {
+      await sendExpoPushNotification(messages);
+    } catch (err) {
+      console.error("[push] Failed to send removal proposal cancellation notification", { targetId, err });
+    }
   }
 }
 
