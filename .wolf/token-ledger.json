@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-10T10:02:44.507Z",
   "lifetime": {
-    "total_tokens_estimated": 758409,
-    "total_reads": 452,
-    "total_writes": 674,
-    "total_sessions": 40,
-    "anatomy_hits": 357,
-    "anatomy_misses": 95,
-    "repeated_reads_blocked": 116,
-    "estimated_savings_vs_bare_cli": 417363
+    "total_tokens_estimated": 772582,
+    "total_reads": 458,
+    "total_writes": 686,
+    "total_sessions": 42,
+    "anatomy_hits": 361,
+    "anatomy_misses": 97,
+    "repeated_reads_blocked": 118,
+    "estimated_savings_vs_bare_cli": 418737
   },
   "sessions": [
     {
@@ -7040,6 +7040,119 @@
         "writes_count": 1,
         "repeated_reads_blocked": 0,
         "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-13-2322",
+      "started": "2026-04-13T21:22:21.892Z",
+      "ended": "2026-04-13T22:36:54.404Z",
+      "reads": [
+        {
+          "file": "/Users/sander/.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic4_loop_progress.md",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/chat.ts",
+          "tokens_estimated": 2592,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/chats.tsx",
+          "tokens_estimated": 574,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/sip-and-speak.ts",
+          "tokens_estimated": 4170,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/conversation-history.test.tsx",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/jest.config.ts",
+          "tokens_estimated": 324,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/chat.ts",
+          "tokens_estimated": 136,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/chats.tsx",
+          "tokens_estimated": 574,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/conversation-inbox.test.tsx",
+          "tokens_estimated": 1052,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/conversation-inbox.test.tsx",
+          "tokens_estimated": 137,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/conversation-inbox.test.tsx",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/conversation-inbox.test.tsx",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/inbox-unread-indicator.test.tsx",
+          "tokens_estimated": 1051,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/inbox-sort-order.test.tsx",
+          "tokens_estimated": 1173,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/chats.tsx",
+          "tokens_estimated": 77,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/inbox-empty-state.test.tsx",
+          "tokens_estimated": 925,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/inbox-tap-navigate.test.tsx",
+          "tokens_estimated": 787,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic4_loop_progress.md",
+          "tokens_estimated": 545,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 7660,
+        "output_tokens_estimated": 6513,
+        "reads_count": 6,
+        "writes_count": 12,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 4
       }
     }
   ],

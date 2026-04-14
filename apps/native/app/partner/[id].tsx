@@ -263,6 +263,20 @@ export default function PartnerProfileScreen() {
             </Button>
           )
         )}
+        {/* #65 — Report / flag this Student */}
+        <Button
+          testID="report-student-btn"
+          variant="ghost"
+          className="mb-2"
+          onPress={() =>
+            router.push({
+              pathname: "/flag-user",
+              params: { targetId: id, targetName: profile.name },
+            })
+          }
+        >
+          <Button.Label>Report Student</Button.Label>
+        </Button>
       </ScrollView>
     </Container>
   );

@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T21:18:46.871Z
-> Files: 277 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T23:08:55.195Z
+> Files: 285 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -25,7 +25,7 @@
 
 - `MEMORY.md` — Memory Index (~106 tok)
 - `project_epic3_loop_progress.md` — Completed (merged to main) (~838 tok)
-- `project_epic4_loop_progress.md` — Completed (~583 tok)
+- `project_epic4_loop_progress.md` — Status: COMPLETE ✅ (~477 tok)
 
 ## ./
 
@@ -311,7 +311,13 @@
 
 - `candidate-card.test.tsx` — Tests for task #122 — Send Request action on suggestion card (~830 tok)
 - `compose-ui.test.tsx` — Tests for task #143 — Build message compose UI (~947 tok)
+- `conversation-inbox.test.tsx` — Tests for task #157 — Build conversation inbox listing all open conversations (~1003 tok)
 - `device-token-registration.test.tsx` — Tests for task #130 — Push notification when MatchRequestSent fires (~722 tok)
+- `flag-user.test.tsx` — Tests for task #65 — Build flag submission UI (peer selection + reason) (~1313 tok)
+- `inbox-empty-state.test.tsx` — Tests for task #160 — Handle empty inbox state (~925 tok)
+- `inbox-sort-order.test.tsx` — Tests for task #159 — Sort conversations by most recent message activity (~1173 tok)
+- `inbox-tap-navigate.test.tsx` — Tests for task #161 — Navigate to conversation view on inbox entry tap (~787 tok)
+- `inbox-unread-indicator.test.tsx` — Tests for task #158 — Show unread message indicator per conversation entry in the inbox (~1051 tok)
 - `notification-deep-link.test.tsx` — Tests for task #132 — Deep-link notification tap to requester's full profile (~1012 tok)
 - `notification-match-accepted.test.tsx` — Tests for task #136 — "Connect Now" CTA in acceptance notification (~1085 tok)
 - `notification-match-declined.test.tsx` — Tests for task #137 — Suggestion list deep-link in decline notification (~861 tok)
@@ -321,9 +327,10 @@
 
 ## apps/native/app/
 
-- `_layout.tsx` — Stack root layout, initialRouteName=(tabs) (~1552 tok)
+- `_layout.tsx` — unstable_settings (~1581 tok)
 - `edit-profile.tsx` — LANGUAGES — uses useRouter, useQuery, useMutation (~3810 tok)
 - `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)
+- `flag-user.tsx` — DETAIL_MAX (~1267 tok)
 - `index.tsx` — LANGUAGES (~5398 tok)
 - `propose-meetup.tsx` — ProposeMeetupScreen (~1591 tok)
 - `respond-meetup.tsx` — RespondMeetupScreen (~3171 tok)
@@ -332,7 +339,7 @@
 ## apps/native/app/(tabs)/
 
 - `_layout.tsx` — StyledIonicons (~401 tok)
-- `chats.tsx` — ChatsScreen (~140 tok)
+- `chats.tsx` — ChatsScreen (~575 tok)
 - `confirmed-meetups.tsx` — ConfirmedMeetupsScreen (~996 tok)
 - `profile.tsx` — ProfileScreen (~233 tok)
 - `suggestions.tsx` — APP_SHARE_URL (~2196 tok)
@@ -343,7 +350,7 @@
 
 ## apps/native/app/partner/
 
-- `[id].tsx` — PartnerProfileScreen — uses useRouter, useQuery, useMutation, useEffect (~2824 tok)
+- `[id].tsx` — PartnerProfileScreen (~2944 tok)
 
 ## apps/native/components/
 
@@ -364,7 +371,7 @@
 ## apps/native/jest-mocks/
 
 - `expo-winter.ts` — Stub for Expo 55 "winter" ESM runtime — uses import.meta which is incompatible with Jest CJS (~34 tok)
-- `heroui-native.tsx` — Minimal heroui-native mock for Jest tests. (~358 tok)
+- `heroui-native.tsx` — Minimal heroui-native mock for Jest tests. (~382 tok)
 - `react-native-reanimated.ts` — Minimal reanimated mock — avoids native binaries entirely. (~172 tok)
 - `react-native-safe-area-context.ts` — Stub for react-native-safe-area-context in tests (~81 tok)
 - `react-native-worklets.ts` — Stub for react-native-worklets — native binaries not available in jest environment (~31 tok)
@@ -488,14 +495,15 @@
 
 ## packages/api/src/routers/
 
-- `chat.ts` — tRPC router: 6 procedures (~2592 tok)
-- `index.ts` — tRPC router: 2 procedures (~243 tok)
+- `chat.ts` — Exports chatRouter (~2894 tok)
+- `index.ts` — tRPC router: 2 procedures (~266 tok)
 - `matching-utils.ts` — Haversine distance in km between two lat/lng points (~1049 tok)
 - `matching.ts` — tRPC router: 5 procedures (~4728 tok)
 - `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~10102 tok)
 - `messaging-persist.ts` — #145 — Persistence helpers for the messaging send flow. (~216 tok)
 - `messaging-utils.ts` — Pure helpers for the messaging opt-in router. (~891 tok)
 - `messaging.ts` — #139 — Record a Student's accept/decline response to the messaging opt-in prompt. (~2346 tok)
+- `moderation.ts` — #65 — Flag submission UI stub. (~284 tok)
 - `profile.ts` — tRPC router: 6 procedures (~4644 tok)
 - `venue-admin.ts` — Exports adminVenueRouter (~1166 tok)
 - `venue.ts` — Zod schemas: venueTagEnum (~1054 tok)

@@ -117,6 +117,7 @@ function StackLayout() {
       <Stack.Screen name="chat/[conversationId]" options={{ title: "Chat" }} />
       <Stack.Screen name="map" options={{ title: "Campus Map" }} />
       <Stack.Screen name="respond-meetup" options={{ title: "Respond to Proposal" }} />
+      <Stack.Screen name="flag-user" options={{ title: "Report Student", presentation: "modal" }} />
       <Stack.Screen name="modal" options={{ title: "Modal", presentation: "modal" }} />
     </Stack>
   );
