@@ -1,7 +1,8 @@
 // #80 — Moderator flag detail view
+// #88 — Warn action with loading/success states
 // TODO: Tighten auth guard to Moderator role once role field is added to user schema
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
@@ -20,9 +21,23 @@ export const Route = createFileRoute("/moderator/flags/$flagId")({
 
 function FlagDetailScreen() {
   const { flagId } = Route.useParams();
+  const queryClient = useQueryClient();
   const { data: flag, isLoading } = useQuery(
     trpc.moderation.getFlagDetail.queryOptions({ flagId }),
   );
+
+  const warnMutation = useMutation(
+    trpc.moderation.warnStudent.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.moderation.getFlagDetail.queryOptions({ flagId }));
+        queryClient.invalidateQueries(trpc.moderation.listOpenFlags.queryOptions());
+      },
+    }),
+  );
+
+  const warnError = warnMutation.isError
+    ? "Action no longer available. The flag may have already been resolved."
+    : undefined;
 
   if (isLoading) {
     return <p className="p-6 text-muted-foreground">Loading flag detail…</p>;
@@ -31,6 +46,29 @@ function FlagDetailScreen() {
   if (!flag) {
     return <p className="p-6 text-destructive">Flag not found.</p>;
   }
+
+  if (warnMutation.isSuccess) {
+    return (
+      <div className="p-6 space-y-4 max-w-2xl">
+        <Link to="/moderator/flags" className="text-sm text-muted-foreground hover:underline">
+          ← Back to queue
+        </Link>
+        <div
+          className="rounded-md border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-700"
+          data-testid="warn-success"
+        >
+          Warning issued. The flag has been resolved.
+        </div>
+      </div>
+    );
+  }
+
+  const studentDisabled = flag.flaggedStudent.suspended || flag.flaggedStudent.removed;
+  const disabledReason = flag.flaggedStudent.removed
+    ? "Student has already been removed"
+    : flag.flaggedStudent.suspended
+      ? "Student is already suspended"
+      : undefined;
 
   return (
     <div className="p-6 space-y-6 max-w-2xl">
@@ -96,15 +134,25 @@ function FlagDetailScreen() {
         )}
       </section>
 
+      {warnError ? (
+        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive" data-testid="warn-error">
+          {warnError}
+        </p>
+      ) : null}
+
       <section className="flex gap-3 pt-2">
+        <span title={disabledReason}>
+          <button
+            data-testid="btn-warn"
+            disabled={studentDisabled || warnMutation.isPending}
+            onClick={() => warnMutation.mutate({ flagId })}
+            className="rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {warnMutation.isPending ? "Warning…" : "Warn"}
+          </button>
+        </span>
         <button
           disabled
-          className="rounded-md border px-4 py-2 text-sm font-medium opacity-50 cursor-not-allowed"
-        >
-          Warn
-        </button>
-        <button
-          disabled={flag.flaggedStudent.removed}
           className="rounded-md border px-4 py-2 text-sm font-medium opacity-50 cursor-not-allowed"
         >
           Suspend
