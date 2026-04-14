@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PartnerIdRouteImport } from './routes/partner/$id'
+import { Route as ModeratorFlagsRouteImport } from './routes/moderator/flags'
 import { Route as AdminLocationsRouteImport } from './routes/admin/locations'
 
 const SuggestionsRoute = SuggestionsRouteImport.update({
@@ -47,6 +48,11 @@ const PartnerIdRoute = PartnerIdRouteImport.update({
   path: '/partner/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ModeratorFlagsRoute = ModeratorFlagsRouteImport.update({
+  id: '/moderator/flags',
+  path: '/moderator/flags',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLocationsRoute = AdminLocationsRouteImport.update({
   id: '/admin/locations',
   path: '/admin/locations',
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
   '/admin/locations': typeof AdminLocationsRoute
+  '/moderator/flags': typeof ModeratorFlagsRoute
   '/partner/$id': typeof PartnerIdRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
   '/admin/locations': typeof AdminLocationsRoute
+  '/moderator/flags': typeof ModeratorFlagsRoute
   '/partner/$id': typeof PartnerIdRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
   '/admin/locations': typeof AdminLocationsRoute
+  '/moderator/flags': typeof ModeratorFlagsRoute
   '/partner/$id': typeof PartnerIdRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/success'
     | '/suggestions'
     | '/admin/locations'
+    | '/moderator/flags'
     | '/partner/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/success'
     | '/suggestions'
     | '/admin/locations'
+    | '/moderator/flags'
     | '/partner/$id'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/success'
     | '/suggestions'
     | '/admin/locations'
+    | '/moderator/flags'
     | '/partner/$id'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   SuccessRoute: typeof SuccessRoute
   SuggestionsRoute: typeof SuggestionsRoute
   AdminLocationsRoute: typeof AdminLocationsRoute
+  ModeratorFlagsRoute: typeof ModeratorFlagsRoute
   PartnerIdRoute: typeof PartnerIdRoute
 }
 
@@ -165,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PartnerIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/moderator/flags': {
+      id: '/moderator/flags'
+      path: '/moderator/flags'
+      fullPath: '/moderator/flags'
+      preLoaderRoute: typeof ModeratorFlagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/locations': {
       id: '/admin/locations'
       path: '/admin/locations'
@@ -182,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuccessRoute: SuccessRoute,
   SuggestionsRoute: SuggestionsRoute,
   AdminLocationsRoute: AdminLocationsRoute,
+  ModeratorFlagsRoute: ModeratorFlagsRoute,
   PartnerIdRoute: PartnerIdRoute,
 }
 export const routeTree = rootRouteImport
