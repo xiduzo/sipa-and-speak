@@ -30,6 +30,11 @@ function ModeratorflagsScreen() {
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-semibold">Open flags</h1>
+      {flags.length === 0 ? (
+        <p className="text-muted-foreground text-sm" data-testid="empty-queue">
+          No open flags. All caught up!
+        </p>
+      ) : (
       <ul className="divide-y divide-border rounded-lg border">
         {flags.map((flag) => (
           <li key={flag.flagId}>
@@ -49,6 +54,7 @@ function ModeratorflagsScreen() {
           </li>
         ))}
       </ul>
+      )}
     </div>
   );
 }
