@@ -76,6 +76,103 @@ export interface StudentFlaggedPayload {
 /**
  * Builds the StudentFlagged domain event payload from the persisted flag row.
  */
+// #78 — Pure helpers for the Moderator flag queue
+
+export interface FlagQueueRow {
+  id: string;
+  targetId: string;
+  targetName: string | null;
+  reason: string;
+  createdAt: Date;
+}
+
+export interface FlagQueueEntry {
+  flagId: string;
+  flaggedStudent: { id: string; name: string | null };
+  reason: string;
+  submittedAt: string;
+}
+
+/**
+ * Maps a DB row (userFlag joined with user) to the API queue entry shape.
+ */
+export function buildFlagQueueEntry(row: FlagQueueRow): FlagQueueEntry {
+  return {
+    flagId: row.id,
+    flaggedStudent: { id: row.targetId, name: row.targetName },
+    reason: row.reason,
+    submittedAt: row.createdAt.toISOString(),
+  };
+}
+
+/**
+ * Sorts an array of flag rows oldest-first (ascending createdAt).
+ * Returns a new array — does not mutate the original.
+ */
+export function sortFlagsOldestFirst<T extends { createdAt: Date }>(flags: T[]): T[] {
+  return [...flags].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+}
+
+/**
+ * Returns true only when status is exactly 'open'.
+ * Drives the WHERE status='open' filter at the DB layer.
+ */
+export function isOpenFlag(status: string): boolean {
+  return status === "open";
+}
+
+// #80 — Pure helpers for the Moderator flag detail view
+
+export interface FlagDetailRow {
+  id: string;
+  targetId: string;
+  targetName: string | null;
+  reason: string;
+  detail: string | null;
+  createdAt: Date;
+}
+
+export interface PriorFlagRow {
+  reason: string;
+  outcome: string | null;
+  createdAt: Date;
+}
+
+export interface FlagDetailEntry {
+  flagId: string;
+  flaggedStudent: { id: string; name: string | null; removed: boolean };
+  reason: string;
+  detail: string | null;
+  submittedAt: string;
+  priorFlags: Array<{ reason: string; outcome: string | null; resolvedAt: string }>;
+}
+
+/**
+ * Builds the flag detail API response from DB rows.
+ * `removed` is true when the flagged Student's user record is absent (null name + no match).
+ */
+export function buildFlagDetail(
+  flag: FlagDetailRow,
+  priorFlags: PriorFlagRow[],
+): FlagDetailEntry {
+  return {
+    flagId: flag.id,
+    flaggedStudent: {
+      id: flag.targetId,
+      name: flag.targetName,
+      removed: flag.targetName === null,
+    },
+    reason: flag.reason,
+    detail: flag.detail,
+    submittedAt: flag.createdAt.toISOString(),
+    priorFlags: priorFlags.map((p) => ({
+      reason: p.reason,
+      outcome: p.outcome,
+      resolvedAt: p.createdAt.toISOString(),
+    })),
+  };
+}
+
 export function buildStudentFlaggedEvent(
   flagId: string,
   input: { reporterId: string; targetId: string; reason: string },
