@@ -2,7 +2,7 @@
 // TODO: Tighten auth guard to Moderator role once role field is added to user schema
 
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
@@ -32,14 +32,20 @@ function ModeratorflagsScreen() {
       <h1 className="text-2xl font-semibold">Open flags</h1>
       <ul className="divide-y divide-border rounded-lg border">
         {flags.map((flag) => (
-          <li key={flag.flagId} className="flex items-start gap-4 p-4">
-            <div className="flex-1 space-y-1">
-              <p className="font-medium">{flag.flaggedStudent.name ?? "Removed student"}</p>
-              <p className="text-sm text-muted-foreground">{flag.reason}</p>
-            </div>
-            <time className="text-xs text-muted-foreground whitespace-nowrap">
-              {new Date(flag.submittedAt).toLocaleString()}
-            </time>
+          <li key={flag.flagId}>
+            <Link
+              to="/moderator/flags/$flagId"
+              params={{ flagId: flag.flagId }}
+              className="flex items-start gap-4 p-4 hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex-1 space-y-1">
+                <p className="font-medium">{flag.flaggedStudent.name ?? "Removed student"}</p>
+                <p className="text-sm text-muted-foreground">{flag.reason}</p>
+              </div>
+              <time className="text-xs text-muted-foreground whitespace-nowrap">
+                {new Date(flag.submittedAt).toLocaleString()}
+              </time>
+            </Link>
           </li>
         ))}
       </ul>
