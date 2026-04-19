@@ -490,6 +490,7 @@ export const meetupRouter = router({
 
         return {
           ...row.meetup,
+          isProposer,
           venue: row.venue,
           partner: {
             id: partner.id,

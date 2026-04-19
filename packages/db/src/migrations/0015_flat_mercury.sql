@@ -1,0 +1,2 @@
+ALTER TABLE "user_interest" ADD CONSTRAINT "user_interest_user_interest_unique" UNIQUE("user_id","interest");--> statement-breakpoint
+ALTER TABLE "user_language" ADD CONSTRAINT "user_language_user_language_type_unique" UNIQUE("user_id","language","type");

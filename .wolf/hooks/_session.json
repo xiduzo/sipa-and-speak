@@ -1,12 +1,56 @@
 {
-  "session_id": "session-2026-04-13-0109",
-  "started": "2026-04-13T23:09:40.469Z",
-  "files_read": {},
-  "files_written": [],
-  "edit_counts": {},
-  "anatomy_hits": 0,
+  "session_id": "session-2026-04-19-2125",
+  "started": "2026-04-19T19:25:13.007Z",
+  "files_read": {
+    "/Users/sander/personal/sip-and-speak/packages/db/src/schema/sip-and-speak.ts": {
+      "count": 2,
+      "tokens": 4909,
+      "first_read": "2026-04-19T19:26:49.812Z"
+    },
+    "/Users/sander/personal/sip-and-speak/packages/db/src/migrations/0015_flat_mercury.sql": {
+      "count": 1,
+      "tokens": 73,
+      "first_read": "2026-04-19T19:27:03.679Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/app/index.tsx": {
+      "count": 1,
+      "tokens": 5398,
+      "first_read": "2026-04-19T19:27:22.961Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx": {
+      "count": 1,
+      "tokens": 3810,
+      "first_read": "2026-04-19T19:27:27.077Z"
+    }
+  },
+  "files_written": [
+    {
+      "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/sip-and-speak.ts",
+      "action": "edit",
+      "tokens": 148,
+      "at": "2026-04-19T19:27:14.926Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/native/app/index.tsx",
+      "action": "edit",
+      "tokens": 286,
+      "at": "2026-04-19T19:27:34.919Z"
+    },
+    {
+      "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+      "action": "edit",
+      "tokens": 286,
+      "at": "2026-04-19T19:27:42.103Z"
+    }
+  ],
+  "edit_counts": {
+    "packages/db/src/schema/sip-and-speak.ts": 1,
+    "apps/native/app/index.tsx": 1,
+    "apps/native/app/edit-profile.tsx": 1
+  },
+  "anatomy_hits": 4,
   "anatomy_misses": 0,
-  "repeated_reads_warned": 0,
+  "repeated_reads_warned": 1,
   "cerebrum_warnings": 0,
-  "stop_count": 0
+  "stop_count": 1
 }

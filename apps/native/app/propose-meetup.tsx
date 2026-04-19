@@ -1,8 +1,9 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button, Spinner } from "heroui-native";
 import { useState } from "react";
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { Container } from "@/components/container";
 import { trpc, queryClient } from "@/utils/trpc";
@@ -15,9 +16,15 @@ export default function ProposeMeetupScreen() {
   const router = useRouter();
 
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
-  const [date, setDate] = useState(""); // YYYY-MM-DD
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [time, setTime] = useState(""); // HH:MM
   const [error, setError] = useState<string | null>(null);
+
+  // Derive YYYY-MM-DD string from selectedDate
+  const date = selectedDate
+    ? selectedDate.toLocaleDateString("sv-SE") // "sv-SE" gives YYYY-MM-DD format
+    : "";
 
   const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
   const hasLocationsQuery = useQuery(trpc.venue.hasActiveLocations.queryOptions());
@@ -31,9 +38,13 @@ export default function ProposeMeetupScreen() {
   const proposeMutation = useMutation(
     trpc.meetup.propose.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries(trpc.meetup.list.queryOptions({ status: "pending" }));
-        Alert.alert("Proposal sent!", `Your meetup proposal has been sent to ${partnerName ?? "your partner"}.`);
-        router.back();
+        void queryClient.invalidateQueries(trpc.meetup.list.queryOptions({ status: "pending" }));
+        void queryClient.invalidateQueries(trpc.matching.getMyMatches.queryOptions());
+        Alert.alert(
+          "Proposal sent!",
+          `Your meetup proposal has been sent to ${partnerName ?? "your partner"}.`,
+          [{ text: "OK", onPress: () => router.back() }],
+        );
       },
       onError: (err) => setError(err.message),
     }),
@@ -55,10 +66,10 @@ export default function ProposeMeetupScreen() {
   function handleSubmit() {
     setError(null);
     if (!selectedVenueId) { setError("Please select a location"); return; }
-    if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) { setError("Enter a date in YYYY-MM-DD format"); return; }
+    if (!selectedDate) { setError("Please select a date"); return; }
     if (!time.match(/^\d{2}:\d{2}$/)) { setError("Enter a time in HH:MM format"); return; }
     const proposed = new Date(`${date}T${time}:00`);
-    if (proposed <= new Date()) { setError("Date and time must be in the future"); return; }
+    if (proposed <= new Date()) { setError("The selected date and time must be in the future"); return; }
     if (!partnerId) return;
     proposeMutation.mutate({ partnerId, venueId: selectedVenueId, date, time });
   }
@@ -89,15 +100,31 @@ export default function ProposeMeetupScreen() {
           </View>
         )}
 
-        <Text className="text-foreground font-semibold mb-2">Date (YYYY-MM-DD)</Text>
-        <TextInput
+        <Text className="text-foreground font-semibold mb-2">Date</Text>
+        <Pressable
           testID="date-input"
-          value={date}
-          onChangeText={(t) => { setDate(t); setError(null); }}
-          placeholder="2026-05-01"
-          className="border border-border rounded-xl px-3 py-2 text-foreground bg-card mb-6"
-          placeholderTextColor="#888"
-        />
+          onPress={() => setShowDatePicker(true)}
+          className="border border-border rounded-xl px-3 py-2 bg-card mb-6"
+        >
+          <Text className={selectedDate ? "text-foreground" : "text-muted-foreground"}>
+            {selectedDate
+              ? selectedDate.toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" })
+              : "Select a date"}
+          </Text>
+        </Pressable>
+        {showDatePicker && (
+          <DateTimePicker
+            testID="date-picker"
+            value={selectedDate ?? new Date()}
+            mode="date"
+            minimumDate={new Date()}
+            display={Platform.OS === "ios" ? "inline" : "default"}
+            onChange={(_event, picked) => {
+              setShowDatePicker(Platform.OS === "ios");
+              if (picked) { setSelectedDate(picked); setError(null); }
+            }}
+          />
+        )}
 
         <Text className="text-foreground font-semibold mb-2">Time</Text>
         {date && slotsQuery.data ? (

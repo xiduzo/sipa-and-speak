@@ -61,6 +61,18 @@ const INTERESTS = [
   { value: "sustainability", label: "Sustainability" },
   { value: "cinephile", label: "Cinephile" },
   { value: "cosmology", label: "Cosmology" },
+  { value: "photography", label: "Photography" },
+  { value: "board_games", label: "Board Games" },
+  { value: "hiking_outdoors", label: "Hiking & Outdoors" },
+  { value: "yoga_wellness", label: "Yoga & Wellness" },
+  { value: "literature", label: "Literature" },
+  { value: "entrepreneurship", label: "Entrepreneurship" },
+  { value: "design_architecture", label: "Design & Architecture" },
+  { value: "travel", label: "Travel" },
+  { value: "gaming", label: "Gaming" },
+  { value: "fitness_sports", label: "Fitness & Sports" },
+  { value: "philosophy", label: "Philosophy" },
+  { value: "theatre", label: "Theatre" },
 ] as const;
 
 type InterestValue = (typeof INTERESTS)[number]["value"];

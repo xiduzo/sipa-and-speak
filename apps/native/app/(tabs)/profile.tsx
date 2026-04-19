@@ -19,6 +19,21 @@ export default function ProfileScreen() {
         <Button onPress={() => router.push("/edit-profile")}>
           <Button.Label>Edit Profile</Button.Label>
         </Button>
+        <Button
+          variant="danger-soft"
+          className="mt-4"
+          onPress={() => {
+            authClient.signOut({
+              fetchOptions: {
+                onSuccess: () => {
+                  router.replace("/");
+                },
+              },
+            });
+          }}
+        >
+          <Button.Label>Sign Out</Button.Label>
+        </Button>
       </View>
     </Container>
   );

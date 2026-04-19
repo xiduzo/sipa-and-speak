@@ -7,7 +7,13 @@ import { Platform } from "react-native";
 
 import { authClient } from "@/lib/auth-client";
 
-export const queryClient = new QueryClient();
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes — override per-query as needed
+    },
+  },
+});
 
 const trpcClient = createTRPCClient<AppRouter>({
   links: [

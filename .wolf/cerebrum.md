@@ -32,6 +32,10 @@
 - [2026-04-12] Do not use `variant="light"` or `variant="bordered"` in heroui-native Button — these are not in `ButtonVariant`. Use `"ghost"` for secondary/tertiary actions.
 - [2026-04-12] `bun --hot` in `apps/server` does NOT watch workspace packages (`packages/api`, etc). After adding new tRPC procedures, the server must be manually restarted — otherwise clients get "No procedure found on path" even though the source is correct.
 
+- **Web test framework:** `apps/web` now has Vitest + React Testing Library (`vitest.config.ts`, `vitest-setup.ts`). Run with `bun run --cwd apps/web test`. Route components use `vi.mock()` for `@tanstack/react-router`, `@tanstack/react-query`, and `@/utils/trpc`.
+- **`Closes #N` in PR body only auto-closes issues on merge to default branch (main).** Task PRs merged to feature branches don't close issues — they close when the feature PR merges to main.
+- **`userFlag.status` values:** "open" | "resolved" only. No `outcome` or `resolvedAt` columns until Features #32-#34.
+
 ## Decision Log
 
 <!-- Significant technical decisions with rationale. Why X was chosen over Y. -->

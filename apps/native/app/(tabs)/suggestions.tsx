@@ -3,7 +3,7 @@ import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { Button, Spinner } from "heroui-native";
 import { useState, useCallback, useEffect } from "react";
-import { FlatList, Image, Platform, Pressable, RefreshControl, Share, Text, View } from "react-native";
+import { FlatList, Image, Platform, Pressable, RefreshControl, Share, Text, TouchableOpacity, View } from "react-native";
 
 import { CandidateCard } from "@/components/candidate-card";
 import { Container } from "@/components/container";
@@ -114,6 +114,52 @@ function IncomingRequestItem({
   );
 }
 
+function MatchItem({
+  match,
+  onPropose,
+}: {
+  match: {
+    matchId: string;
+    partnerId: string;
+    partnerName: string;
+    partnerPhotoUrl: string | null;
+    matchedAt: string;
+  };
+  onPropose: () => void;
+}) {
+  return (
+    <View
+      testID="match-item"
+      className="bg-card border border-border rounded-2xl p-4 mb-3"
+    >
+      <View className="flex-row items-center gap-3 mb-3">
+        {match.partnerPhotoUrl ? (
+          <Image
+            source={{ uri: match.partnerPhotoUrl }}
+            className="w-12 h-12 rounded-full"
+          />
+        ) : (
+          <View className="w-12 h-12 rounded-full bg-muted items-center justify-center">
+            <Text className="text-muted-foreground text-lg font-semibold">
+              {match.partnerName.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
+        <Text className="text-foreground text-base font-semibold flex-1">
+          {match.partnerName}
+        </Text>
+      </View>
+      <TouchableOpacity
+        testID="propose-meetup-btn"
+        onPress={onPropose}
+        className="bg-primary rounded-xl py-2.5 items-center"
+      >
+        <Text className="text-primary-foreground font-semibold text-sm">Propose a meetup</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 export default function SuggestionsScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
@@ -130,15 +176,17 @@ export default function SuggestionsScreen() {
   const incomingRequestsQuery = useQuery(
     trpc.matching.getIncomingRequests.queryOptions(),
   );
+  const myMatchesQuery = useQuery(trpc.matching.getMyMatches.queryOptions());
 
   const partners = discoverQuery.data?.partners ?? [];
   const incomingRequests = incomingRequestsQuery.data ?? [];
+  const myMatches = myMatchesQuery.data ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([discoverQuery.refetch(), incomingRequestsQuery.refetch()]);
+    await Promise.all([discoverQuery.refetch(), incomingRequestsQuery.refetch(), myMatchesQuery.refetch()]);
     setRefreshing(false);
-  }, [discoverQuery, incomingRequestsQuery]);
+  }, [discoverQuery, incomingRequestsQuery, myMatchesQuery]);
 
   if (discoverQuery.isPending) {
     return (
@@ -165,6 +213,20 @@ export default function SuggestionsScreen() {
                   key={req.matchRequestId}
                   request={req}
                   onPress={() => router.push({ pathname: "/partner/[id]", params: { id: req.requesterId, matchRequestId: req.matchRequestId } })}
+                />
+              ))}
+            </View>
+          )}
+          {myMatches.length > 0 && (
+            <View testID="my-matches-section" className="mb-6">
+              <Text className="text-foreground text-lg font-bold mb-3">
+                Your matches
+              </Text>
+              {myMatches.map((match) => (
+                <MatchItem
+                  key={match.matchId}
+                  match={match}
+                  onPropose={() => router.push({ pathname: "/propose-meetup", params: { partnerId: match.partnerId, partnerName: match.partnerName } })}
                 />
               ))}
             </View>
@@ -200,6 +262,22 @@ export default function SuggestionsScreen() {
                     key={req.matchRequestId}
                     request={req}
                     onPress={() => router.push({ pathname: "/partner/[id]", params: { id: req.requesterId, matchRequestId: req.matchRequestId } })}
+                  />
+                ))}
+              </View>
+            )}
+
+            {/* Your matches — accepted pairs awaiting meetup proposal */}
+            {myMatches.length > 0 && (
+              <View testID="my-matches-section" className="mb-6">
+                <Text className="text-foreground text-lg font-bold mb-3">
+                  Your matches
+                </Text>
+                {myMatches.map((match) => (
+                  <MatchItem
+                    key={match.matchId}
+                    match={match}
+                    onPropose={() => router.push({ pathname: "/propose-meetup", params: { partnerId: match.partnerId, partnerName: match.partnerName } })}
                   />
                 ))}
               </View>

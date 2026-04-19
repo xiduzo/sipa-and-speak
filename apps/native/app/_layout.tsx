@@ -12,7 +12,7 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { focusManager, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -22,7 +22,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/lib/auth-client";
@@ -69,6 +69,11 @@ function AuthGuard() {
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const router = useRouter();
   const segments = useSegments();
+
+  // Refetch stale queries whenever the active route changes (tab switches, screen push/pop)
+  useEffect(() => {
+    void queryClient.refetchQueries({ type: "active", stale: true });
+  }, [segments]);
 
   useNotificationCategories();
   useDeviceTokenRegistration(!!session);
@@ -124,6 +129,16 @@ function StackLayout() {
 }
 
 export default function Layout() {
+  // Sync React Query focus state with native app foreground/background
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (status) => {
+      if (Platform.OS !== "web") {
+        focusManager.setFocused(status === "active");
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+
   const [fontsLoaded] = useFonts({
     Manrope_400Regular,
     Manrope_500Medium,

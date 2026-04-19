@@ -30,6 +30,10 @@
   --color-brand-muted-foreground: #6F605B;
   --color-brand-border: #E8D5C4;
   --color-brand-accent: #D4A574;
+
+  /* Pin heroui-native semantic tokens to brand values */
+  --color-background: #FFF8F3;
+  --color-foreground: #2C1810;
 }
 
 @theme inline {

@@ -10,6 +10,7 @@ import { trpc, queryClient } from "@/utils/trpc";
 export default function ConfirmedMeetupsScreen() {
   const router = useRouter();
   const meetupsQuery = useQuery(trpc.meetup.getConfirmed.queryOptions());
+  const pendingQuery = useQuery(trpc.meetup.list.queryOptions({ status: "pending" }));
 
   // Track which meetup has the reschedule form open
   const [reschedulingMeetupId, setReschedulingMeetupId] = useState<string | null>(null);
@@ -33,6 +34,7 @@ export default function ConfirmedMeetupsScreen() {
     trpc.meetup.cancelMeetup.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
+        void queryClient.invalidateQueries(trpc.meetup.list.queryOptions({ status: "pending" }));
         Alert.alert("Meetup cancelled", "The meetup has been cancelled.");
       },
       onError: (err) => Alert.alert("Error", err.message),
@@ -76,7 +78,7 @@ export default function ConfirmedMeetupsScreen() {
     rescheduleMutation.mutate({ meetupId, venueId: rescheduleVenueId, date: rescheduleDate, time: rescheduleTime });
   }
 
-  if (meetupsQuery.isPending) {
+  if (meetupsQuery.isPending || pendingQuery.isPending) {
     return (
       <Container isScrollable={false}>
         <View className="flex-1 items-center justify-center">
@@ -87,16 +89,17 @@ export default function ConfirmedMeetupsScreen() {
   }
 
   const meetups = meetupsQuery.data ?? [];
+  const pending = pendingQuery.data ?? [];
 
-  if (meetups.length === 0) {
+  if (meetups.length === 0 && pending.length === 0 && !meetupsQuery.isFetching && !pendingQuery.isFetching) {
     return (
       <Container isScrollable={false}>
         <View testID="no-meetups-state" className="flex-1 items-center justify-center p-6">
           <Text className="text-foreground text-lg font-semibold text-center mb-2">
-            No confirmed meetups
+            No meetups yet
           </Text>
           <Text className="text-muted-foreground text-center">
-            Accept a proposal to schedule your first Sip&Speak moment.
+            Propose a meetup to a match to get started.
           </Text>
         </View>
       </Container>
@@ -121,7 +124,40 @@ export default function ConfirmedMeetupsScreen() {
   return (
     <Container>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <Text className="text-foreground text-2xl font-bold mb-6">Confirmed meetups</Text>
+        <Text className="text-foreground text-2xl font-bold mb-6">Meetups</Text>
+
+        {pending.length > 0 && (
+          <View testID="pending-proposals-section" className="mb-6">
+            <Text className="text-foreground text-base font-semibold mb-3">Pending proposals</Text>
+            {pending.map((p) => (
+              <View
+                key={p.id}
+                testID="pending-proposal-card"
+                className="bg-card border border-border rounded-2xl p-4 mb-3"
+              >
+                <Text className="text-foreground font-semibold text-base mb-1">
+                  With {p.partner.name}
+                </Text>
+                <Text className="text-muted-foreground text-sm mb-0.5">{p.venue.name}</Text>
+                <Text className="text-muted-foreground text-sm mb-3">{p.date} at {p.time}</Text>
+                {p.isProposer ? (
+                  <Text testID="awaiting-response-label" className="text-muted-foreground text-xs text-center">
+                    Awaiting response from {p.partner.name}
+                  </Text>
+                ) : (
+                  <Button
+                    testID="respond-to-proposal-btn"
+                    variant="primary"
+                    onPress={() => router.push({ pathname: "/respond-meetup", params: { meetupId: p.id } })}
+                  >
+                    <Button.Label>Respond to proposal</Button.Label>
+                  </Button>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
         {meetups.map((m) => (
           <View
             key={m.meetupId}

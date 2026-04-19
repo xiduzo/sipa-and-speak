@@ -3,6 +3,9 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
+| 21:49 | Fix receiver not seeing pending meetup proposal in meetups tab | apps/native/app/(tabs)/confirmed-meetups.tsx | fixed spinner to check both queries; guarded empty state against isFetching | ~100 |
+| 21:52 | Global query revalidation on route change + app foreground | apps/native/utils/trpc.ts, apps/native/app/_layout.tsx | staleTime 5min default; AppState→focusManager; segments useEffect refetchQueries stale:true | ~150 |
+
 | 00:03 | Implemented feature #11 tasks #56–59: profile review screen, completeness validation, incomplete-section CTAs, submitProfile mutation, ProfileCompleted event, auto-restore via syncMatchingEligibility | apps/native/app/review-profile.tsx, edit-profile.tsx, _layout.tsx, index.tsx, packages/api/src/routers/profile.ts, domain-events.ts | PR #166 opened | ~4200 |
 
 | 20:14 | Implemented all feature #7 tasks (TU/e email OTP enrolment) | packages/auth/src/domain-validation.ts, packages/auth/src/index.ts, apps/native/app/enrolment.tsx, apps/web/src/components/sign-in-form.tsx | 6 tasks marked implemented on branch task/35-tue-email-otp-enrolment | ~8000 |
@@ -708,3 +711,346 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 10:28 | Created packages/api/src/__tests__/moderation-queue.test.ts | — | ~798 |
+| 10:28 | Edited packages/api/src/routers/moderation-utils.ts | modified buildFlagQueueEntry() | ~347 |
+| 10:28 | Edited packages/api/src/routers/moderation.ts | added 1 import(s) | ~122 |
+| 10:28 | Edited packages/api/src/routers/moderation.ts | expanded (+22 lines) | ~236 |
+| 10:29 | Created apps/web/src/routes/moderator/flags.tsx | — | ~463 |
+| 10:29 | Edited packages/api/src/__tests__/moderation-queue.test.ts | 2→2 lines | ~24 |
+| 10:29 | Edited packages/api/src/__tests__/moderation-queue.test.ts | inline fix | ~12 |
+| 10:30 | Edited ../../../../tmp/task-78-current.md | 4→4 lines | ~114 |
+| 10:31 | Edited ../../../../tmp/task-78-verify.md | 6→6 lines | ~50 |
+| 10:32 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic5_loop_progress.md | — | ~579 |
+| 10:33 | Session end: 10 writes across 7 files (moderation-queue.test.ts, moderation-utils.ts, moderation.ts, flags.tsx, task-78-current.md) | 7 reads | ~7482 tok |
+
+## Session: 2026-04-14 10:33
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 10:35 | Edited packages/api/src/__tests__/moderation-queue.test.ts | modified simulateListOpenFlags() | ~762 |
+| 10:37 | Edited packages/api/src/routers/moderation-utils.ts | modified buildFlagDetail() | ~374 |
+| 10:37 | Edited packages/api/src/routers/moderation.ts | 7→8 lines | ~51 |
+| 10:37 | Edited packages/api/src/routers/moderation.ts | inline fix | ~16 |
+| 10:37 | Edited packages/api/src/routers/moderation.ts | added 1 condition(s) | ~413 |
+| 10:37 | Created apps/web/src/routes/moderator/flags.$flagId.tsx | — | ~1158 |
+| 10:37 | Edited apps/web/src/routes/moderator/flags.tsx | 2→2 lines | ~36 |
+| 10:37 | Edited apps/web/src/routes/moderator/flags.tsx | CSS: flagId, hover | ~231 |
+| 10:37 | Created packages/api/src/__tests__/moderation-flag-detail.test.ts | — | ~662 |
+| 10:38 | Created apps/web/vitest.config.ts | — | ~103 |
+| 10:38 | Created apps/web/vitest-setup.ts | — | ~11 |
+| 10:39 | Edited apps/web/package.json | 1→3 lines | ~29 |
+| 10:39 | Created apps/web/src/__tests__/moderator-flag-detail.test.tsx | — | ~1638 |
+| 10:41 | Edited apps/web/src/routes/moderator/flags.tsx | modified return() | ~108 |
+| 10:41 | Edited apps/web/src/routes/moderator/flags.tsx | 4→5 lines | ~14 |
+| 10:41 | Created apps/web/src/__tests__/moderator-flags.test.tsx | — | ~1003 |
+| 10:43 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic5_loop_progress.md | — | ~454 |
+| 10:43 | wtf.loop Feature #31 complete — #82 (resolved filter tests), #80 (flag detail view + getFlagDetail), #84 (empty state), Vitest setup for web | moderation.ts, moderation-utils.ts, flags.tsx, flags.$flagId.tsx, vitest.config.ts | PR #256 merged to main | ~8000 |
+| 10:43 | Session end: 17 writes across 12 files (moderation-queue.test.ts, moderation-utils.ts, moderation.ts, flags.$flagId.tsx, flags.tsx) | 11 reads | ~20104 tok |
+
+## Session: 2026-04-14 10:48
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 10:56 | Edited ../../../../tmp/wtf-implement-task-approach.md | 20→20 lines | ~390 |
+| 10:56 | Edited packages/api/src/routers/moderation-utils.ts | modified buildFlagDetail() | ~216 |
+| 10:56 | Edited packages/api/src/routers/moderation-utils.ts | 5→6 lines | ~54 |
+| 10:57 | Edited packages/api/src/routers/moderation.ts | added 1 condition(s) | ~229 |
+| 10:57 | Created apps/web/src/routes/moderator/flags.$flagId.tsx | — | ~1568 |
+| 10:57 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | added 1 condition(s) | ~834 |
+| 10:58 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | CSS: suspended | ~74 |
+| 10:58 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | expanded (+57 lines) | ~632 |
+| 10:58 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | inline fix | ~24 |
+| 11:00 | Edited ../../../../tmp/wtf-implement-task-test-mapping.md | 4→4 lines | ~119 |
+| 11:07 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | 8→12 lines | ~128 |
+| 11:07 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | expanded (+6 lines) | ~85 |
+| 11:07 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | expanded (+15 lines) | ~253 |
+| 11:07 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | modified WarnActionView() | ~317 |
+| 11:08 | Edited ../../../../tmp/verify-final-body.md | 7→7 lines | ~57 |
+| 11:08 | Edited ../../../../tmp/verify-final-body.md | expanded (+6 lines) | ~117 |
+| 11:12 | Edited ../../../../tmp/wtf-implement-task-approach.md | 20→20 lines | ~521 |
+| 11:12 | Edited packages/db/src/schema/sip-and-speak.ts | 9→13 lines | ~170 |
+| 11:12 | Edited packages/api/src/routers/moderation-utils.ts | 5→6 lines | ~58 |
+| 11:12 | Edited packages/api/src/routers/moderation-utils.ts | added nullish coalescing | ~47 |
+| 11:13 | Edited packages/api/src/routers/moderation-utils.ts | modified buildStudentFlaggedEvent() | ~383 |
+| 11:13 | Edited packages/api/src/domain-events.ts | expanded (+8 lines) | ~83 |
+| 11:13 | Edited packages/api/src/domain-events.ts | 2→3 lines | ~24 |
+| 11:13 | Edited packages/api/src/routers/moderation-persist.ts | added 1 import(s) | ~101 |
+| 11:13 | Edited packages/api/src/routers/moderation-persist.ts | modified persistFlag() | ~204 |
+| 11:13 | Edited packages/api/src/routers/moderation.ts | 9→10 lines | ~79 |
+| 11:13 | Edited packages/api/src/routers/moderation.ts | added 1 condition(s) | ~334 |
+| 11:14 | Edited packages/api/src/routers/moderation.ts | 6→7 lines | ~62 |
+| 11:19 | Edited packages/api/src/routers/moderation-utils.ts | modified canWarnFlag() | ~190 |
+| 11:19 | Edited packages/api/src/routers/moderation.ts | 9→11 lines | ~73 |
+| 11:19 | Edited packages/api/src/routers/moderation.ts | added 1 condition(s) | ~176 |
+| 11:21 | Session end: 31 writes across 10 files (wtf-implement-task-approach.md, moderation-utils.ts, moderation.ts, flags.$flagId.tsx, moderator-flag-detail.test.tsx) | 13 reads | ~22660 tok |
+
+## Session: 2026-04-14 11:45
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 11:46 | Edited apps/server/src/notifications.ts | inline fix | ~184 |
+| 11:46 | Edited apps/server/src/notifications.ts | 4→7 lines | ~52 |
+| 11:46 | Edited apps/server/src/notifications.ts | added 1 condition(s) | ~284 |
+| 11:46 | Created apps/server/src/__tests__/notifications-student-warned.test.ts | — | ~836 |
+| 11:47 | Edited apps/server/src/__tests__/notifications-student-warned.test.ts | inline fix | ~39 |
+| 11:48 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic5_loop_progress.md | — | ~479 |
+| 12:48 | Edited packages/db/src/schema/auth.ts | 12→16 lines | ~174 |
+| 12:48 | Edited packages/api/src/domain-events.ts | expanded (+15 lines) | ~114 |
+| 12:48 | Edited packages/api/src/domain-events.ts | 3→5 lines | ~50 |
+| 12:49 | Edited packages/api/src/routers/moderation-utils.ts | modified checkStudentActive() | ~450 |
+| 12:49 | Edited packages/api/src/routers/moderation-utils.ts | modified buildFlagDetail() | ~431 |
+| 12:49 | Edited packages/api/src/routers/moderation-persist.ts | added 1 import(s) | ~44 |
+| 12:49 | Edited packages/api/src/routers/moderation-persist.ts | modified persistWarnFlag() | ~442 |
+| 12:49 | Edited packages/api/src/routers/moderation.ts | 12→14 lines | ~123 |
+| 12:49 | Edited packages/api/src/routers/moderation.ts | 13→14 lines | ~132 |
+| 12:50 | Edited packages/api/src/routers/moderation.ts | added optional chaining | ~129 |
+| 12:50 | Edited packages/api/src/routers/moderation.ts | added optional chaining | ~755 |
+| 12:50 | Edited packages/api/src/routers/chat.ts | added optional chaining | ~316 |
+| 12:50 | Edited packages/api/src/routers/meetup.ts | added 1 import(s) | ~61 |
+| 12:50 | Edited packages/api/src/routers/meetup.ts | added optional chaining | ~197 |
+| 12:50 | Edited packages/api/src/routers/matching.ts | 5→5 lines | ~86 |
+| 12:51 | Created packages/api/src/__tests__/moderation-suspend.test.ts | — | ~983 |
+| 12:52 | Edited packages/api/src/__tests__/moderation-flag-detail.test.ts | 8→9 lines | ~70 |
+| 12:53 | Edited packages/api/src/__tests__/moderation-flag-detail.test.ts | inline fix | ~32 |
+| 12:53 | Edited packages/api/src/__tests__/moderation-flag-detail.test.ts | 2→2 lines | ~51 |
+| 12:54 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | 3→4 lines | ~64 |
+| 12:54 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | expanded (+13 lines) | ~260 |
+| 12:54 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | added 1 condition(s) | ~285 |
+| 12:54 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | expanded (+10 lines) | ~461 |
+| 12:54 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | CSS: suspendStudent, mutationOptions, mutationKey | ~96 |
+| 12:55 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | added 1 condition(s) | ~1054 |
+| 12:56 | Edited apps/server/src/notifications.ts | 5→5 lines | ~275 |
+| 12:56 | Edited apps/server/src/notifications.ts | expanded (+6 lines) | ~82 |
+| 12:56 | Edited apps/server/src/notifications.ts | added 4 condition(s) | ~1142 |
+| 12:57 | Edited apps/server/src/notifications.ts | 3→4 lines | ~66 |
+| 12:57 | Created apps/server/src/__tests__/notifications-suspension.test.ts | — | ~1855 |
+| 12:58 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | expanded (+8 lines) | ~160 |
+| 12:58 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | expanded (+6 lines) | ~158 |
+| 12:58 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | CSS: targetId, disabled, disabled | ~221 |
+| 12:58 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | CSS: liftSuspension | ~131 |
+| 12:59 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | added 1 condition(s) | ~607 |
+| 13:00 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic5_loop_progress.md | — | ~391 |
+
+## Session: 2026-04-14 13:00
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:06 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | 11→15 lines | ~198 |
+| 13:06 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | CSS: removeStudent | ~165 |
+| 13:06 | Edited apps/web/src/__tests__/moderator-flag-detail.test.tsx | added 1 condition(s) | ~1429 |
+| 13:06 | Edited packages/api/src/routers/moderation.ts | added 2 condition(s) | ~235 |
+| 13:07 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | added 1 import(s) | ~134 |
+| 13:07 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | 7→8 lines | ~85 |
+| 13:07 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | expanded (+9 lines) | ~160 |
+| 13:07 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | added 1 condition(s) | ~292 |
+| 13:07 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | CSS: disabled, disabled | ~138 |
+| 13:07 | Edited apps/web/src/routes/moderator/flags.$flagId.tsx | expanded (+31 lines) | ~492 |
+| 13:09 | Edited ../../../../tmp/wtf-107-body.md | 6→6 lines | ~168 |
+| 13:11 | Created packages/api/src/__tests__/moderation-remove.test.ts | — | ~930 |
+| 13:11 | Edited packages/api/src/routers/moderation-utils.ts | modified buildRemoveFlagValues() | ~318 |
+| 13:11 | Edited packages/api/src/routers/moderation-utils.ts | modified buildFlagDetail() | ~160 |
+| 13:11 | Edited packages/api/src/domain-events.ts | expanded (+8 lines) | ~69 |
+| 13:11 | Edited packages/api/src/domain-events.ts | 4→5 lines | ~50 |
+| 13:11 | Edited packages/api/src/routers/moderation-persist.ts | inline fix | ~35 |
+| 13:11 | Edited packages/api/src/routers/moderation-persist.ts | modified persistRemoveStudent() | ~222 |
+| 13:11 | Edited packages/api/src/routers/moderation.ts | 14→16 lines | ~144 |
+| 13:11 | Edited packages/api/src/routers/moderation.ts | added optional chaining | ~444 |
+| 13:12 | Edited packages/auth/src/index.ts | added 1 import(s) | ~141 |
+| 13:12 | Edited packages/auth/src/index.ts | added optional chaining | ~271 |
+| 13:13 | Edited packages/auth/package.json | 3→4 lines | ~31 |
+| 13:27 | Created packages/api/src/__tests__/moderation-remove-blocklist.test.ts | — | ~356 |
+| 13:27 | Edited packages/api/src/routers/moderation-utils.ts | modified normalizeEmail() | ~138 |
+| 13:27 | Edited packages/db/src/schema/sip-and-speak.ts | expanded (+13 lines) | ~145 |
+| 13:28 | Edited packages/api/src/routers/moderation-persist.ts | 6→6 lines | ~100 |
+| 13:28 | Edited packages/api/src/routers/moderation-persist.ts | modified addEmailToBlocklist() | ~182 |
+| 13:28 | Edited apps/server/src/index.ts | added 5 import(s) | ~276 |
+| 13:28 | Edited apps/server/src/index.ts | added optional chaining | ~122 |
+| 13:28 | Edited apps/server/src/index.ts | added 1 condition(s) | ~109 |
+| 13:30 | Edited apps/server/src/notifications.ts | 4→7 lines | ~71 |
+| 13:30 | Edited apps/server/src/notifications.ts | inline fix | ~207 |
+| 13:30 | Edited apps/server/src/notifications.ts | added error handling | ~462 |
+| 13:31 | Created apps/server/src/__tests__/notifications-removal-proposals.test.ts | — | ~1203 |
+| 13:32 | Session end: 35 writes across 14 files (moderator-flag-detail.test.tsx, moderation.ts, flags.$flagId.tsx, wtf-107-body.md, moderation-remove.test.ts) | 18 reads | ~45733 tok |
+
+## Session: 2026-04-14 13:32
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:35 | Edited packages/db/src/schema/sip-and-speak.ts | 2→3 lines | ~88 |
+| 13:35 | Edited packages/api/src/routers/messaging-utils.ts | modified checkConversationAccess() | ~82 |
+| 13:35 | Edited packages/api/src/routers/messaging-utils.ts | modified checkReadAccess() | ~64 |
+| 13:35 | Edited packages/api/src/routers/chat.ts | 11→11 lines | ~124 |
+| 13:36 | Edited packages/api/src/routers/chat.ts | modified if() | ~92 |
+| 13:36 | Edited apps/server/src/notifications.ts | 4→5 lines | ~70 |
+| 13:36 | Edited apps/server/src/notifications.ts | inline fix | ~38 |
+| 13:36 | Edited apps/server/src/notifications.ts | added 1 condition(s) | ~288 |
+| 13:36 | Created apps/server/src/__tests__/notifications-removal-conversations.test.ts | — | ~925 |
+| 13:37 | Edited apps/server/src/__tests__/notifications-removal-conversations.test.ts | 8→8 lines | ~76 |
+| 13:37 | Edited apps/server/src/__tests__/notifications-removal-conversations.test.ts | 7→7 lines | ~133 |
+| 13:37 | Edited apps/server/src/__tests__/notifications-removal-conversations.test.ts | 14→16 lines | ~279 |
+| 13:38 | Edited apps/server/src/notifications.ts | 4→5 lines | ~91 |
+| 13:38 | Edited apps/server/src/notifications.ts | added 1 condition(s) | ~341 |
+| 13:39 | Created apps/server/src/__tests__/notifications-removal.test.ts | — | ~1094 |
+| 13:39 | Edited packages/api/src/__tests__/moderation-remove.test.ts | 10→11 lines | ~140 |
+| 13:39 | Edited packages/api/src/__tests__/moderation-remove.test.ts | expanded (+27 lines) | ~378 |
+| 13:41 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/project_epic5_loop_progress.md | — | ~249 |
+
+| $(date +%H:%M) | Epic #5 Feature #34 complete — tasks #110-#112 + feature PR merged to main | notifications.ts, chat.ts, moderation-remove.test.ts | all 6 tasks done | ~2000 |
+| 13:41 | Session end: 18 writes across 8 files (sip-and-speak.ts, messaging-utils.ts, chat.ts, notifications.ts, notifications-removal-conversations.test.ts) | 11 reads | ~31160 tok |
+
+## Session: 2026-04-14 16:14
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-15 20:22
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-15 20:32
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-15 20:50
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-15 20:52
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:52 | Edited apps/native/app.json | inline fix | ~10 |
+| 20:52 | Edited apps/native/global.css | CSS: --color-background, --color-foreground | ~102 |
+| 20:52 | Session end: 2 writes across 2 files (app.json, global.css) | 0 reads | ~112 tok |
+
+## Session: 2026-04-15 20:55
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:56 | Edited packages/db/src/schema/sip-and-speak.ts | 2→5 lines | ~51 |
+| 20:56 | Edited apps/native/app/partner/[id].tsx | 6→7 lines | ~69 |
+| 20:56 | Edited packages/db/src/schema/sip-and-speak.ts | 2→5 lines | ~46 |
+| 20:57 | Edited packages/db/src/migrations/0015_flat_mercury.sql | 2→4 lines | ~160 |
+| 20:57 | fix: acceptMutation missing router.back() after accept | apps/native/app/partner/[id].tsx | fixed: user now navigates back after accepting match request | ~50 |
+| 20:57 | Session end: 4 writes across 3 files (sip-and-speak.ts, [id].tsx, 0015_flat_mercury.sql) | 4 reads | ~12883 tok |
+
+## Session: 2026-04-15 20:57
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:58 | Edited apps/native/app/(tabs)/profile.tsx | CSS: fetchOptions, onSuccess | ~150 |
+| 20:58 | Add sign-out button to native profile tab | apps/native/app/(tabs)/profile.tsx | done | ~300 |
+| 20:58 | Session end: 1 writes across 1 files (profile.tsx) | 2 reads | ~864 tok |
+
+## Session: 2026-04-15 21:00
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:00 | Edited packages/db/src/migrations/0015_flat_mercury.sql | 4→2 lines | ~68 |
+
+| 21:01 | Fix duplicate key React warnings — missing unique constraints on userLanguage/userInterest | packages/db/src/schema/sip-and-speak.ts, 0015_flat_mercury.sql | Added unique(userId,language,type) + unique(userId,interest); deduped DB; constraints applied | ~800 |
+| 21:01 | Session end: 1 writes across 1 files (0015_flat_mercury.sql) | 4 reads | ~10041 tok |
+| 21:05 | Edited packages/api/src/routers/matching.ts | added optional chaining | ~359 |
+| 21:05 | Edited apps/native/app/(tabs)/suggestions.tsx | 6→6 lines | ~107 |
+| 21:05 | Edited apps/native/app/(tabs)/suggestions.tsx | 13→15 lines | ~196 |
+| 21:05 | Edited apps/native/app/(tabs)/suggestions.tsx | modified MatchItem() | ~380 |
+| 21:05 | Edited apps/native/app/(tabs)/suggestions.tsx | CSS: partnerId, partnerName | ~382 |
+| 21:05 | Edited apps/native/app/(tabs)/suggestions.tsx | CSS: partnerId, partnerName | ~435 |
+| 21:06 | Edited apps/native/app/partner/[id].tsx | 15→15 lines | ~156 |
+| 21:06 | Edited apps/native/app/partner/[id].tsx | 3→4 lines | ~74 |
+| 21:06 | Edited apps/native/app/partner/[id].tsx | modified if() | ~980 |
+| 21:07 | Post-accept dead-end fix: added matching.getMyMatches proc, 'Your matches' section in suggestions.tsx, 'Propose a meetup' CTA in partner/[id].tsx for both acceptor + requester | matching.ts, suggestions.tsx, partner/[id].tsx | done |
+| 21:07 | Session end: 10 writes across 4 files (0015_flat_mercury.sql, matching.ts, suggestions.tsx, [id].tsx) | 10 reads | ~24011 tok |
+| 21:13 | Session end: 10 writes across 4 files (0015_flat_mercury.sql, matching.ts, suggestions.tsx, [id].tsx) | 20 reads | ~51457 tok |
+
+## Session: 2026-04-15 21:13
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:26 | Edited packages/api/src/routers/matching.ts | 7→8 lines | ~43 |
+| 21:26 | Edited packages/api/src/routers/matching.ts | added 1 condition(s) | ~351 |
+| 21:26 | Edited apps/native/app/propose-meetup.tsx | CSS: text, onPress | ~121 |
+| 21:26 | fix: propose-meetup bug — getMyMatches now excludes pairs with active proposals; router.back() moved into Alert callback | matching.ts, propose-meetup.tsx | fixed | ~800 |
+| 21:27 | Session end: 3 writes across 2 files (matching.ts, propose-meetup.tsx) | 13 reads | ~39242 tok |
+| 21:33 | Created ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/feedback_package_manager.md | — | ~102 |
+| 21:33 | Edited ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/MEMORY.md | 1→3 lines | ~27 |
+| 21:35 | Edited apps/native/app/propose-meetup.tsx | added 1 import(s) | ~108 |
+| 21:35 | Edited apps/native/app/propose-meetup.tsx | CSS: format | ~140 |
+| 21:35 | Edited apps/native/app/propose-meetup.tsx | added nullish coalescing | ~299 |
+| 21:35 | Edited apps/native/app/propose-meetup.tsx | inline fix | ~32 |
+| 21:36 | Edited apps/native/app/propose-meetup.tsx | modified if() | ~113 |
+| 21:36 | feat: native date picker in propose-meetup — @react-native-community/datetimepicker, iOS inline / Android default | propose-meetup.tsx | done | ~300 |
+| 21:36 | Session end: 10 writes across 4 files (matching.ts, propose-meetup.tsx, feedback_package_manager.md, MEMORY.md) | 14 reads | ~40432 tok |
+| 21:38 | Session end: 10 writes across 4 files (matching.ts, propose-meetup.tsx, feedback_package_manager.md, MEMORY.md) | 15 reads | ~40573 tok |
+| 21:40 | Edited packages/api/src/routers/meetup.ts | 9→10 lines | ~66 |
+| 21:40 | Edited apps/native/app/(tabs)/confirmed-meetups.tsx | CSS: status | ~69 |
+| 21:40 | Edited apps/native/app/(tabs)/confirmed-meetups.tsx | modified if() | ~232 |
+| 21:40 | Edited apps/native/app/(tabs)/confirmed-meetups.tsx | CSS: pathname, params, meetupId | ~444 |
+| 21:40 | Edited apps/native/app/(tabs)/confirmed-meetups.tsx | CSS: status | ~108 |
+| 21:41 | feat: show pending proposals on meetups tab — meetup.list(pending) + isProposer in response | confirmed-meetups.tsx, meetup.ts | done | ~400 |
+| 21:41 | Session end: 15 writes across 6 files (matching.ts, propose-meetup.tsx, feedback_package_manager.md, MEMORY.md, meetup.ts) | 16 reads | ~44792 tok |
+
+## Session: 2026-04-15 21:42
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:49 | Edited apps/native/app/(tabs)/confirmed-meetups.tsx | 5→5 lines | ~85 |
+| 21:49 | Edited apps/native/app/(tabs)/confirmed-meetups.tsx | CSS: status | ~126 |
+| 21:49 | Edited apps/native/app/(tabs)/confirmed-meetups.tsx | modified if() | ~125 |
+| 21:49 | Session end: 3 writes across 1 files (confirmed-meetups.tsx) | 10 reads | ~35718 tok |
+| 21:53 | Edited apps/native/utils/trpc.ts | expanded (+6 lines) | ~49 |
+| 21:53 | Edited apps/native/app/_layout.tsx | 12→12 lines | ~178 |
+| 21:53 | Edited apps/native/app/_layout.tsx | CSS: type, stale | ~106 |
+| 21:54 | Edited apps/native/app/_layout.tsx | added 1 condition(s) | ~112 |
+| 21:54 | Edited apps/native/app/(tabs)/confirmed-meetups.tsx | 4→4 lines | ~54 |
+| 21:54 | Edited apps/native/app/(tabs)/confirmed-meetups.tsx | reduced (-8 lines) | ~31 |
+| 21:54 | Session end: 9 writes across 3 files (confirmed-meetups.tsx, trpc.ts, _layout.tsx) | 12 reads | ~38230 tok |
+
+## Session: 2026-04-19 20:19
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-19 20:19
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:28 | Created ../../../../tmp/bug-body.md | — | ~337 |
+| 20:30 | Session end: 1 writes across 1 files (bug-body.md) | 1 reads | ~518 tok |
+
+## Session: 2026-04-19 20:40
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:51 | Created ../../../../tmp/feature-body.md | — | ~836 |
+| 20:55 | Created ../../../../tmp/task-body.md | — | ~1095 |
+| 20:57 | Created ../../../../tmp/task-body.md | — | ~1427 |
+| 21:02 | Created ../../../../tmp/task-body.md | — | ~1356 |
+| 21:05 | Created ../../../../tmp/task-body.md | — | ~1663 |
+| 21:09 | Created ../../../../tmp/task-body.md | — | ~1786 |
+| 21:12 | Created ../../../../tmp/task-body.md | — | ~1642 |
+| 21:15 | Created ../../../../tmp/task-body.md | — | ~1271 |
+
+## Session: 2026-04-19 21:15
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-19 21:17
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:23 | Created ../../../../tmp/bug-body.md | — | ~638 |
+| 21:25 | Session end: 1 writes across 1 files (bug-body.md) | 2 reads | ~6239 tok |
+
+## Session: 2026-04-19 21:25
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:27 | Edited packages/db/src/schema/sip-and-speak.ts | expanded (+12 lines) | ~148 |
+| 21:27 | Edited apps/native/app/index.tsx | expanded (+12 lines) | ~286 |
+| 21:27 | Edited apps/native/app/edit-profile.tsx | expanded (+12 lines) | ~286 |
+| 21:27 | Session end: 3 writes across 3 files (sip-and-speak.ts, index.tsx, edit-profile.tsx) | 4 reads | ~14910 tok |

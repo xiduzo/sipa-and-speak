@@ -8,6 +8,7 @@ import {
   userInterest,
   matchRequest,
   studentMatch,
+  meetup,
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
@@ -516,5 +517,70 @@ export const matchingRouter = router({
       });
 
       return { status: "declined" as const };
+    }),
+
+  getMyMatches: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userId = ctx.session.user.id;
+
+      const matches = await db
+        .select()
+        .from(studentMatch)
+        .where(
+          and(
+            or(
+              eq(studentMatch.studentAId, userId),
+              eq(studentMatch.studentBId, userId),
+            ),
+            eq(studentMatch.status, "matched"),
+          ),
+        );
+
+      if (matches.length === 0) return [];
+
+      // Exclude matches that already have an active (pending/confirmed) meetup proposal
+      const activeProposals = await db
+        .select({ proposerId: meetup.proposerId, receiverId: meetup.receiverId })
+        .from(meetup)
+        .where(
+          and(
+            inArray(meetup.status, ["pending", "confirmed"]),
+            or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
+          ),
+        );
+
+      const activePartnerIds = new Set(
+        activeProposals.map((p) =>
+          p.proposerId === userId ? p.receiverId : p.proposerId,
+        ),
+      );
+
+      const proposableMatches = matches.filter((m) => {
+        const partnerId = m.studentAId === userId ? m.studentBId : m.studentAId;
+        return !activePartnerIds.has(partnerId);
+      });
+
+      if (proposableMatches.length === 0) return [];
+
+      const partnerIds = proposableMatches.map((m) =>
+        m.studentAId === userId ? m.studentBId : m.studentAId,
+      );
+
+      const partnerUsers = await db
+        .select({ id: user.id, name: user.name, image: user.image })
+        .from(user)
+        .where(inArray(user.id, partnerIds));
+
+      return proposableMatches.map((m) => {
+        const partnerId = m.studentAId === userId ? m.studentBId : m.studentAId;
+        const partnerInfo = partnerUsers.find((u) => u.id === partnerId);
+        return {
+          matchId: m.id,
+          partnerId,
+          partnerName: partnerInfo?.name ?? "Unknown",
+          partnerPhotoUrl: partnerInfo?.image ?? null,
+          matchedAt: m.createdAt.toISOString(),
+        };
+      });
     }),
 });

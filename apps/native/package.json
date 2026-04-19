@@ -19,6 +19,7 @@
     "@expo/metro-runtime": "~55.0.6",
     "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5",
+    "@react-native-community/datetimepicker": "^9.1.0",
     "@react-navigation/drawer": "^7.3.9",
     "@react-navigation/elements": "^2.8.1",
     "@sip-and-speak/api": "workspace:*",

@@ -48,7 +48,10 @@ export const userLanguage = pgTable(
       enum: ["beginner", "intermediate", "advanced", "native"],
     }),
   },
-  (table) => [index("user_language_userId_idx").on(table.userId)],
+  (table) => [
+    index("user_language_userId_idx").on(table.userId),
+    unique("user_language_user_language_type_unique").on(table.userId, table.language, table.type),
+  ],
 );
 
 export const userInterest = pgTable(
@@ -69,10 +72,25 @@ export const userInterest = pgTable(
         "sustainability",
         "cinephile",
         "cosmology",
+        "photography",
+        "board_games",
+        "hiking_outdoors",
+        "yoga_wellness",
+        "literature",
+        "entrepreneurship",
+        "design_architecture",
+        "travel",
+        "gaming",
+        "fitness_sports",
+        "philosophy",
+        "theatre",
       ],
     }).notNull(),
   },
-  (table) => [index("user_interest_userId_idx").on(table.userId)],
+  (table) => [
+    index("user_interest_userId_idx").on(table.userId),
+    unique("user_interest_user_interest_unique").on(table.userId, table.interest),
+  ],
 );
 
 export const venue = pgTable(

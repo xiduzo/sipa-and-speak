@@ -37,14 +37,15 @@ export default function PartnerProfileScreen() {
   const acceptMutation = useMutation({
     ...trpc.matching.acceptMatchRequest.mutationOptions(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["matching.getIncomingRequests"] });
+      queryClient.invalidateQueries(trpc.matching.getIncomingRequests.queryOptions());
+      queryClient.invalidateQueries(trpc.matching.getMyMatches.queryOptions());
     },
   });
 
   const declineMutation = useMutation({
     ...trpc.matching.declineMatchRequest.mutationOptions(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["matching.getIncomingRequests"] });
+      queryClient.invalidateQueries(trpc.matching.getIncomingRequests.queryOptions());
       router.back();
     },
   });
@@ -83,9 +84,10 @@ export default function PartnerProfileScreen() {
 
   const profile = profileQuery.data;
   const comments = commentsQuery.data ?? [];
-  const requestAlreadySent =
-    (statusQuery.data?.matchRequestStatus === "pending" || statusQuery.data?.matchRequestStatus === "accepted") ||
-    sendRequestMutation.isSuccess;
+  const requestIsPending =
+    statusQuery.data?.matchRequestStatus === "pending" ||
+    (sendRequestMutation.isSuccess && statusQuery.data?.matchRequestStatus !== "accepted");
+  const requestIsAccepted = statusQuery.data?.matchRequestStatus === "accepted";
 
   return (
     <Container isScrollable={false}>
@@ -213,37 +215,77 @@ export default function PartnerProfileScreen() {
 
         {/* #127 — Accept/Decline bar (when opened from incoming request context) */}
         {matchRequestId ? (
-          <View testID="accept-decline-bar" className="flex-row gap-3 mb-4">
-            <Button
-              testID="decline-button"
-              variant="ghost"
-              className="flex-1"
-              isDisabled={declineMutation.isPending}
-              onPress={() => {
-                if (matchRequestId) {
-                  declineMutation.mutate({ matchRequestId });
+          acceptMutation.isSuccess ? (
+            <View testID="accepted-propose-bar" className="mb-4">
+              <View className="bg-primary/10 rounded-xl p-3 mb-3">
+                <Text className="text-primary text-sm text-center font-medium">
+                  Matched! Propose a meetup to get started.
+                </Text>
+              </View>
+              <Button
+                testID="propose-meetup-after-accept-btn"
+                variant="primary"
+                onPress={() =>
+                  router.push({
+                    pathname: "/propose-meetup",
+                    params: { partnerId: id, partnerName: profile.name },
+                  })
                 }
-              }}
-            >
-              <Button.Label>Decline</Button.Label>
-            </Button>
-            <Button
-              testID="accept-button"
-              variant="primary"
-              className="flex-1"
-              isDisabled={acceptMutation.isPending || acceptMutation.isSuccess}
-              onPress={() => {
-                if (matchRequestId) {
-                  acceptMutation.mutate({ matchRequestId });
-                }
-              }}
-            >
-              <Button.Label>{acceptMutation.isSuccess ? "Accepted" : "Accept"}</Button.Label>
-            </Button>
-          </View>
+              >
+                <Button.Label>Propose a meetup</Button.Label>
+              </Button>
+            </View>
+          ) : (
+            <View testID="accept-decline-bar" className="flex-row gap-3 mb-4">
+              <Button
+                testID="decline-button"
+                variant="ghost"
+                className="flex-1"
+                isDisabled={declineMutation.isPending}
+                onPress={() => {
+                  if (matchRequestId) {
+                    declineMutation.mutate({ matchRequestId });
+                  }
+                }}
+              >
+                <Button.Label>Decline</Button.Label>
+              </Button>
+              <Button
+                testID="accept-button"
+                variant="primary"
+                className="flex-1"
+                isDisabled={acceptMutation.isPending}
+                onPress={() => {
+                  if (matchRequestId) {
+                    acceptMutation.mutate({ matchRequestId });
+                  }
+                }}
+              >
+                {acceptMutation.isPending ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <Button.Label>Accept</Button.Label>
+                )}
+              </Button>
+            </View>
+          )
         ) : (
-          /* #120/#122 — Contextual Send Request */
-          requestAlreadySent ? (
+          /* #120/#122 — Contextual Send Request / Propose meetup */
+          requestIsAccepted ? (
+            <Button
+              testID="propose-meetup-btn"
+              variant="primary"
+              className="mb-4"
+              onPress={() =>
+                router.push({
+                  pathname: "/propose-meetup",
+                  params: { partnerId: id, partnerName: profile.name },
+                })
+              }
+            >
+              <Button.Label>Propose a meetup</Button.Label>
+            </Button>
+          ) : requestIsPending ? (
             <View testID="request-sent-indicator" className="bg-muted rounded-xl p-4 mb-4 items-center">
               <Text className="text-muted-foreground font-medium">Request Sent</Text>
             </View>

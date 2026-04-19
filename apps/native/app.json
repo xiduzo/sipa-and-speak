@@ -1,7 +1,7 @@
 {
   "expo": {
     "scheme": "sip-and-speak",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "orientation": "default",
     "web": {
       "bundler": "metro"
@@ -9,7 +9,8 @@
     "name": "sip-and-speak",
     "slug": "sip-and-speak",
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

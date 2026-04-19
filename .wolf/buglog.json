@@ -1874,6 +1874,969 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-13T23:08:46.611Z"
+    },
+    {
+      "id": "bug-117",
+      "timestamp": "2026-04-14T08:28:35.679Z",
+      "error_message": "Type error",
+      "file": "packages/api/src/routers/moderation-utils.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T08:28:35.679Z"
+    },
+    {
+      "id": "bug-118",
+      "timestamp": "2026-04-14T08:28:57.682Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/moderation.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T08:28:57.682Z"
+    },
+    {
+      "id": "bug-119",
+      "timestamp": "2026-04-14T08:37:06.516Z",
+      "error_message": "Type error",
+      "file": "packages/api/src/routers/moderation-utils.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T08:37:06.516Z"
+    },
+    {
+      "id": "bug-120",
+      "timestamp": "2026-04-14T08:37:20.035Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/moderation.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T08:37:20.035Z"
+    },
+    {
+      "id": "bug-121",
+      "timestamp": "2026-04-14T08:56:11.725Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/wtf-implement-task-approach.md",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 20→20 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T08:56:11.725Z"
+    },
+    {
+      "id": "bug-122",
+      "timestamp": "2026-04-14T08:57:02.423Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/moderation.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T08:57:02.423Z"
+    },
+    {
+      "id": "bug-123",
+      "timestamp": "2026-04-14T08:57:54.835Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/web/src/__tests__/moderator-flag-detail.test.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 60→102 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T08:57:54.835Z"
+    },
+    {
+      "id": "bug-124",
+      "timestamp": "2026-04-14T08:58:05.695Z",
+      "error_message": "CSS fix: flaggedStudent",
+      "file": "apps/web/src/__tests__/moderator-flag-detail.test.tsx",
+      "root_cause": "flaggedStudent: { id: \"user-2\", name: \"Jane Doe\", removed: false → { id: \"user-2\", name: \"Jane Doe\", removed: false, suspended: false",
+      "fix": "Changed flaggedStudent: { id: \"user-2\", name: \"Jane Doe\", removed: false → { id: \"user-2\", name: \"Jane Doe\", removed: false, suspended: false",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-14T08:58:48.876Z"
+    },
+    {
+      "id": "bug-125",
+      "timestamp": "2026-04-14T09:07:42.274Z",
+      "error_message": "Type error",
+      "file": "apps/web/src/routes/moderator/flags.$flagId.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T09:07:42.274Z"
+    },
+    {
+      "id": "bug-126",
+      "timestamp": "2026-04-14T09:12:30.250Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../../../tmp/wtf-implement-task-approach.md",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 20→20 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T09:12:30.250Z"
+    },
+    {
+      "id": "bug-127",
+      "timestamp": "2026-04-14T09:12:53.044Z",
+      "error_message": "Null/undefined access in ",
+      "file": "packages/api/src/routers/moderation-utils.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T09:12:53.044Z"
+    },
+    {
+      "id": "bug-128",
+      "timestamp": "2026-04-14T09:13:54.638Z",
+      "error_message": "Significant refactor of ",
+      "file": "packages/api/src/routers/moderation.ts",
+      "root_cause": "9 lines replaced/restructured",
+      "fix": "Rewrote 20→33 lines (9 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T09:13:54.638Z"
+    },
+    {
+      "id": "bug-129",
+      "timestamp": "2026-04-14T09:46:39.078Z",
+      "error_message": "Missing guard clause",
+      "file": "apps/server/src/notifications.ts",
+      "root_cause": "No early return/throw for edge case: tokens.length === 0",
+      "fix": "Added guard clause: if (tokens.length === 0)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T09:46:39.078Z"
+    },
+    {
+      "id": "bug-130",
+      "timestamp": "2026-04-14T09:47:30.063Z",
+      "error_message": "Wrong reference: registerNotificationHandlers should be domainEvents",
+      "file": "apps/server/src/__tests__/notifications-student-warned.test.ts",
+      "root_cause": "Used \"registerNotificationHandlers\" instead of \"domainEvents\"",
+      "fix": "Changed registerNotificationHandlers → domainEvents",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T09:47:30.063Z"
+    },
+    {
+      "id": "bug-131",
+      "timestamp": "2026-04-14T10:49:17.175Z",
+      "error_message": "Significant refactor of ",
+      "file": "packages/api/src/routers/moderation-utils.ts",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 8→67 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:49:17.175Z"
+    },
+    {
+      "id": "bug-132",
+      "timestamp": "2026-04-14T10:50:03.441Z",
+      "error_message": "Null/undefined access in ",
+      "file": "packages/api/src/routers/moderation.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: * #100/#103 — Suspend a flagged Student.; * Sets studentStatus to 'suspended', resolves flag with outc",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-14T10:50:15.844Z"
+    },
+    {
+      "id": "bug-133",
+      "timestamp": "2026-04-14T10:50:25.692Z",
+      "error_message": "Null/undefined access in ",
+      "file": "packages/api/src/routers/chat.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:50:25.692Z"
+    },
+    {
+      "id": "bug-134",
+      "timestamp": "2026-04-14T10:50:31.726Z",
+      "error_message": "Incorrect value in code",
+      "file": "packages/api/src/routers/meetup.ts",
+      "root_cause": "Had \"../index\"",
+      "fix": "Changed to \"@sip-and-speak/db/schema/auth\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:50:31.726Z"
+    },
+    {
+      "id": "bug-135",
+      "timestamp": "2026-04-14T10:50:37.552Z",
+      "error_message": "Null/undefined access in ",
+      "file": "packages/api/src/routers/meetup.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:50:37.552Z"
+    },
+    {
+      "id": "bug-136",
+      "timestamp": "2026-04-14T10:50:50.977Z",
+      "error_message": "Significant refactor of ",
+      "file": "packages/api/src/routers/matching.ts",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→5 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:50:50.977Z"
+    },
+    {
+      "id": "bug-137",
+      "timestamp": "2026-04-14T10:52:57.565Z",
+      "error_message": "Type error",
+      "file": "packages/api/src/__tests__/moderation-flag-detail.test.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:52:57.565Z"
+    },
+    {
+      "id": "bug-138",
+      "timestamp": "2026-04-14T10:54:49.912Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/web/src/routes/moderator/flags.$flagId.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 30→40 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:54:49.912Z"
+    },
+    {
+      "id": "bug-139",
+      "timestamp": "2026-04-14T10:55:12.486Z",
+      "error_message": "Type error",
+      "file": "apps/web/src/__tests__/moderator-flag-detail.test.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:55:12.486Z"
+    },
+    {
+      "id": "bug-140",
+      "timestamp": "2026-04-14T10:58:50.467Z",
+      "error_message": "CSS fix: mutationOptions",
+      "file": "apps/web/src/__tests__/moderator-flag-detail.test.tsx",
+      "root_cause": "mutationOptions: vi.fn((opts) => ({ mutationKey: [\"suspendStudent\"], ...opts → vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts",
+      "fix": "Changed mutationOptions: vi.fn((opts) => ({ mutationKey: [\"suspendStudent\"], ...opts → vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:58:50.467Z"
+    },
+    {
+      "id": "bug-141",
+      "timestamp": "2026-04-14T10:59:01.191Z",
+      "error_message": "Missing guard clause",
+      "file": "apps/web/src/__tests__/moderator-flag-detail.test.tsx",
+      "root_cause": "No early return/throw for edge case: !flag.flaggedStudent.suspended",
+      "fix": "Added guard clause: if (!flag.flaggedStudent.suspended)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T10:59:01.191Z"
+    },
+    {
+      "id": "bug-142",
+      "timestamp": "2026-04-14T11:06:08.604Z",
+      "error_message": "CSS fix: mutationOptions",
+      "file": "apps/web/src/__tests__/moderator-flag-detail.test.tsx",
+      "root_cause": "mutationOptions: vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts → vi.fn((opts) => ({ mutationKey: [\"removeStudent\"], ...opts",
+      "fix": "Changed mutationOptions: vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts → vi.fn((opts) => ({ mutationKey: [\"removeStudent\"], ...opts",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-14T11:06:37.938Z"
+    },
+    {
+      "id": "bug-143",
+      "timestamp": "2026-04-14T11:06:53.835Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/moderation.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:06:53.835Z"
+    },
+    {
+      "id": "bug-144",
+      "timestamp": "2026-04-14T11:07:34.404Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/web/src/routes/moderator/flags.$flagId.tsx",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 6→10 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:07:34.404Z"
+    },
+    {
+      "id": "bug-145",
+      "timestamp": "2026-04-14T11:11:14.593Z",
+      "error_message": "Type error",
+      "file": "packages/api/src/routers/moderation-utils.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:11:14.593Z"
+    },
+    {
+      "id": "bug-146",
+      "timestamp": "2026-04-14T11:11:42.841Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/moderation-persist.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:11:42.841Z"
+    },
+    {
+      "id": "bug-147",
+      "timestamp": "2026-04-14T11:11:59.363Z",
+      "error_message": "Null/undefined access in ",
+      "file": "packages/api/src/routers/moderation.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:11:59.363Z"
+    },
+    {
+      "id": "bug-148",
+      "timestamp": "2026-04-14T11:12:13.493Z",
+      "error_message": "Null/undefined access in ",
+      "file": "packages/auth/src/index.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:12:13.493Z"
+    },
+    {
+      "id": "bug-149",
+      "timestamp": "2026-04-14T11:27:47.957Z",
+      "error_message": "Type error",
+      "file": "packages/api/src/routers/moderation-utils.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:27:47.957Z"
+    },
+    {
+      "id": "bug-150",
+      "timestamp": "2026-04-14T11:28:10.066Z",
+      "error_message": "Missing await",
+      "file": "packages/api/src/routers/moderation-persist.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:28:10.066Z"
+    },
+    {
+      "id": "bug-151",
+      "timestamp": "2026-04-14T11:28:22.875Z",
+      "error_message": "Null/undefined access in ",
+      "file": "apps/server/src/index.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:28:22.875Z"
+    },
+    {
+      "id": "bug-152",
+      "timestamp": "2026-04-14T11:28:28.542Z",
+      "error_message": "Wrong condition in logic",
+      "file": "apps/server/src/index.ts",
+      "root_cause": "Condition was: if (validateTueDomain(email)",
+      "fix": "Changed to: if (await isEmailBlocklisted(email)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:28:28.542Z"
+    },
+    {
+      "id": "bug-153",
+      "timestamp": "2026-04-14T11:30:58.330Z",
+      "error_message": "Missing error handling in function",
+      "file": "apps/server/src/notifications.ts",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:30:58.330Z"
+    },
+    {
+      "id": "bug-154",
+      "timestamp": "2026-04-14T11:35:44.483Z",
+      "error_message": "Incorrect value in code",
+      "file": "packages/db/src/schema/sip-and-speak.ts",
+      "root_cause": "Had \"status\"",
+      "fix": "Changed to \"closed\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:35:44.483Z"
+    },
+    {
+      "id": "bug-155",
+      "timestamp": "2026-04-14T11:36:02.823Z",
+      "error_message": "Significant refactor of ",
+      "file": "packages/api/src/routers/chat.ts",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→8 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:36:02.823Z"
+    },
+    {
+      "id": "bug-156",
+      "timestamp": "2026-04-14T11:36:32.562Z",
+      "error_message": "Missing guard clause",
+      "file": "apps/server/src/notifications.ts",
+      "root_cause": "No early return/throw for edge case: openConversations.length === 0",
+      "fix": "Added guard clause: if (openConversations.length === 0)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:36:32.562Z"
+    },
+    {
+      "id": "bug-157",
+      "timestamp": "2026-04-14T11:38:44.124Z",
+      "error_message": "Function not marked async",
+      "file": "apps/server/src/notifications.ts",
+      "root_cause": "Function uses await but wasn't declared async",
+      "fix": "Added async modifier",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:38:44.124Z"
+    },
+    {
+      "id": "bug-158",
+      "timestamp": "2026-04-14T11:39:54.458Z",
+      "error_message": "Type error",
+      "file": "packages/api/src/__tests__/moderation-remove.test.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T11:39:54.458Z"
+    },
+    {
+      "id": "bug-159",
+      "timestamp": "2026-04-15T18:52:06.760Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/app.json",
+      "root_cause": "Had \"automatic\"",
+      "fix": "Changed to \"light\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T18:52:06.760Z"
+    },
+    {
+      "id": "bug-160",
+      "timestamp": "2026-04-15T00:00:00.000Z",
+      "error_message": "nothing happens after accepting an invite",
+      "file": "apps/native/app/partner/[id].tsx",
+      "root_cause": "acceptMutation.onSuccess only invalidated queries — no router.back() call, so user stayed on profile screen after accepting",
+      "fix": "Added router.back() in acceptMutation.onSuccess, matching decline behavior",
+      "tags": [
+        "ux",
+        "navigation",
+        "matching"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T00:00:00.000Z"
+    },
+    {
+      "id": "bug-161",
+      "timestamp": "2026-04-15T00:00:00.000Z",
+      "error_message": "Encountered two children with the same key, `%s`. Keys should be unique... Spanish / English / Dutch / tech_coding / cosmology / etc.",
+      "file": "packages/db/src/schema/sip-and-speak.ts",
+      "root_cause": "userLanguage and userInterest tables had no unique composite constraints (only index). onConflictDoNothing() never fired because id is a UUID (always unique). Running seed multiple times inserted duplicate rows. API returned arrays with duplicates causing React duplicate-key warnings.",
+      "fix": "Added unique(userId, language, type) to userLanguage and unique(userId, interest) to userInterest. Manually deduped existing DB rows. Generated migration 0015_flat_mercury.sql.",
+      "tags": [
+        "react-keys",
+        "schema",
+        "seed",
+        "db-constraints"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T00:00:00.000Z"
+    },
+    {
+      "id": "bug-162",
+      "timestamp": "2026-04-15T19:05:26.160Z",
+      "error_message": "Null/undefined access in ",
+      "file": "packages/api/src/routers/matching.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T19:05:26.160Z"
+    },
+    {
+      "id": "bug-163",
+      "timestamp": "2026-04-15T19:05:36.414Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/native/app/(tabs)/suggestions.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 13→15 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T19:05:36.414Z"
+    },
+    {
+      "id": "bug-164",
+      "timestamp": "2026-04-15T19:05:43.911Z",
+      "error_message": "Type error",
+      "file": "apps/native/app/(tabs)/suggestions.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T19:05:43.911Z"
+    },
+    {
+      "id": "bug-165",
+      "timestamp": "2026-04-15T19:05:51.772Z",
+      "error_message": "CSS fix: pathname",
+      "file": "apps/native/app/(tabs)/suggestions.tsx",
+      "root_cause": "pathname: \"/partner/[id]\", params: { id: req.requesterId, matchRequestId: req.matchRequestId → \"/propose-meetup\", params: { partnerId: match.partnerId, partnerName: match.partnerName",
+      "fix": "Changed pathname: \"/partner/[id]\", params: { id: req.requesterId, matchRequestId: req.matchRequestId → \"/propose-meetup\", params: { partnerId: match.partnerId, partnerName: match.partnerName",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-15T19:05:58.628Z"
+    },
+    {
+      "id": "bug-166",
+      "timestamp": "2026-04-15T19:06:09.121Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/native/app/partner/[id].tsx",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 3→4 lines (3 removed) | Also: isDisabled={acceptMutation.isPending || acceptMuta; <Button.Label>{acceptMutation.isSuccess ? \"Accepte",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-15T19:06:23.663Z"
+    },
+    {
+      "id": "bug-167",
+      "timestamp": "2026-04-15T19:26:25.923Z",
+      "error_message": "Significant refactor of ",
+      "file": "packages/api/src/routers/matching.ts",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 12→36 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T19:26:25.923Z"
+    },
+    {
+      "id": "bug-168",
+      "timestamp": "2026-04-15T19:26:30.778Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/native/app/propose-meetup.tsx",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 5→9 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T19:26:30.778Z"
+    },
+    {
+      "id": "bug-169",
+      "timestamp": "2026-04-15T00:00:00.000Z",
+      "error_message": "whenever i propose a meetup to a match nothing happens",
+      "file": "packages/api/src/routers/matching.ts, apps/native/app/propose-meetup.tsx",
+      "root_cause": "Two issues: (1) getMyMatches returned matches that already had a pending/confirmed meetup proposal, so proposing again silently conflicted or showed alert then immediately navigated back leaving match still visible; (2) router.back() fired immediately after Alert.alert() without waiting for user to dismiss, so user missed the success feedback",
+      "fix": "(1) getMyMatches now filters out matches with active (pending/confirmed) proposals; (2) propose-meetup onSuccess moves router.back() inside Alert OK button callback; also invalidates getMyMatches cache",
+      "tags": [
+        "meetup",
+        "proposal",
+        "ux",
+        "getMyMatches",
+        "alert"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T00:00:00.000Z"
+    },
+    {
+      "id": "bug-170",
+      "timestamp": "2026-04-15T19:35:40.957Z",
+      "error_message": "Null/undefined access in ",
+      "file": "apps/native/app/propose-meetup.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T19:35:40.957Z"
+    },
+    {
+      "id": "bug-171",
+      "timestamp": "2026-04-15T19:40:34.492Z",
+      "error_message": "Type error",
+      "file": "apps/native/app/(tabs)/confirmed-meetups.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation | Also: <Text className=\"text-foreground text-2xl font-bold mb-6\">Me; {pending.length > 0 && (",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-15T19:40:51.863Z"
+    },
+    {
+      "id": "bug-172",
+      "timestamp": "2026-04-15T19:49:20.185Z",
+      "error_message": "Type error",
+      "file": "apps/native/app/(tabs)/confirmed-meetups.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T19:49:20.185Z"
+    },
+    {
+      "id": "bug-173",
+      "timestamp": "2026-04-15T19:53:45.289Z",
+      "error_message": "Type error",
+      "file": "apps/native/utils/trpc.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T19:53:45.289Z"
+    },
+    {
+      "id": "bug-174",
+      "timestamp": "2026-04-15T19:54:14.165Z",
+      "error_message": "Significant refactor of ",
+      "file": "apps/native/app/(tabs)/confirmed-meetups.tsx",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 11→3 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T19:54:14.165Z"
+    },
+    {
+      "id": "bug-175",
+      "timestamp": "2026-04-19T19:27:34.921Z",
+      "error_message": "CSS fix: value",
+      "file": "apps/native/app/index.tsx",
+      "root_cause": "value: \"cosmology\", label: \"Cosmology\" → \"theatre\", label: \"Theatre\"",
+      "fix": "Changed value: \"cosmology\", label: \"Cosmology\" → \"theatre\", label: \"Theatre\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:27:34.921Z"
+    },
+    {
+      "id": "bug-176",
+      "timestamp": "2026-04-19T19:27:42.105Z",
+      "error_message": "CSS fix: value",
+      "file": "apps/native/app/edit-profile.tsx",
+      "root_cause": "value: \"cosmology\", label: \"Cosmology\" → \"theatre\", label: \"Theatre\"",
+      "fix": "Changed value: \"cosmology\", label: \"Cosmology\" → \"theatre\", label: \"Theatre\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:27:42.105Z"
     }
   ]
 }

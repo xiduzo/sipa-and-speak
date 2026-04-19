@@ -43,6 +43,7 @@
     "db:down": "turbo -F @sip-and-speak/db db:down"
   },
   "dependencies": {
+    "@react-native-community/datetimepicker": "^9.1.0",
     "@sip-and-speak/env": "workspace:*",
     "dotenv": "catalog:",
     "zod": "catalog:"
