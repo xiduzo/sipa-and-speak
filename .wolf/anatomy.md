@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T16:15:48.630Z
-> Files: 345 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T18:44:59.915Z
+> Files: 346 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -278,7 +278,7 @@
 - `.gitignore` — Git ignore rules (~111 tok)
 - `app.json` (~149 tok)
 - `expo-env.d.ts` — / <reference types="expo/types" /> (~32 tok)
-- `global.css` — Styles: 5 rules, 30 vars (~540 tok)
+- `global.css` — Styles: 5 rules, 42 vars (~702 tok)
 - `jest-setup.ts` — Expo 55 "winter" installs lazy getters on many globals (structuredClone, etc.) that try to (~252 tok)
 - `jest.config.ts` — Jest test configuration (~324 tok)
 - `metro.config.js` — Declares config (~141 tok)
@@ -328,11 +328,11 @@
 
 ## apps/native/app/
 
-- `_layout.tsx` — unstable_settings (~1809 tok)
-- `edit-profile.tsx` — LANGUAGES (~5318 tok)
-- `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)
+- `_layout.tsx` — useNotificationCategories (~1683 tok)
+- `edit-profile.tsx` — GOLD (~6919 tok)
+- `enrolment.tsx` — OTP_RESEND_COOLDOWN (~3879 tok)
 - `flag-user.tsx` — DETAIL_MAX — uses useRouter, useState, useMutation (~1486 tok)
-- `index.tsx` — LANGUAGES (~5576 tok)
+- `index.tsx` — PROFICIENCY_LEVELS (~5404 tok)
 - `propose-meetup.tsx` — ProposeMeetupScreen — uses useRouter, useState, useQuery, useMutation (~1912 tok)
 - `respond-meetup.tsx` — RespondMeetupScreen — uses useRouter, useState, useQuery, useMutation (~3171 tok)
 - `review-profile.tsx` — INTERESTS_LABEL — uses useRouter, useQuery, useMutation (~2394 tok)
@@ -357,7 +357,8 @@
 
 - `candidate-card.tsx` — CandidateCard — uses useRouter, useMutation (~1406 tok)
 - `container.tsx` — AnimatedView (~360 tok)
-- `sign-in.tsx` — signInSchema — renders form — uses useForm (~1376 tok)
+- `language-picker-modal.tsx` — ALL_LANGUAGES — renders modal (~694 tok)
+- `onboarding-modal.tsx` — OnboardingModal — full-screen React Native Modal for identity setup (name/surname/photo), shown when identityProfileComplete is false (~2698 tok)
 - `sign-up.tsx` — signUpSchema — renders form — uses useForm (~1680 tok)
 - `theme-toggle.tsx` — StyledIonicons (~309 tok)
 
@@ -485,9 +486,9 @@
 
 ## docs/steering/
 
-- `DESIGN.md` — Sip&Speak Design Guidelines (~2183 tok)
+- `DESIGN.md` — Sip&Speak Design Guidelines (~2504 tok)
 - `QA.md` — Sip&Speak QA Standards (~958 tok)
-- `TECH.md` — Sip&Speak Technical Guidelines (~1106 tok)
+- `TECH.md` — Sip&Speak Technical Guidelines (~1231 tok)
 - `VISION.md` — Sip&Speak Vision (~1011 tok)
 
 ## packages/api/

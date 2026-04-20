@@ -89,6 +89,7 @@ bun db:studio
 - **Routers:** One file per domain in `packages/api/src/routers/`; all routers registered in `packages/api/src/routers/index.ts`
 - **Schema:** Domain tables in `packages/db/src/schema/sip-and-speak.ts`; auth tables in `packages/db/src/schema/auth.ts`
 - **Test files:** No test suite currently exists — write new code with pure functions and clear side-effect boundaries to enable future coverage
+- **Native styling:** Prefer NativeWind `className` over `style={{}}` inline objects. Use token-based utilities (`text-foreground`, `bg-background`, `font-manrope`, `font-manrope-bold`, `bg-brand-gold`, etc.) defined in `apps/native/global.css`. Reserve the `style` prop for genuinely dynamic values that can't be expressed as a className string (e.g. pressed/disabled state colors, conditional `borderColor`). Never declare hardcoded color constants (BG, INK, MUTED) when a design token class exists.
 
 ## Architecture Decision Records
 

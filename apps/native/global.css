@@ -31,6 +31,11 @@
   --color-brand-border: #E8D5C4;
   --color-brand-accent: #D4A574;
 
+  /* Extended tokens */
+  --color-brand-gold: #F2C94C;
+  --color-brand-input: #F5EFE8;
+  --color-brand-green: #2D7A4F;
+
   /* Pin heroui-native semantic tokens to brand values */
   --color-background: #FFF8F3;
   --color-foreground: #2C1810;
@@ -51,4 +56,15 @@
   --color-brand-muted-foreground: var(--color-brand-muted-foreground);
   --color-brand-border: var(--color-brand-border);
   --color-brand-accent: var(--color-brand-accent);
+  --color-brand-gold: var(--color-brand-gold);
+  --color-brand-input: var(--color-brand-input);
+  --color-brand-green: var(--color-brand-green);
+
+  /* Font families — names match expo-font loaded keys */
+  --font-manrope: Manrope_400Regular;
+  --font-manrope-md: Manrope_500Medium;
+  --font-manrope-semi: Manrope_600SemiBold;
+  --font-manrope-bold: Manrope_700Bold;
+  --font-caveat: Caveat_700Bold;
+  --font-jakarta: PlusJakartaSans_800ExtraBold;
 }

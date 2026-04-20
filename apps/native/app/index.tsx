@@ -73,7 +73,7 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     if (onboardingStatus.data?.complete) {
-      router.replace("/suggestions");
+      router.replace("/(tabs)/suggestions");
     }
   }, [onboardingStatus.data?.complete]);
 

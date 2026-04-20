@@ -1117,3 +1117,122 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 18:21 | Created apps/native/components/language-picker-modal.tsx | — | ~694 |
+| 18:21 | Edited apps/native/app/index.tsx | reduced (-14 lines) | ~133 |
+| 18:21 | Edited apps/native/app/index.tsx | 5→6 lines | ~126 |
+| 18:21 | Edited apps/native/app/index.tsx | modified renderStep1() | ~1229 |
+
+## Session: 2026-04-20 18:25
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 18:26 | Edited apps/native/app/index.tsx | added 1 condition(s) | ~170 |
+| 18:26 | Edited apps/native/app/edit-profile.tsx | reduced (-14 lines) | ~90 |
+| 18:27 | Edited apps/native/app/edit-profile.tsx | reduced (-6 lines) | ~38 |
+| 18:27 | Edited apps/native/app/edit-profile.tsx | removed 29 lines | ~52 |
+| 18:27 | Edited apps/native/app/edit-profile.tsx | removed 33 lines | ~54 |
+| 18:27 | Edited apps/native/app/edit-profile.tsx | expanded (+8 lines) | ~103 |
+| 18:28 | fix #282: searchable language picker via iso-639-1 modal | apps/native/components/language-picker-modal.tsx, apps/native/app/index.tsx, apps/native/app/edit-profile.tsx | committed + pushed | ~800 |
+| 18:28 | Session end: 6 writes across 2 files (index.tsx, edit-profile.tsx) | 2 reads | ~10262 tok |
+| 18:32 | Session end: 6 writes across 2 files (index.tsx, edit-profile.tsx) | 2 reads | ~10262 tok |
+| 18:49 | Redesigned enrolment screen to match handwritten mockup: Caveat font, gold pill button, unified flow (no alumnus split, no step distinction) | apps/native/app/enrolment.tsx, apps/native/app/_layout.tsx | done ~2400 tok |
+
+## Session: 2026-04-20 19:17
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:21 | Redesigned edit-profile.tsx as 5-step conversational onboarding wizard | app/edit-profile.tsx | Step-by-step wizard: name→photo→spoken langs→learning langs→interests. Progress bar, gold CTA, flag emojis, proficiency dots, CEFR level pills. | ~3500 |
+| 19:21 | Edited apps/native/app/_layout.tsx | added error handling | ~188 |
+| 19:21 | Session end: 1 writes across 1 files (_layout.tsx) | 5 reads | ~4976 tok |
+
+## Session: 2026-04-20 19:24
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:25 | Edited apps/native/app/enrolment.tsx | added 1 import(s) | ~54 |
+| 19:25 | Edited apps/native/app/edit-profile.tsx | added 1 import(s) | ~52 |
+| 19:25 | Session end: 2 writes across 2 files (enrolment.tsx, edit-profile.tsx) | 2 reads | ~7106 tok |
+
+## Session: 2026-04-20 19:25
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:26 | Edited apps/native/app/_layout.tsx | 3→3 lines | ~20 |
+| 19:26 | Session end: 1 writes across 1 files (_layout.tsx) | 4 reads | ~6806 tok |
+| 19:26 | Session end: 1 writes across 1 files (_layout.tsx) | 4 reads | ~6806 tok |
+| 19:27 | Session end: 1 writes across 1 files (_layout.tsx) | 5 reads | ~8667 tok |
+| 19:28 | Session end: 1 writes across 1 files (_layout.tsx) | 5 reads | ~8667 tok |
+
+## Session: 2026-04-20 19:33
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:35 | Edited apps/native/app/_layout.tsx | — | ~0 |
+| 19:36 | Edited apps/native/app/_layout.tsx | 2→3 lines | ~61 |
+| 19:36 | Session end: 2 writes across 1 files (_layout.tsx) | 6 reads | ~14091 tok |
+| 19:39 | Edited apps/native/app/_layout.tsx | CSS: isPending | ~259 |
+| 19:39 | Session end: 3 writes across 1 files (_layout.tsx) | 11 reads | ~24835 tok |
+| 19:42 | Edited apps/native/global.css | expanded (+16 lines) | ~414 |
+| 19:42 | Created apps/native/global.css | — | ~702 |
+| 19:43 | Created apps/native/app/enrolment.tsx | — | ~3828 |
+| 19:44 | Created apps/native/app/edit-profile.tsx | — | ~6874 |
+| 19:44 | Edited apps/native/app/_layout.tsx | modified Layout() | ~225 |
+| 19:44 | Session end: 8 writes across 4 files (_layout.tsx, global.css, enrolment.tsx, edit-profile.tsx) | 11 reads | ~37040 tok |
+| 19:45 | Edited docs/steering/TECH.md | 6→7 lines | ~330 |
+| 19:45 | Edited docs/steering/DESIGN.md | expanded (+26 lines) | ~358 |
+| 19:45 | NativeWind refactor: font+color tokens to global.css, converted enrolment.tsx+edit-profile.tsx from inline styles to className, updated DESIGN+TECH steering, updated cerebrum | global.css, enrolment.tsx, edit-profile.tsx, DESIGN.md, TECH.md, cerebrum.md | complete | ~2500 |
+| 19:45 | Session end: 10 writes across 6 files (_layout.tsx, global.css, enrolment.tsx, edit-profile.tsx, TECH.md) | 11 reads | ~37777 tok |
+| 19:46 | Session end: 10 writes across 6 files (_layout.tsx, global.css, enrolment.tsx, edit-profile.tsx, TECH.md) | 11 reads | ~37777 tok |
+| 19:50 | Edited apps/native/app/_layout.tsx | added 1 condition(s) | ~198 |
+| 19:50 | Session end: 11 writes across 6 files (_layout.tsx, global.css, enrolment.tsx, edit-profile.tsx, TECH.md) | 11 reads | ~37975 tok |
+
+## Session: 2026-04-20 19:52
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:57 | Edited apps/native/app/_layout.tsx | 13→9 lines | ~207 |
+| 19:57 | removed 4 non-existent Stack.Screen entries (onboarding, schedule/[partnerId], map, modal) | apps/native/app/_layout.tsx | fixed white screen warnings | ~50 |
+| 19:57 | Session end: 1 writes across 1 files (_layout.tsx) | 5 reads | ~18914 tok |
+| 20:03 | Edited apps/native/app/_layout.tsx | inline fix | ~24 |
+| 20:03 | Edited apps/native/app/_layout.tsx | modified AuthGuard() | ~500 |
+| 20:04 | Edited apps/native/app/_layout.tsx | modified if() | ~285 |
+| 20:04 | fixed AuthGuard: added navigationReady gate + simplified routing to /(tabs) | apps/native/app/_layout.tsx | white screen fix | ~80 |
+| 20:05 | Session end: 4 writes across 1 files (_layout.tsx) | 6 reads | ~20029 tok |
+| 20:07 | Created apps/native/app/_layout.tsx | — | ~1651 |
+| 20:07 | Edited apps/native/app/enrolment.tsx | 2→2 lines | ~22 |
+| 20:07 | stripped AuthGuard to 2 rules + debug logging; enrolment navigates to /(tabs) directly | _layout.tsx, enrolment.tsx | simplification | ~60 |
+| 20:07 | Session end: 6 writes across 2 files (_layout.tsx, enrolment.tsx) | 6 reads | ~21670 tok |
+| 20:10 | Edited apps/native/app/enrolment.tsx | 14→14 lines | ~108 |
+| 20:11 | Edited apps/native/app/enrolment.tsx | modified EnrolmentScreen() | ~41 |
+| 20:11 | Edited apps/native/app/enrolment.tsx | inline fix | ~32 |
+| 20:11 | Edited apps/native/app/enrolment.tsx | inline fix | ~4 |
+| 20:11 | Edited apps/native/app/edit-profile.tsx | inline fix | ~20 |
+| 20:11 | Edited apps/native/app/edit-profile.tsx | modified EditProfileScreen() | ~53 |
+| 20:12 | Edited apps/native/app/enrolment.tsx | inline fix | ~34 |
+| 20:13 | Edited apps/native/app/enrolment.tsx | CSS: flex | ~28 |
+| 20:13 | Edited apps/native/app/edit-profile.tsx | modified if() | ~105 |
+| 20:13 | Edited apps/native/app/edit-profile.tsx | inline fix | ~4 |
+| 20:13 | Session end: 16 writes across 3 files (_layout.tsx, enrolment.tsx, edit-profile.tsx) | 10 reads | ~28051 tok |
+| 20:14 | Edited apps/native/app/enrolment.tsx | CSS: flex, paddingTop, paddingBottom | ~37 |
+| 20:14 | Edited apps/native/app/enrolment.tsx | inline fix | ~4 |
+| 20:14 | Session end: 18 writes across 3 files (_layout.tsx, enrolment.tsx, edit-profile.tsx) | 10 reads | ~28095 tok |
+
+## Session: 2026-04-20 20:15
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:20 | Created apps/native/components/onboarding-modal.tsx | — | ~2698 |
+| 20:20 | Edited apps/native/app/_layout.tsx | added 1 import(s) | ~89 |
+| 20:20 | Edited apps/native/app/_layout.tsx | 2→3 lines | ~26 |
+| 20:21 | Edited apps/native/app/index.tsx | modified if() | ~24 |
+| 20:21 | Fixed unmatched route bug (index.tsx /suggestions→/(tabs)); added OnboardingModal component; wired into _layout.tsx | apps/native/app/index.tsx, apps/native/app/_layout.tsx, apps/native/components/onboarding-modal.tsx | success | ~800 |
+| 20:21 | Session end: 4 writes across 3 files (onboarding-modal.tsx, _layout.tsx, index.tsx) | 5 reads | ~21086 tok |
+| 20:44 | Edited apps/native/app/_layout.tsx | "/(tabs)" → "/(tabs)/suggestions" | ~13 |
+| 20:44 | Edited apps/native/app/enrolment.tsx | "/(tabs)" → "/(tabs)/suggestions" | ~13 |
+| 20:44 | Edited apps/native/app/index.tsx | "/(tabs)" → "/(tabs)/suggestions" | ~13 |
+| 20:45 | Session end: 7 writes across 4 files (onboarding-modal.tsx, _layout.tsx, index.tsx, enrolment.tsx) | 5 reads | ~21125 tok |
+
+## Session: 2026-04-20 20:46
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|

@@ -1,5 +1,6 @@
 import "@/global.css";
 import Constants from "expo-constants";
+import { Caveat_700Bold } from "@expo-google-fonts/caveat";
 import {
   Manrope_400Regular,
   Manrope_500Medium,
@@ -12,9 +13,9 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans";
-import { focusManager, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { focusManager, QueryClientProvider, useMutation } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRootNavigationState, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { HeroUINativeProvider } from "heroui-native";
@@ -23,18 +24,14 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import * as Notifications from "expo-notifications";
 import { AppState, Platform } from "react-native";
-import { useMutation } from "@tanstack/react-query";
 
 import { authClient } from "@/lib/auth-client";
 import { AppThemeProvider } from "@/contexts/app-theme-context";
 import { queryClient, trpc } from "@/utils/trpc";
 import { useNotificationTapHandler } from "@/hooks/use-notification-tap-handler";
+import { OnboardingModal } from "@/components/onboarding-modal";
 
 SplashScreen.preventAutoHideAsync();
-
-export const unstable_settings = {
-  initialRouteName: "(tabs)",
-};
 
 function useNotificationCategories() {
   useEffect(() => {
@@ -51,13 +48,17 @@ function useDeviceTokenRegistration(isLoggedIn: boolean) {
     if (!isLoggedIn) return;
 
     async function register() {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== "granted") return;
+      try {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status !== "granted") return;
 
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
-      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
-      const platform = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
-      registerToken.mutate({ token: tokenData.data, platform });
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+        const platform = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
+        registerToken.mutate({ token: tokenData.data, platform });
+      } catch {
+        // Push token unavailable (simulator or missing EAS projectId) — non-fatal
+      }
     }
 
     void register();
@@ -66,47 +67,45 @@ function useDeviceTokenRegistration(isLoggedIn: boolean) {
 }
 
 function AuthGuard() {
-  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
   const segments = useSegments();
-
-  // Refetch stale queries whenever the active route changes (tab switches, screen push/pop)
-  useEffect(() => {
-    void queryClient.refetchQueries({ type: "active", stale: true });
-  }, [segments]);
+  const navigationReady = !!useRootNavigationState()?.key;
 
   useNotificationCategories();
   useDeviceTokenRegistration(!!session);
   useNotificationTapHandler();
 
-  const onboardingQuery = useQuery({
-    ...trpc.profile.getOnboardingStatus.queryOptions(),
-    enabled: !!session,
-  });
+  // Refetch stale queries on route change
+  useEffect(() => {
+    void queryClient.refetchQueries({ type: "active", stale: true });
+  }, [segments]);
 
   useEffect(() => {
-    if (sessionPending) return;
-    if (session && onboardingQuery.isPending) return;
+    console.log("[AuthGuard] state:", {
+      navigationReady,
+      isPending,
+      session: session ? "signed-in" : session === null ? "signed-out" : "loading",
+      segments,
+    });
 
-    const onEnrolmentScreen = segments[0] === "enrolment";
-    const onReviewScreen = segments[0] === "review-profile";
-    const onEditProfileScreen = segments[0] === "edit-profile";
-    const onOnboardingScreen = segments[0] === undefined;
+    if (!navigationReady || isPending) return;
 
-    if (!session && !onEnrolmentScreen) {
+    const inEnrolment = segments[0] === "enrolment";
+    const atRoot = segments.length === 0;
+
+    console.log("[AuthGuard] routing:", { inEnrolment, atRoot });
+
+    if (!session && !inEnrolment) {
+      console.log("[AuthGuard] → /enrolment (not signed in)");
       router.replace("/enrolment");
-    } else if (session && !onboardingQuery.data?.identityProfileComplete && !onEditProfileScreen && !onEnrolmentScreen) {
-      router.replace("/edit-profile");
-    } else if (session && onEnrolmentScreen) {
-      if (onboardingQuery.data?.complete) {
-        router.replace("/suggestions");
-      } else {
-        router.replace("/");
-      }
-    } else if (session && !onboardingQuery.data?.complete && !onOnboardingScreen && !onReviewScreen && !onEditProfileScreen) {
-      router.replace("/");
+    } else if (session && (inEnrolment || atRoot)) {
+      console.log("[AuthGuard] → /(tabs) (signed in)");
+      router.replace("/(tabs)/suggestions");
+    } else {
+      console.log("[AuthGuard] no redirect needed");
     }
-  }, [session, sessionPending, onboardingQuery.data, onboardingQuery.isPending, segments]);
+  }, [navigationReady, isPending, session, segments]);
 
   return null;
 }
@@ -114,24 +113,20 @@ function AuthGuard() {
 function StackLayout() {
   return (
     <Stack screenOptions={{}}>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="enrolment" options={{ title: "Enrol with TU/e", headerBackVisible: false }} />
-      <Stack.Screen name="onboarding" options={{ title: "Set Up Your Profile", headerBackVisible: false }} />
+      <Stack.Screen name="enrolment" options={{ headerShown: false }} />
       <Stack.Screen name="edit-profile" options={{ title: "Edit Profile" }} />
       <Stack.Screen name="review-profile" options={{ title: "Review Profile" }} />
       <Stack.Screen name="partner/[id]" options={{ title: "Partner Profile" }} />
-      <Stack.Screen name="schedule/[partnerId]" options={{ title: "Schedule Meet-Up" }} />
       <Stack.Screen name="chat/[conversationId]" options={{ title: "Chat" }} />
-      <Stack.Screen name="map" options={{ title: "Campus Map" }} />
       <Stack.Screen name="respond-meetup" options={{ title: "Respond to Proposal" }} />
       <Stack.Screen name="flag-user" options={{ title: "Report Student", presentation: "modal" }} />
-      <Stack.Screen name="modal" options={{ title: "Modal", presentation: "modal" }} />
     </Stack>
   );
 }
 
 export default function Layout() {
-  // Sync React Query focus state with native app foreground/background
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (status) => {
       if (Platform.OS !== "web") {
@@ -142,6 +137,7 @@ export default function Layout() {
   }, []);
 
   const [fontsLoaded] = useFonts({
+    Caveat_700Bold,
     Manrope_400Regular,
     Manrope_500Medium,
     Manrope_600SemiBold,
@@ -153,6 +149,7 @@ export default function Layout() {
   });
 
   useEffect(() => {
+    console.log("[Layout] fontsLoaded:", fontsLoaded);
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
@@ -169,6 +166,7 @@ export default function Layout() {
           <AppThemeProvider>
             <HeroUINativeProvider>
               <AuthGuard />
+              <OnboardingModal />
               <StackLayout />
             </HeroUINativeProvider>
           </AppThemeProvider>

@@ -6,7 +6,7 @@
 
 ## User Preferences
 
-<!-- How the user likes things done. Code style, tools, patterns, communication. -->
+- **Native styling: prefer NativeWind className over inline style objects.** Use token utilities (`text-foreground`, `bg-background`, `font-manrope-bold`, etc.) from `apps/native/global.css`. Reserve `style` prop only for runtime-dynamic values (pressed states, conditional `borderColor`). Never declare BG/INK/MUTED color constants when a design token class exists.
 
 ## Key Learnings
 
@@ -20,6 +20,8 @@
 
 ## User Preferences
 
+- **Onboarding gates use React Native `Modal` components, not routes.** When a user must complete an action before accessing the app (e.g. identity setup), show a full-screen `Modal` (`presentationStyle="fullScreen"`) rather than redirecting to a route. The modal is controlled by query state — hides automatically when the condition is met.
+
 - **Favour unified flows over separate screens for the same UX pattern.** When two user types (e.g. student vs alumni) share the same form + OTP flow, handle the distinction server-side (middleware / validation) rather than duplicating UI. Keep separate screens only when the UX genuinely diverges.
 
 ## Do-Not-Repeat
@@ -31,6 +33,10 @@
 - [2026-04-12] For Better-Auth email OTP **sign-in** flow: use `authClient.signIn.emailOtp({ email, otp })` — NOT `authClient.emailOtp.verifyEmail()`. The `verifyEmail` method is only for `type: "email-verification"` (changing email). Using it for sign-in always returns 400.
 - [2026-04-12] Do not use `variant="light"` or `variant="bordered"` in heroui-native Button — these are not in `ButtonVariant`. Use `"ghost"` for secondary/tertiary actions.
 - [2026-04-12] `bun --hot` in `apps/server` does NOT watch workspace packages (`packages/api`, etc). After adding new tRPC procedures, the server must be manually restarted — otherwise clients get "No procedure found on path" even though the source is correct.
+- [2026-04-20] **Expo Router route groups cannot be navigated to directly.** `router.replace("/(tabs)")` resolves to `sip-and-speak:///` (empty URL) → Unmatched Route. Always navigate to a concrete route: `router.replace("/(tabs)/suggestions")`.
+- [2026-04-20] Expo Router AuthGuard: `router.replace()` in `useEffect` silently fails if the navigator isn't mounted yet. Always gate on `useRootNavigationState().key` before any navigation. Missing this causes persistent white screen on app start.
+- [2026-04-20] `Stack.Screen` entries for non-existent route files cause `[Layout children]: No route named X exists` warnings in Expo Router SDK 55. Remove them — they serve no purpose without the corresponding file.
+- [2026-04-20] UniWind does NOT process `className` on `SafeAreaView` from `react-native-safe-area-context` (third-party). This causes zero-height render — blank screen. Always use `View` + `useSafeAreaInsets()` instead. Also add `style={{ flex: 1 }}` inline alongside `className="flex-1"` as a safety net for any container where height is critical.
 
 - **Web test framework:** `apps/web` now has Vitest + React Testing Library (`vitest.config.ts`, `vitest-setup.ts`). Run with `bun run --cwd apps/web test`. Route components use `vi.mock()` for `@tanstack/react-router`, `@tanstack/react-query`, and `@/utils/trpc`.
 - **`Closes #N` in PR body only auto-closes issues on merge to default branch (main).** Task PRs merged to feature branches don't close issues — they close when the feature PR merges to main.

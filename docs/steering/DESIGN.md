@@ -160,4 +160,30 @@ This is a **mobile-first** product. The native Expo app is the primary surface; 
 - Crowd the interface — if a screen feels busy, remove elements or increase surface-tier contrast
 
 <!-- MANUAL ADDITIONS START -->
+## Native Styling (UniWind / NativeWind)
+
+Design tokens defined in `apps/native/global.css` map directly to NativeWind utility classes. Always use them instead of hardcoded hex values or JS color constants.
+
+| Token | Utility class | Value |
+| --- | --- | --- |
+| Background | `bg-background` | `#FFF8F3` |
+| Primary text | `text-foreground` | `#2C1810` |
+| Secondary text | `text-brand-muted-foreground` | `#6F605B` |
+| Input fill | `bg-brand-input` | `#F5EFE8` |
+| Gold CTA | `bg-brand-gold` | `#F2C94C` |
+| Success green | `text-brand-green` | `#2D7A4F` |
+| Error | `text-destructive` | heroui-native red |
+
+**Font utilities** (all resolve to expo-font loaded names):
+
+| Utility | Font | Weight |
+| --- | --- | --- |
+| `font-manrope` | Manrope | 400 Regular |
+| `font-manrope-md` | Manrope | 500 Medium |
+| `font-manrope-semi` | Manrope | 600 SemiBold |
+| `font-manrope-bold` | Manrope | 700 Bold |
+| `font-caveat` | Caveat | 700 Bold |
+| `font-jakarta` | Plus Jakarta Sans | 800 ExtraBold |
+
+**Rule:** Use conditional `className` strings for state variations (`selected ? "bg-brand-gold" : "bg-brand-input"`). Keep `style` prop only for truly dynamic values that depend on runtime state that can't be expressed as a string (e.g. `pressed` callback, conditional `borderColor`).
 <!-- MANUAL ADDITIONS END -->
