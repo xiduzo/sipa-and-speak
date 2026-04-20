@@ -29,7 +29,7 @@ import { authClient } from "@/lib/auth-client";
 import { AppThemeProvider } from "@/contexts/app-theme-context";
 import { queryClient, trpc } from "@/utils/trpc";
 import { useNotificationTapHandler } from "@/hooks/use-notification-tap-handler";
-import { OnboardingModal } from "@/components/onboarding-modal";
+import { OnboardingModal } from "@/components/onboarding-modal"; // edge-case: complete but no identity
 
 SplashScreen.preventAutoHideAsync();
 
@@ -99,8 +99,9 @@ function AuthGuard() {
     if (!session && !inEnrolment) {
       console.log("[AuthGuard] → /enrolment (not signed in)");
       router.replace("/enrolment");
-    } else if (session && (inEnrolment || atRoot)) {
+    } else if (session && inEnrolment) {
       console.log("[AuthGuard] → /(tabs) (signed in)");
+      queryClient.clear();
       router.replace("/(tabs)/suggestions");
     } else {
       console.log("[AuthGuard] no redirect needed");
@@ -116,8 +117,7 @@ function StackLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="enrolment" options={{ headerShown: false }} />
-      <Stack.Screen name="edit-profile" options={{ title: "Edit Profile" }} />
-      <Stack.Screen name="review-profile" options={{ title: "Review Profile" }} />
+
       <Stack.Screen name="partner/[id]" options={{ title: "Partner Profile" }} />
       <Stack.Screen name="chat/[conversationId]" options={{ title: "Chat" }} />
       <Stack.Screen name="respond-meetup" options={{ title: "Respond to Proposal" }} />

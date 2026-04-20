@@ -1,104 +1,42 @@
 {
-  "session_id": "session-2026-04-20-2211",
-  "started": "2026-04-20T20:11:12.294Z",
+  "session_id": "session-2026-04-20-2257",
+  "started": "2026-04-20T20:57:52.465Z",
   "files_read": {
-    "/Users/sander/personal/sip-and-speak/apps/native/components/onboarding-modal.tsx": {
+    "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts": {
       "count": 1,
-      "tokens": 2698,
-      "first_read": "2026-04-20T20:12:20.284Z"
+      "tokens": 5126,
+      "first_read": "2026-04-20T20:58:11.086Z"
     },
-    "/Users/sander/personal/sip-and-speak/apps/native/app/index.tsx": {
+    "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/profile.tsx": {
       "count": 1,
-      "tokens": 5404,
-      "first_read": "2026-04-20T20:12:20.416Z"
-    },
-    "/Users/sander/personal/sip-and-speak/apps/native/utils/profile-picture.ts": {
-      "count": 1,
-      "tokens": 406,
-      "first_read": "2026-04-20T20:13:05.796Z"
-    },
-    "/Users/sander/personal/sip-and-speak/apps/native/__tests__/profile-picture.test.ts": {
-      "count": 1,
-      "tokens": 942,
-      "first_read": "2026-04-20T20:13:55.438Z"
+      "tokens": 5804,
+      "first_read": "2026-04-20T20:58:11.292Z"
     },
     "/Users/sander/personal/sip-and-speak/packages/db/src/schema/sip-and-speak.ts": {
       "count": 1,
       "tokens": 4990,
-      "first_read": "2026-04-20T20:15:02.040Z"
+      "first_read": "2026-04-20T20:58:47.677Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/components/onboarding-modal.tsx": {
+      "count": 1,
+      "tokens": 7720,
+      "first_read": "2026-04-20T20:58:48.142Z"
     }
   },
   "files_written": [
     {
-      "file": "/Users/sander/personal/sip-and-speak/apps/native/utils/profile-picture.ts",
+      "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
       "action": "edit",
-      "tokens": 12,
-      "at": "2026-04-20T20:13:49.894Z"
-    },
-    {
-      "file": "/Users/sander/personal/sip-and-speak/apps/native/utils/profile-picture.ts",
-      "action": "edit",
-      "tokens": 50,
-      "at": "2026-04-20T20:13:53.101Z"
-    },
-    {
-      "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/profile-picture.test.ts",
-      "action": "edit",
-      "tokens": 22,
-      "at": "2026-04-20T20:13:58.890Z"
-    },
-    {
-      "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/profile-picture.test.ts",
-      "action": "edit",
-      "tokens": 16,
-      "at": "2026-04-20T20:14:02.075Z"
-    },
-    {
-      "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/profile-picture.test.ts",
-      "action": "edit",
-      "tokens": 17,
-      "at": "2026-04-20T20:14:04.826Z"
-    },
-    {
-      "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/profile-picture.test.ts",
-      "action": "edit",
-      "tokens": 18,
-      "at": "2026-04-20T20:14:08.087Z"
-    },
-    {
-      "file": "/Users/sander/personal/sip-and-speak/apps/native/utils/profile-picture.ts",
-      "action": "edit",
-      "tokens": 22,
-      "at": "2026-04-20T20:14:13.930Z"
-    },
-    {
-      "file": "/Users/sander/personal/sip-and-speak/apps/native/app/index.tsx",
-      "action": "create",
-      "tokens": 8523,
-      "at": "2026-04-20T20:18:03.899Z"
-    },
-    {
-      "file": "/Users/sander/personal/sip-and-speak/apps/native/components/onboarding-modal.tsx",
-      "action": "edit",
-      "tokens": 93,
-      "at": "2026-04-20T20:18:09.734Z"
-    },
-    {
-      "file": "/Users/sander/personal/sip-and-speak/apps/native/app/index.tsx",
-      "action": "edit",
-      "tokens": 13,
-      "at": "2026-04-20T20:18:30.167Z"
+      "tokens": 104,
+      "at": "2026-04-20T20:58:53.862Z"
     }
   ],
   "edit_counts": {
-    "apps/native/utils/profile-picture.ts": 3,
-    "apps/native/__tests__/profile-picture.test.ts": 4,
-    "apps/native/app/index.tsx": 2,
-    "apps/native/components/onboarding-modal.tsx": 1
+    "packages/api/src/routers/profile.ts": 1
   },
-  "anatomy_hits": 5,
+  "anatomy_hits": 4,
   "anatomy_misses": 0,
   "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 3
+  "stop_count": 1
 }

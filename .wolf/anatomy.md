@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T20:18:30.152Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T20:58:53.851Z
 > Files: 346 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
@@ -328,21 +328,21 @@
 
 ## apps/native/app/
 
-- `_layout.tsx` — useNotificationCategories (~1683 tok)
+- `_layout.tsx` — useNotificationCategories (~1652 tok)
 - `edit-profile.tsx` — GOLD (~6919 tok)
 - `enrolment.tsx` — OTP_RESEND_COOLDOWN (~3879 tok)
 - `flag-user.tsx` — DETAIL_MAX — uses useRouter, useState, useMutation (~1486 tok)
-- `index.tsx` — GOLD (~8506 tok)
+- `index.tsx` — GOLD (~8022 tok)
 - `propose-meetup.tsx` — ProposeMeetupScreen — uses useRouter, useState, useQuery, useMutation (~1912 tok)
 - `respond-meetup.tsx` — RespondMeetupScreen — uses useRouter, useState, useQuery, useMutation (~3171 tok)
-- `review-profile.tsx` — INTERESTS_LABEL — uses useRouter, useQuery, useMutation (~2394 tok)
+- `review-profile.tsx` — INTERESTS_LABEL (~2397 tok)
 
 ## apps/native/app/(tabs)/
 
 - `_layout.tsx` — StyledIonicons (~401 tok)
 - `chats.tsx` — ChatsScreen — uses useRouter, useQuery (~575 tok)
 - `confirmed-meetups.tsx` — ConfirmedMeetupsScreen — uses useRouter, useQuery, useState, useMutation (~3798 tok)
-- `profile.tsx` — AVATAR_SIZE (~692 tok)
+- `profile.tsx` — GOLD (~5804 tok)
 - `suggestions.tsx` — APP_SHARE_URL (~2981 tok)
 
 ## apps/native/app/chat/
@@ -358,7 +358,7 @@
 - `candidate-card.tsx` — CandidateCard — uses useRouter, useMutation (~1406 tok)
 - `container.tsx` — AnimatedView (~360 tok)
 - `language-picker-modal.tsx` — ALL_LANGUAGES — renders modal (~694 tok)
-- `onboarding-modal.tsx` — GOLD — renders modal (~2753 tok)
+- `onboarding-modal.tsx` — GOLD — renders modal (~7720 tok)
 - `sign-up.tsx` — signUpSchema — renders form — uses useForm (~1680 tok)
 - `theme-toggle.tsx` — StyledIonicons (~309 tok)
 
@@ -545,7 +545,7 @@
 - `moderation-utils.ts` — Rejects a flag where the reporter and target are the same user. (~2641 tok)
 - `moderation.ts` — #78 — List all open flags sorted oldest-first for the Moderator queue. (~3160 tok)
 - `profile-utils.ts` — Exports determineIdentityProfileEvent (~66 tok)
-- `profile.ts` — Zod schemas: interestEnum, proficiencyEnum, spokenLanguageSchema, learningProficiencyEnum + 4 more (~5126 tok)
+- `profile.ts` — Zod schemas: interestEnum, proficiencyEnum, spokenLanguageSchema, learningProficiencyEnum + 4 more (~5186 tok)
 - `venue-admin.ts` — tRPC router: 7 procedures (~1166 tok)
 - `venue.ts` — tRPC router: 4 procedures (~1054 tok)
 

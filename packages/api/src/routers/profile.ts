@@ -22,6 +22,18 @@ const interestEnum = z.enum([
   "sustainability",
   "cinephile",
   "cosmology",
+  "photography",
+  "board_games",
+  "hiking_outdoors",
+  "yoga_wellness",
+  "literature",
+  "entrepreneurship",
+  "design_architecture",
+  "travel",
+  "gaming",
+  "fitness_sports",
+  "philosophy",
+  "theatre",
 ]);
 
 const proficiencyEnum = z.enum([

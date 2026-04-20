@@ -24,9 +24,7 @@ import { pickAndEncodeProfilePicture } from "@/utils/profile-picture";
 const GOLD = "#F2C94C";
 const MUTED_BORDER = "#D9C9BC";
 const TOTAL_STEPS = 5;
-const SPOKEN_BAR_COUNT = 7;
 
-type Proficiency = "beginner" | "intermediate" | "advanced" | "native";
 type LearningProficiency = "beginner" | "intermediate" | "advanced";
 type InterestValue =
   | "modern_art" | "tech_coding" | "jazz_music" | "culinary_arts"
@@ -35,29 +33,13 @@ type InterestValue =
   | "entrepreneurship" | "design_architecture" | "travel" | "gaming"
   | "fitness_sports" | "philosophy" | "theatre";
 
-interface SpokenLanguage { language: string; proficiency: Proficiency }
-interface LearningLang { language: string; cefr: string }
+interface SpokenLanguage { language: string; proficiency: LearningProficiency }
+interface LearningLang { language: string; proficiency: LearningProficiency }
 
-const SPOKEN_BAR_FILLS: Record<Proficiency, number> = {
-  beginner: 2, intermediate: 4, advanced: 6, native: 7,
-};
-
-const SPOKEN_LEVEL_LABEL: Record<Proficiency, string> = {
-  beginner: "A2 · Beginner",
-  intermediate: "B2 · Intermediate",
-  advanced: "C1 · Advanced",
-  native: "Native",
-};
-
-const SPOKEN_PROFICIENCY_ORDER: Proficiency[] = ["beginner", "intermediate", "advanced", "native"];
-
-const CEFR_LEVELS = [
-  { value: "A1", proficiency: "beginner" as LearningProficiency, desc: "Basic words and phrases" },
-  { value: "A2", proficiency: "beginner" as LearningProficiency, desc: "Simple everyday conversations" },
-  { value: "B1", proficiency: "intermediate" as LearningProficiency, desc: "Can handle most travel situations" },
-  { value: "B2", proficiency: "intermediate" as LearningProficiency, desc: "Comfortable in most conversations" },
-  { value: "C1", proficiency: "advanced" as LearningProficiency, desc: "Flexible and effective use" },
-  { value: "C2", proficiency: "advanced" as LearningProficiency, desc: "Near-native mastery" },
+const LEVEL_BLOCKS = [
+  { value: "beginner" as LearningProficiency, label: "A1–A2", sub: "Beginner" },
+  { value: "intermediate" as LearningProficiency, label: "B1–B2", sub: "Intermediate" },
+  { value: "advanced" as LearningProficiency, label: "C1–C2", sub: "Advanced" },
 ];
 
 const INTERESTS: { value: InterestValue; label: string }[] = [
@@ -98,12 +80,6 @@ const LANGUAGE_FLAGS: Record<string, string> = {
   Urdu: "🇵🇰", Vietnamese: "🇻🇳", Welsh: "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
 };
 
-function cefrToProficiency(cefr: string): LearningProficiency {
-  if (cefr === "C1" || cefr === "C2") return "advanced";
-  if (cefr === "B1" || cefr === "B2") return "intermediate";
-  return "beginner";
-}
-
 function GoldButton({
   onPress, disabled, label, loading,
 }: { onPress: () => void; disabled?: boolean; label: string; loading?: boolean }) {
@@ -129,28 +105,6 @@ function GoldButton({
       >
         {label}
       </Text>
-    </Pressable>
-  );
-}
-
-function ProficiencyBar({
-  proficiency,
-  onCycleUp,
-}: { proficiency: Proficiency; onCycleUp: () => void }) {
-  const filled = SPOKEN_BAR_FILLS[proficiency];
-  return (
-    <Pressable onPress={onCycleUp} className="flex-row gap-[3px]">
-      {Array.from({ length: SPOKEN_BAR_COUNT }, (_, i) => (
-        <View
-          key={i}
-          style={{
-            width: 22,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: i < filled ? GOLD : MUTED_BORDER,
-          }}
-        />
-      ))}
     </Pressable>
   );
 }
@@ -186,7 +140,7 @@ export default function OnboardingScreen() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!onboardingStatus.data) return;
+    if (!onboardingStatus.data || onboardingStatus.isFetching) return;
     if (onboardingStatus.data.complete) {
       router.replace("/(tabs)/suggestions");
       return;
@@ -195,7 +149,7 @@ export default function OnboardingScreen() {
       setStep(3);
       setInitialized(true);
     }
-  }, [onboardingStatus.data]);
+  }, [onboardingStatus.data, onboardingStatus.isFetching]);
 
   useEffect(() => {
     if (initialized || !profileQuery.data || onboardingStatus.data?.identityProfileComplete) return;
@@ -224,14 +178,9 @@ export default function OnboardingScreen() {
 
   const isSaving = setIdentityMutation.isPending || upsertMutation.isPending || partialMutation.isPending;
 
-  function cycleSpokenProficiency(language: string) {
+  function setSpokenProficiency(language: string, proficiency: LearningProficiency) {
     setSpokenLanguages((prev) =>
-      prev.map((l) => {
-        if (l.language !== language) return l;
-        const idx = SPOKEN_PROFICIENCY_ORDER.indexOf(l.proficiency);
-        const next = SPOKEN_PROFICIENCY_ORDER[(idx + 1) % SPOKEN_PROFICIENCY_ORDER.length];
-        return { ...l, proficiency: next };
-      }),
+      prev.map((l) => (l.language === language ? { ...l, proficiency } : l)),
     );
   }
 
@@ -243,9 +192,9 @@ export default function OnboardingScreen() {
     setLearningLanguages((prev) => prev.filter((l) => l.language !== language));
   }
 
-  function setLearningCEFR(language: string, cefr: string) {
+  function setLearningProficiency(language: string, proficiency: LearningProficiency) {
     setLearningLanguages((prev) =>
-      prev.map((l) => (l.language === language ? { ...l, cefr } : l)),
+      prev.map((l) => (l.language === language ? { ...l, proficiency } : l)),
     );
   }
 
@@ -315,14 +264,11 @@ export default function OnboardingScreen() {
     try {
       await upsertMutation.mutateAsync({
         spokenLanguages,
-        learningLanguages: learningLanguages.map((l) => ({
-          language: l.language,
-          proficiency: cefrToProficiency(l.cefr),
-        })),
+        learningLanguages,
         interests,
       });
       await queryClient.refetchQueries();
-      router.replace("/review-profile");
+      router.replace("/(tabs)/suggestions");
     } catch {
       toast.show({ variant: "danger", label: "Failed to save profile." });
     }
@@ -346,16 +292,11 @@ export default function OnboardingScreen() {
     try {
       const input: Record<string, unknown> = {};
       if (spokenLanguages.length > 0) input.spokenLanguages = spokenLanguages;
-      if (learningLanguages.length > 0) {
-        input.learningLanguages = learningLanguages.map((l) => ({
-          language: l.language,
-          proficiency: cefrToProficiency(l.cefr),
-        }));
-      }
+      if (learningLanguages.length > 0) input.learningLanguages = learningLanguages;
       if (interests.length > 0) input.interests = interests;
       await partialMutation.mutateAsync(input as Parameters<typeof partialMutation.mutateAsync>[0]);
       await queryClient.refetchQueries();
-      router.replace("/review-profile");
+      router.replace("/(tabs)/suggestions");
     } catch {
       toast.show({ variant: "danger", label: "Failed to save." });
     }
@@ -548,17 +489,9 @@ export default function OnboardingScreen() {
                         <Text style={{ fontSize: 24 }}>
                           {LANGUAGE_FLAGS[sl.language] ?? "🌐"}
                         </Text>
-                        <View>
-                          <Text className="font-manrope-bold text-[16px] text-foreground">
-                            {sl.language}
-                          </Text>
-                          <Text
-                            className="font-manrope text-[13px]"
-                            style={{ color: "#8A7570" }}
-                          >
-                            {SPOKEN_LEVEL_LABEL[sl.proficiency]}
-                          </Text>
-                        </View>
+                        <Text className="font-manrope-bold text-[16px] text-foreground">
+                          {sl.language}
+                        </Text>
                       </View>
                       <Pressable onPress={() => removeSpoken(sl.language)}>
                         <Text
@@ -569,10 +502,36 @@ export default function OnboardingScreen() {
                         </Text>
                       </Pressable>
                     </View>
-                    <ProficiencyBar
-                      proficiency={sl.proficiency}
-                      onCycleUp={() => cycleSpokenProficiency(sl.language)}
-                    />
+                    <View className="flex-row gap-2">
+                      {LEVEL_BLOCKS.map((lvl) => (
+                        <Pressable
+                          key={lvl.value}
+                          onPress={() => setSpokenProficiency(sl.language, lvl.value)}
+                          style={{
+                            flex: 1,
+                            paddingVertical: 10,
+                            borderRadius: 12,
+                            alignItems: "center",
+                            backgroundColor: sl.proficiency === lvl.value ? GOLD : "transparent",
+                            borderWidth: 1.5,
+                            borderColor: sl.proficiency === lvl.value ? GOLD : MUTED_BORDER,
+                          }}
+                        >
+                          <Text
+                            className="font-manrope-bold text-[13px]"
+                            style={{ color: sl.proficiency === lvl.value ? "#2C1810" : "#8A7570" }}
+                          >
+                            {lvl.label}
+                          </Text>
+                          <Text
+                            className="font-manrope text-[11px]"
+                            style={{ color: sl.proficiency === lvl.value ? "#2C1810" : MUTED_BORDER }}
+                          >
+                            {lvl.sub}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
                   </View>
                 ))}
 
@@ -592,80 +551,62 @@ export default function OnboardingScreen() {
 
             {step === 4 && (
               <View className="gap-3">
-                {learningLanguages.map((ll) => {
-                  const selectedCefr = CEFR_LEVELS.find((c) => c.value === ll.cefr);
-                  return (
-                    <View
-                      key={ll.language}
-                      className="bg-brand-input rounded-2xl px-5 py-4"
-                      style={{ borderWidth: 2, borderColor: MUTED_BORDER }}
-                    >
-                      <View className="flex-row items-center justify-between mb-4">
-                        <View className="flex-row items-center gap-3">
-                          <Text style={{ fontSize: 24 }}>
-                            {LANGUAGE_FLAGS[ll.language] ?? "🌐"}
-                          </Text>
-                          <View>
-                            <Text className="font-manrope-bold text-[16px] text-foreground">
-                              {ll.language}
-                            </Text>
-                            <Text
-                              className="font-manrope text-[13px]"
-                              style={{ color: "#8A7570" }}
-                            >
-                              Your level
-                            </Text>
-                          </View>
-                        </View>
-                        <Pressable onPress={() => removeLearning(ll.language)}>
-                          <Text
-                            className="font-manrope text-[13px]"
-                            style={{ color: "#C0876A" }}
-                          >
-                            Remove
-                          </Text>
-                        </Pressable>
+                {learningLanguages.map((ll) => (
+                  <View
+                    key={ll.language}
+                    className="bg-brand-input rounded-2xl px-5 py-4"
+                    style={{ borderWidth: 2, borderColor: MUTED_BORDER }}
+                  >
+                    <View className="flex-row items-center justify-between mb-3">
+                      <View className="flex-row items-center gap-3">
+                        <Text style={{ fontSize: 24 }}>
+                          {LANGUAGE_FLAGS[ll.language] ?? "🌐"}
+                        </Text>
+                        <Text className="font-manrope-bold text-[16px] text-foreground">
+                          {ll.language}
+                        </Text>
                       </View>
-
-                      <View className="flex-row gap-2 mb-3">
-                        {CEFR_LEVELS.map((level) => {
-                          const selected = ll.cefr === level.value;
-                          return (
-                            <Pressable
-                              key={level.value}
-                              onPress={() => setLearningCEFR(ll.language, level.value)}
-                              style={{
-                                flex: 1,
-                                paddingVertical: 8,
-                                borderRadius: 8,
-                                alignItems: "center",
-                                backgroundColor: selected ? "#2C1810" : "transparent",
-                                borderWidth: 1.5,
-                                borderColor: selected ? "#2C1810" : MUTED_BORDER,
-                              }}
-                            >
-                              <Text
-                                className="font-manrope-bold text-[13px]"
-                                style={{ color: selected ? GOLD : "#8A7570" }}
-                              >
-                                {level.value}
-                              </Text>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
-
-                      {selectedCefr && (
+                      <Pressable onPress={() => removeLearning(ll.language)}>
                         <Text
                           className="font-manrope text-[13px]"
-                          style={{ color: "#8A7570" }}
+                          style={{ color: "#C0876A" }}
                         >
-                          {ll.cefr} — {selectedCefr.desc}
+                          Remove
                         </Text>
-                      )}
+                      </Pressable>
                     </View>
-                  );
-                })}
+                    <View className="flex-row gap-2">
+                      {LEVEL_BLOCKS.map((lvl) => (
+                        <Pressable
+                          key={lvl.value}
+                          onPress={() => setLearningProficiency(ll.language, lvl.value)}
+                          style={{
+                            flex: 1,
+                            paddingVertical: 10,
+                            borderRadius: 12,
+                            alignItems: "center",
+                            backgroundColor: ll.proficiency === lvl.value ? GOLD : "transparent",
+                            borderWidth: 1.5,
+                            borderColor: ll.proficiency === lvl.value ? GOLD : MUTED_BORDER,
+                          }}
+                        >
+                          <Text
+                            className="font-manrope-bold text-[13px]"
+                            style={{ color: ll.proficiency === lvl.value ? "#2C1810" : "#8A7570" }}
+                          >
+                            {lvl.label}
+                          </Text>
+                          <Text
+                            className="font-manrope text-[11px]"
+                            style={{ color: ll.proficiency === lvl.value ? "#2C1810" : MUTED_BORDER }}
+                          >
+                            {lvl.sub}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                ))}
 
                 <Pressable
                   onPress={() => setPickerTarget("learning")}
@@ -809,7 +750,7 @@ export default function OnboardingScreen() {
           if (pickerTarget === "spoken") {
             setSpokenLanguages((prev) => [...prev, { language: lang, proficiency: "beginner" }]);
           } else {
-            setLearningLanguages((prev) => [...prev, { language: lang, cefr: "A2" }]);
+            setLearningLanguages((prev) => [...prev, { language: lang, proficiency: "beginner" }]);
           }
           setPickerTarget(null);
         }}

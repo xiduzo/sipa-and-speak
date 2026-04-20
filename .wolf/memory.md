@@ -1264,3 +1264,66 @@
 | 22:18 | Edited apps/native/components/onboarding-modal.tsx | 4→7 lines | ~93 |
 | 22:18 | Edited apps/native/app/index.tsx | inline fix | ~13 |
 | 22:19 | Session end: 10 writes across 4 files (profile-picture.ts, profile-picture.test.ts, index.tsx, onboarding-modal.tsx) | 5 reads | ~23226 tok |
+| 22:25 | Edited apps/native/app/_layout.tsx | modified if() | ~41 |
+| 22:25 | Edited apps/native/app/_layout.tsx | inline fix | ~30 |
+| 22:26 | Created apps/native/app/(tabs)/profile.tsx | — | ~5757 |
+| 22:26 | Edited apps/native/app/_layout.tsx | 2→1 lines | ~24 |
+| 22:35 | Fixed onboarding flow routing + inline profile editing | _layout.tsx, (tabs)/profile.tsx | removed atRoot redirect from AuthGuard so index.tsx shows for new users; rebuilt profile tab as inline auto-save editor; removed edit-profile route from stack | ~1800 tok |
+| 22:26 | Session end: 14 writes across 6 files (profile-picture.ts, profile-picture.test.ts, index.tsx, onboarding-modal.tsx, _layout.tsx) | 8 reads | ~38372 tok |
+| 22:27 | Edited apps/native/app/review-profile.tsx | "/edit-profile" → "/(tabs)/profile" | ~9 |
+| 22:27 | Session end: 15 writes across 7 files (profile-picture.ts, profile-picture.test.ts, index.tsx, onboarding-modal.tsx, _layout.tsx) | 9 reads | ~40775 tok |
+| 22:28 | Session end: 15 writes across 7 files (profile-picture.ts, profile-picture.test.ts, index.tsx, onboarding-modal.tsx, _layout.tsx) | 9 reads | ~40778 tok |
+| 22:28 | Edited apps/native/app/_layout.tsx | removed 2 lines | ~1 |
+| 22:28 | Edited apps/native/app/index.tsx | "/review-profile" → "/(tabs)/suggestions" | ~13 |
+| 22:28 | Session end: 17 writes across 7 files (profile-picture.ts, profile-picture.test.ts, index.tsx, onboarding-modal.tsx, _layout.tsx) | 9 reads | ~40792 tok |
+
+## Session: 2026-04-20 22:29
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 22:30 | Edited apps/native/app/_layout.tsx | modified if() | ~39 |
+| 22:30 | fix: AuthGuard redirect → / instead of /(tabs)/suggestions on first sign-in | apps/native/app/_layout.tsx | onboarding modal now shown to new users | ~50 |
+| 22:30 | Session end: 1 writes across 1 files (_layout.tsx) | 3 reads | ~12945 tok |
+| 22:34 | Edited apps/native/app/index.tsx | modified if() | ~57 |
+| 22:34 | Edited apps/native/app/index.tsx | inline fix | ~17 |
+| 22:34 | Session end: 3 writes across 2 files (_layout.tsx, index.tsx) | 3 reads | ~13028 tok |
+
+## Session: 2026-04-20 22:36
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 22:36 | Edited apps/native/app/(tabs)/profile.tsx | 1→4 lines | ~43 |
+| 22:36 | Edited apps/native/app/_layout.tsx | modified if() | ~47 |
+| 22:36 | fix: clear queryClient cache on sign-out and sign-in to prevent stale user data bleed | profile.tsx, _layout.tsx | ~40 |
+| 22:36 | Session end: 2 writes across 2 files (profile.tsx, _layout.tsx) | 0 reads | ~90 tok |
+| 22:39 | Edited apps/native/app/(tabs)/profile.tsx | reduced (-7 lines) | ~67 |
+| 22:40 | Edited apps/native/app/(tabs)/profile.tsx | CSS: flex, alignItems | ~508 |
+| 22:40 | Edited apps/native/app/(tabs)/profile.tsx | 2→2 lines | ~29 |
+| 22:40 | Edited apps/native/app/(tabs)/profile.tsx | 2→2 lines | ~20 |
+| 22:40 | Edited apps/native/app/index.tsx | 3→2 lines | ~26 |
+| 22:40 | Edited apps/native/app/index.tsx | 2→2 lines | ~45 |
+| 22:40 | Edited apps/native/app/index.tsx | reduced (-16 lines) | ~79 |
+| 22:40 | Edited apps/native/app/index.tsx | removed 7 lines | ~6 |
+| 22:40 | Edited apps/native/app/index.tsx | removed 23 lines | ~4 |
+| 22:40 | Edited apps/native/app/index.tsx | 4→3 lines | ~23 |
+| 22:40 | Edited apps/native/app/index.tsx | modified setSpokenProficiency() | ~72 |
+| 22:40 | Edited apps/native/app/index.tsx | setLearningCEFR() → setLearningProficiency() | ~61 |
+| 22:40 | Edited apps/native/app/index.tsx | 8→5 lines | ~35 |
+| 22:40 | Edited apps/native/app/index.tsx | 6→1 lines | ~24 |
+| 22:41 | Edited apps/native/app/index.tsx | expanded (+18 lines) | ~670 |
+| 22:41 | Edited apps/native/app/index.tsx | reduced (-18 lines) | ~782 |
+| 22:41 | Edited apps/native/app/index.tsx | CSS: proficiency | ~38 |
+| 22:41 | Unified language level selector to 3-block A1-A2/B1-B2/C1-C2 for both spoken+learning in profile and onboarding | profile.tsx, index.tsx | done | ~800 |
+| 22:41 | Session end: 19 writes across 3 files (profile.tsx, _layout.tsx, index.tsx) | 4 reads | ~18940 tok |
+| 22:44 | Edited apps/native/app/_layout.tsx | modified if() | ~48 |
+| 22:45 | Created apps/native/components/onboarding-modal.tsx | — | ~7720 |
+| 22:45 | refactor: move full 5-step onboarding into OnboardingModal (modal-based, not route-based per cerebrum) | onboarding-modal.tsx, _layout.tsx | ~180 |
+| 22:46 | Session end: 21 writes across 4 files (profile.tsx, _layout.tsx, index.tsx, onboarding-modal.tsx) | 4 reads | ~26708 tok |
+
+## Session: 2026-04-20 22:57
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 22:58 | Edited packages/api/src/routers/profile.ts | expanded (+12 lines) | ~104 |
+| 22:58 | Fix bug-218: interestEnum missing 12 values | packages/api/src/routers/profile.ts | Fixed 400 on upsertProfile | ~120 |
+| 22:59 | Session end: 1 writes across 1 files (profile.ts) | 4 reads | ~23744 tok |
