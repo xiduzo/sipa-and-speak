@@ -226,6 +226,18 @@ export interface StudentRemovedEvent {
   removedAt: Date;
 }
 
+// #276 — Feature #275
+export interface StudentProfileCompletedEvent {
+  userId: string;
+  completedAt: Date;
+}
+
+// #276 — Feature #275
+export interface StudentProfileUpdatedEvent {
+  userId: string;
+  updatedAt: Date;
+}
+
 type DomainEventMap = {
   LanguageProfileUpdated: [LanguageProfileUpdatedEvent];
   InterestProfileUpdated: [InterestProfileUpdatedEvent];
@@ -256,6 +268,8 @@ type DomainEventMap = {
   StudentSuspended: [StudentSuspendedEvent];
   SuspensionLifted: [SuspensionLiftedEvent];
   StudentRemoved: [StudentRemovedEvent];
+  StudentProfileCompleted: [StudentProfileCompletedEvent];
+  StudentProfileUpdated: [StudentProfileUpdatedEvent];
 };
 
 class TypedEventEmitter extends EventEmitter {

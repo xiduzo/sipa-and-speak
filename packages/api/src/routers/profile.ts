@@ -12,6 +12,7 @@ import {
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
+import { determineIdentityProfileEvent } from "./profile-utils";
 
 const interestEnum = z.enum([
   "modern_art",
@@ -102,28 +103,63 @@ async function syncMatchingEligibility(userId: string): Promise<boolean> {
   return isEligible;
 }
 
+const setIdentityProfileInput = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  surname: z.string().trim().min(1, "Surname is required"),
+  imageUrl: z.string().optional(),
+});
+
+
 export const profileRouter = router({
+  setIdentityProfile: protectedProcedure
+    .input(setIdentityProfileInput)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const existing = await db
+        .select({ surname: user.surname })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1);
+
+      const previousSurname = existing[0]?.surname ?? null;
+
+      await db
+        .update(user)
+        .set({ name: input.name, surname: input.surname, image: input.imageUrl ?? null })
+        .where(eq(user.id, userId));
+
+      const event = determineIdentityProfileEvent(previousSurname);
+      if (event === "StudentProfileCompleted") {
+        domainEvents.emit("StudentProfileCompleted", { userId, completedAt: new Date() });
+      } else {
+        domainEvents.emit("StudentProfileUpdated", { userId, updatedAt: new Date() });
+      }
+
+      return { success: true };
+    }),
+
   getMyProfile: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const profile = await db.query.languageProfile.findFirst({
-      where: eq(languageProfile.userId, userId),
-    });
-
-    const languages = await db
-      .select()
-      .from(userLanguage)
-      .where(eq(userLanguage.userId, userId));
-
-    const interests = await db
-      .select()
-      .from(userInterest)
-      .where(eq(userInterest.userId, userId));
+    const [profile, languages, interests, identity] = await Promise.all([
+      db.query.languageProfile.findFirst({
+        where: eq(languageProfile.userId, userId),
+      }),
+      db.select().from(userLanguage).where(eq(userLanguage.userId, userId)),
+      db.select().from(userInterest).where(eq(userInterest.userId, userId)),
+      db
+        .select({ name: user.name, surname: user.surname, image: user.image, email: user.email })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1),
+    ]);
 
     return {
       profile: profile ?? null,
       languages,
       interests,
+      identity: identity[0] ?? null,
     };
   }),
 
@@ -297,14 +333,25 @@ export const profileRouter = router({
   getOnboardingStatus: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const profile = await db.query.languageProfile.findFirst({
-      where: eq(languageProfile.userId, userId),
-      columns: { onboardingComplete: true },
-    });
+    const [profile, identity] = await Promise.all([
+      db.query.languageProfile.findFirst({
+        where: eq(languageProfile.userId, userId),
+        columns: { onboardingComplete: true },
+      }),
+      db
+        .select({ name: user.name, surname: user.surname })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1),
+    ]);
+
+    const id = identity[0];
+    const identityProfileComplete = !!(id?.name?.trim() && id?.surname?.trim());
 
     return {
       complete: profile?.onboardingComplete ?? false,
       hasProfile: profile !== null,
+      identityProfileComplete,
     };
   }),
 

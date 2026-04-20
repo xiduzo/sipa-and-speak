@@ -90,18 +90,20 @@ function AuthGuard() {
 
     const onEnrolmentScreen = segments[0] === "enrolment";
     const onReviewScreen = segments[0] === "review-profile";
-
+    const onEditProfileScreen = segments[0] === "edit-profile";
     const onOnboardingScreen = segments[0] === undefined;
 
     if (!session && !onEnrolmentScreen) {
       router.replace("/enrolment");
+    } else if (session && !onboardingQuery.data?.identityProfileComplete && !onEditProfileScreen && !onEnrolmentScreen) {
+      router.replace("/edit-profile");
     } else if (session && onEnrolmentScreen) {
       if (onboardingQuery.data?.complete) {
         router.replace("/suggestions");
       } else {
         router.replace("/");
       }
-    } else if (session && !onboardingQuery.data?.complete && !onOnboardingScreen && !onReviewScreen) {
+    } else if (session && !onboardingQuery.data?.complete && !onOnboardingScreen && !onReviewScreen && !onEditProfileScreen) {
       router.replace("/");
     }
   }, [session, sessionPending, onboardingQuery.data, onboardingQuery.isPending, segments]);
