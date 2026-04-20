@@ -333,14 +333,25 @@ export const profileRouter = router({
   getOnboardingStatus: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const profile = await db.query.languageProfile.findFirst({
-      where: eq(languageProfile.userId, userId),
-      columns: { onboardingComplete: true },
-    });
+    const [profile, identity] = await Promise.all([
+      db.query.languageProfile.findFirst({
+        where: eq(languageProfile.userId, userId),
+        columns: { onboardingComplete: true },
+      }),
+      db
+        .select({ name: user.name, surname: user.surname })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1),
+    ]);
+
+    const id = identity[0];
+    const identityProfileComplete = !!(id?.name?.trim() && id?.surname?.trim());
 
     return {
       complete: profile?.onboardingComplete ?? false,
       hasProfile: profile !== null,
+      identityProfileComplete,
     };
   }),
 
