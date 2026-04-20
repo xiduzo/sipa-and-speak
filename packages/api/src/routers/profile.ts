@@ -12,6 +12,7 @@ import {
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
+import { determineIdentityProfileEvent } from "./profile-utils";
 
 const interestEnum = z.enum([
   "modern_art",
@@ -102,7 +103,42 @@ async function syncMatchingEligibility(userId: string): Promise<boolean> {
   return isEligible;
 }
 
+const setIdentityProfileInput = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  surname: z.string().trim().min(1, "Surname is required"),
+  imageUrl: z.string().optional(),
+});
+
+
 export const profileRouter = router({
+  setIdentityProfile: protectedProcedure
+    .input(setIdentityProfileInput)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const existing = await db
+        .select({ surname: user.surname })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1);
+
+      const previousSurname = existing[0]?.surname ?? null;
+
+      await db
+        .update(user)
+        .set({ name: input.name, surname: input.surname, image: input.imageUrl ?? null })
+        .where(eq(user.id, userId));
+
+      const event = determineIdentityProfileEvent(previousSurname);
+      if (event === "StudentProfileCompleted") {
+        domainEvents.emit("StudentProfileCompleted", { userId, completedAt: new Date() });
+      } else {
+        domainEvents.emit("StudentProfileUpdated", { userId, updatedAt: new Date() });
+      }
+
+      return { success: true };
+    }),
+
   getMyProfile: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
