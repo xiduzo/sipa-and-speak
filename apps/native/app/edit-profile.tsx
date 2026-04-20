@@ -5,24 +5,10 @@ import { useEffect, useState } from "react";
 import { Alert, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Container } from "@/components/container";
+import { LanguagePickerModal } from "@/components/language-picker-modal";
 import { queryClient, trpc } from "@/utils/trpc";
 import { extractNameFromEmail } from "@/utils/email-name-extract";
 import { pickAndEncodeProfilePicture } from "@/utils/profile-picture";
-
-const LANGUAGES = [
-  "English",
-  "Spanish",
-  "French",
-  "German",
-  "Mandarin",
-  "Japanese",
-  "Korean",
-  "Portuguese",
-  "Italian",
-  "Arabic",
-  "Hindi",
-  "Russian",
-] as const;
 
 const INTERESTS = [
   { value: "modern_art", label: "Modern Art" },
@@ -167,16 +153,10 @@ export default function EditProfileScreen() {
 
   const isMutating = upsertMutation.isPending || removeMutation.isPending || toggleInterestMutation.isPending;
 
-  const availableForSpoken = LANGUAGES.filter(
-    (l) =>
-      !spokenLanguages.some((s) => s.language === l) &&
-      !learningLanguages.some((ll) => ll.language === l),
-  );
-  const availableForLearning = LANGUAGES.filter(
-    (l) =>
-      !learningLanguages.some((ll) => ll.language === l) &&
-      !spokenLanguages.some((s) => s.language === l),
-  );
+  const allSelectedLanguages = [
+    ...spokenLanguages.map((l) => l.language),
+    ...learningLanguages.map((l) => l.language),
+  ];
 
   function handleAdd(lang: string, type: LanguageType) {
     upsertMutation.mutate({ language: lang, type, proficiency: "beginner" });
@@ -309,35 +289,9 @@ export default function EditProfileScreen() {
               ))}
             </View>
 
-            {addingType === "spoken" ? (
-              <View className="mt-3">
-                <Text className="text-foreground font-medium mb-2">Pick a language to add:</Text>
-                {availableForSpoken.length === 0 ? (
-                  <Text className="text-muted-foreground text-sm">All languages already added.</Text>
-                ) : (
-                  <View className="flex-row flex-wrap gap-2">
-                    {availableForSpoken.map((lang) => (
-                      <Pressable
-                        key={lang}
-                        onPress={() => handleAdd(lang, "spoken")}
-                        className="px-4 py-2 rounded-full border bg-background border-border"
-                      >
-                        <Text className="text-foreground">{lang}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                )}
-                <Button variant="ghost" onPress={() => setAddingType(null)} className="mt-2">
-                  <Button.Label>Cancel</Button.Label>
-                </Button>
-              </View>
-            ) : (
-              availableForSpoken.length > 0 && (
-                <Button variant="outline" onPress={() => setAddingType("spoken")} className="mt-3">
-                  <Button.Label>+ Add spoken language</Button.Label>
-                </Button>
-              )
-            )}
+            <Button variant="outline" onPress={() => setAddingType("spoken")} className="mt-3">
+              <Button.Label>+ Add spoken language</Button.Label>
+            </Button>
           </View>
 
           {/* Learning Languages */}
@@ -386,39 +340,9 @@ export default function EditProfileScreen() {
               ))}
             </View>
 
-            {addingType === "learning" ? (
-              <View className="mt-3">
-                <Text className="text-foreground font-medium mb-2">Pick a language to add:</Text>
-                {availableForLearning.length === 0 ? (
-                  <Text className="text-muted-foreground text-sm">All languages already added.</Text>
-                ) : (
-                  <View className="flex-row flex-wrap gap-2">
-                    {availableForLearning.map((lang) => (
-                      <Pressable
-                        key={lang}
-                        onPress={() => handleAdd(lang, "learning")}
-                        className="px-4 py-2 rounded-full border bg-background border-border"
-                      >
-                        <Text className="text-foreground">{lang}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                )}
-                <Button variant="ghost" onPress={() => setAddingType(null)} className="mt-2">
-                  <Button.Label>Cancel</Button.Label>
-                </Button>
-              </View>
-            ) : (
-              availableForLearning.length > 0 && (
-                <Button
-                  variant="outline"
-                  onPress={() => setAddingType("learning")}
-                  className="mt-3"
-                >
-                  <Button.Label>+ Add learning language</Button.Label>
-                </Button>
-              )
-            )}
+            <Button variant="outline" onPress={() => setAddingType("learning")} className="mt-3">
+              <Button.Label>+ Add learning language</Button.Label>
+            </Button>
           </View>
 
           {/* Interests */}
@@ -478,6 +402,14 @@ export default function EditProfileScreen() {
 
         </View>
       </ScrollView>
+
+      <LanguagePickerModal
+        visible={addingType !== null}
+        title={addingType === "spoken" ? "Add spoken language" : "Add learning language"}
+        disabledLanguages={allSelectedLanguages}
+        onSelect={(lang) => handleAdd(lang, addingType!)}
+        onClose={() => setAddingType(null)}
+      />
     </Container>
   );
 }
