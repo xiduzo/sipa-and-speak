@@ -142,24 +142,24 @@ export const profileRouter = router({
   getMyProfile: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const profile = await db.query.languageProfile.findFirst({
-      where: eq(languageProfile.userId, userId),
-    });
-
-    const languages = await db
-      .select()
-      .from(userLanguage)
-      .where(eq(userLanguage.userId, userId));
-
-    const interests = await db
-      .select()
-      .from(userInterest)
-      .where(eq(userInterest.userId, userId));
+    const [profile, languages, interests, identity] = await Promise.all([
+      db.query.languageProfile.findFirst({
+        where: eq(languageProfile.userId, userId),
+      }),
+      db.select().from(userLanguage).where(eq(userLanguage.userId, userId)),
+      db.select().from(userInterest).where(eq(userInterest.userId, userId)),
+      db
+        .select({ name: user.name, surname: user.surname, image: user.image, email: user.email })
+        .from(user)
+        .where(eq(user.id, userId))
+        .limit(1),
+    ]);
 
     return {
       profile: profile ?? null,
       languages,
       interests,
+      identity: identity[0] ?? null,
     };
   }),
 
