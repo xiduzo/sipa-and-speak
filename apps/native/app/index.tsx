@@ -10,22 +10,8 @@ import {
 } from "react-native";
 
 import { Container } from "@/components/container";
+import { LanguagePickerModal } from "@/components/language-picker-modal";
 import { trpc, queryClient } from "@/utils/trpc";
-
-const LANGUAGES = [
-  "English",
-  "Spanish",
-  "French",
-  "German",
-  "Mandarin",
-  "Japanese",
-  "Korean",
-  "Portuguese",
-  "Italian",
-  "Arabic",
-  "Hindi",
-  "Russian",
-] as const;
 
 const PROFICIENCY_LEVELS = [
   { value: "beginner", label: "Beginner" },
@@ -96,6 +82,7 @@ export default function OnboardingScreen() {
   const [learningLanguages, setLearningLanguages] = useState<LearningLanguage[]>([]);
   const [interests, setInterests] = useState<InterestValue[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [pickerTarget, setPickerTarget] = useState<"spoken" | "learning" | null>(null);
 
   const upsertMutation = useMutation(trpc.profile.upsertProfile.mutationOptions());
   const partialMutation = useMutation(trpc.profile.savePartialProfile.mutationOptions());
@@ -246,35 +233,17 @@ export default function OnboardingScreen() {
         <Text className="text-muted-foreground mb-4">
           Select the languages you already speak and your proficiency level.
         </Text>
-        <View className="flex-row flex-wrap gap-2 mb-4">
-          {LANGUAGES.map((lang) => {
-            const selected = spokenLanguages.find((l) => l.language === lang);
-            return (
-              <Pressable
-                key={lang}
-                onPress={() => toggleSpokenLanguage(lang)}
-                className={`px-4 py-2 rounded-full border ${
-                  selected
-                    ? "bg-primary border-primary"
-                    : "bg-background border-border"
-                }`}
-              >
-                <Text
-                  className={selected ? "text-primary-foreground font-medium" : "text-foreground"}
-                >
-                  {lang}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
 
         {spokenLanguages.length > 0 && (
-          <View className="gap-3">
-            <Text className="text-foreground font-semibold">Set proficiency:</Text>
+          <View className="gap-3 mb-4">
             {spokenLanguages.map((sl) => (
               <Card key={sl.language} className="p-3">
-                <Text className="text-foreground font-medium mb-2">{sl.language}</Text>
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="text-foreground font-medium">{sl.language}</Text>
+                  <Pressable onPress={() => toggleSpokenLanguage(sl.language)}>
+                    <Text className="text-destructive text-sm font-medium">Remove</Text>
+                  </Pressable>
+                </View>
                 <View className="flex-row flex-wrap gap-2">
                   {PROFICIENCY_LEVELS.map((level) => (
                     <Pressable
@@ -302,6 +271,10 @@ export default function OnboardingScreen() {
             ))}
           </View>
         )}
+
+        <Button variant="outline" onPress={() => setPickerTarget("spoken")}>
+          <Button.Label>+ Add spoken language</Button.Label>
+        </Button>
       </View>
     );
   }
@@ -315,43 +288,17 @@ export default function OnboardingScreen() {
         <Text className="text-muted-foreground mb-4">
           Pick the languages you'd like to practice with a partner.
         </Text>
-        <View className="flex-row flex-wrap gap-2 mb-4">
-          {LANGUAGES.map((lang) => {
-            const selected = learningLanguages.find((l) => l.language === lang);
-            const alreadySpoken = spokenLanguages.some((l) => l.language === lang);
-            return (
-              <Pressable
-                key={lang}
-                onPress={() => toggleLearningLanguage(lang)}
-                disabled={alreadySpoken}
-                className={`px-4 py-2 rounded-full border ${
-                  selected
-                    ? "bg-primary border-primary"
-                    : alreadySpoken
-                      ? "bg-muted border-muted opacity-40"
-                      : "bg-background border-border"
-                }`}
-              >
-                <Text
-                  className={
-                    selected
-                      ? "text-primary-foreground font-medium"
-                      : "text-foreground"
-                  }
-                >
-                  {lang}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
 
         {learningLanguages.length > 0 && (
-          <View className="gap-3">
-            <Text className="text-foreground font-semibold">Set proficiency:</Text>
+          <View className="gap-3 mb-4">
             {learningLanguages.map((ll) => (
               <Card key={ll.language} className="p-3">
-                <Text className="text-foreground font-medium mb-2">{ll.language}</Text>
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="text-foreground font-medium">{ll.language}</Text>
+                  <Pressable onPress={() => toggleLearningLanguage(ll.language)}>
+                    <Text className="text-destructive text-sm font-medium">Remove</Text>
+                  </Pressable>
+                </View>
                 <View className="flex-row flex-wrap gap-2">
                   {LEARNING_PROFICIENCY_LEVELS.map((level) => (
                     <Pressable
@@ -379,6 +326,10 @@ export default function OnboardingScreen() {
             ))}
           </View>
         )}
+
+        <Button variant="outline" onPress={() => setPickerTarget("learning")}>
+          <Button.Label>+ Add learning language</Button.Label>
+        </Button>
       </View>
     );
   }
@@ -560,6 +511,21 @@ export default function OnboardingScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <LanguagePickerModal
+        visible={pickerTarget !== null}
+        title={pickerTarget === "spoken" ? "Add spoken language" : "Add learning language"}
+        disabledLanguages={[
+          ...spokenLanguages.map((l) => l.language),
+          ...learningLanguages.map((l) => l.language),
+        ]}
+        onSelect={(lang) => {
+          if (pickerTarget === "spoken") toggleSpokenLanguage(lang);
+          else toggleLearningLanguage(lang);
+          setPickerTarget(null);
+        }}
+        onClose={() => setPickerTarget(null)}
+      />
     </Container>
   );
 }

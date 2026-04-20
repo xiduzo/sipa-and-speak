@@ -1,11 +1,14 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T19:27:42.092Z
-> Files: 332 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T16:15:48.630Z
+> Files: 345 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
 - `bug-body.md` — Related (~598 tok)
+- `bug-lang-validation.md` — 🐞 Bug: Language Profile validation errors missing when no languages declared (~911 tok)
+- `bug1-body.md` — 🐞 Bug: No in-app visual feedback when Match is formed (~473 tok)
+- `bug2-body.md` — 🐞 Bug: No in-app visual feedback when Meetup is confirmed (~488 tok)
 - `feature-body.md` — 🚀 Feature: Student can complete and update their Profile (~784 tok)
 - `task-body.md` — 🛠 Task: Display name, surname, and picture in the profile tab (~1191 tok)
 
@@ -300,6 +303,8 @@
 - `conversation-history.test.tsx` — Tests for task #147 — Build conversation view with chronological message history (~1202 tok)
 - `conversation-inbox.test.tsx` — Tests for task #157 — Build conversation inbox listing all open conversations (~1003 tok)
 - `device-token-registration.test.tsx` — Tests for task #130 — Push notification when MatchRequestSent fires (~722 tok)
+- `edit-profile-identity.test.tsx` — Tests for task #279 — Add name, surname, and picture to profile screen (~1931 tok)
+- `email-name-extract.test.ts` — Tests for email-based name pre-fill utility (~258 tok)
 - `empty-conversation-state.test.tsx` — Tests for task #150 — Handle empty conversation state (~1025 tok)
 - `flag-submission-confirm.test.tsx` — Tests for task #74 — Confirm flag submission to the flagging Student (~1319 tok)
 - `flag-user.test.tsx` — Tests for task #65 — Build flag submission UI (peer selection + reason) (~1313 tok)
@@ -313,6 +318,8 @@
 - `notification-match-declined.test.tsx` — Tests for task #137 — Suggestion list deep-link in decline notification (~861 tok)
 - `notification-message-deep-link.test.tsx` — Tests for task #155 — Deep-link notification tap to the relevant conversation view (~841 tok)
 - `partner-profile.test.tsx` — Tests for tasks: (~3997 tok)
+- `profile-picture.test.ts` — Tests for task #278 — Base64 image encoding and validation for profile picture (~942 tok)
+- `profile-tab-display.test.tsx` — Tests for task #281 — Display name, surname, and picture in the profile tab (~1014 tok)
 - `push-suppression-presence.test.tsx` — Tests for task #153 — Suppress push notification when recipient is actively viewing (~1321 tok)
 - `read-unread-indicators.test.tsx` — Tests for task #148 — Render read/unread status indicators on messages (~1309 tok)
 - `reschedule-form.test.tsx` — Tests for task #86 — Add reschedule action to confirmed meetup view (new time/location form) (~1928 tok)
@@ -321,8 +328,8 @@
 
 ## apps/native/app/
 
-- `_layout.tsx` — unstable_settings — uses useEffect, useMutation, useRouter, useQuery (~1738 tok)
-- `edit-profile.tsx` — LANGUAGES (~3987 tok)
+- `_layout.tsx` — unstable_settings (~1809 tok)
+- `edit-profile.tsx` — LANGUAGES (~5318 tok)
 - `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)
 - `flag-user.tsx` — DETAIL_MAX — uses useRouter, useState, useMutation (~1486 tok)
 - `index.tsx` — LANGUAGES (~5576 tok)
@@ -335,7 +342,7 @@
 - `_layout.tsx` — StyledIonicons (~401 tok)
 - `chats.tsx` — ChatsScreen — uses useRouter, useQuery (~575 tok)
 - `confirmed-meetups.tsx` — ConfirmedMeetupsScreen — uses useRouter, useQuery, useState, useMutation (~3798 tok)
-- `profile.tsx` — ProfileScreen — uses useRouter (~342 tok)
+- `profile.tsx` — AVATAR_SIZE (~692 tok)
 - `suggestions.tsx` — APP_SHARE_URL (~2981 tok)
 
 ## apps/native/app/chat/
@@ -377,6 +384,8 @@
 
 ## apps/native/utils/
 
+- `email-name-extract.ts` — Exports extractNameFromEmail (~131 tok)
+- `profile-picture.ts` — Exports validateImageMimeType, validateImageSize, buildDataUri, PickResult, pickAndEncodeProfilePict (~406 tok)
 - `trpc.ts` — Exports queryClient, trpc (~394 tok)
 
 ## apps/server/
@@ -490,11 +499,12 @@
 ## packages/api/src/
 
 - `context.ts` — Exports CreateContextOptions, createContext, Context (~126 tok)
-- `domain-events.ts` — The student who just counter-proposed (new proposer after role swap) (~1846 tok)
+- `domain-events.ts` — The student who just counter-proposed (new proposer after role swap) (~1942 tok)
 - `index.ts` — tRPC router (~156 tok)
 
 ## packages/api/src/__tests__/
 
+- `identity-profile.test.ts` — Tests for task #277 — tRPC procedures to set and update Student identity profile (~360 tok)
 - `matching.test.ts` — Tests for: (~758 tok)
 - `meetup-rounds.test.ts` — Tests for task #73 — Enforce max 3 counter-proposal rounds (~256 tok)
 - `messaging-access-control.test.ts` — Tests for task #146 — Block message sending in non-open conversations (~528 tok)
@@ -516,6 +526,7 @@
 - `moderation-suspend.test.ts` — Tests for task #100/#103 — Transition Student to Suspended state + record in flag history (~983 tok)
 - `moderation-validation.test.ts` — Tests for task #67 — Validate flag (no self-flagging, no duplicate open flag) (~723 tok)
 - `moderation-warn.test.ts` — Tests for task #90 — Record warning in Student flag history and mark flag as resolved (~680 tok)
+- `onboarding-status-identity.test.ts` — Tests for task #280 — Gate app routes until Student identity profile is complete (~300 tok)
 - `reschedule-validation.test.ts` — Tests for task #87 — Validate reschedule proposal (~531 tok)
 
 ## packages/api/src/routers/
@@ -532,7 +543,8 @@
 - `moderation-persist.ts` — #72 — Persistence helpers for the flag submission flow. (~1053 tok)
 - `moderation-utils.ts` — Rejects a flag where the reporter and target are the same user. (~2641 tok)
 - `moderation.ts` — #78 — List all open flags sorted oldest-first for the Moderator queue. (~3160 tok)
-- `profile.ts` — tRPC router: 6 procedures (~4644 tok)
+- `profile-utils.ts` — Exports determineIdentityProfileEvent (~66 tok)
+- `profile.ts` — Zod schemas: interestEnum, proficiencyEnum, spokenLanguageSchema, learningProficiencyEnum + 4 more (~5126 tok)
 - `venue-admin.ts` — tRPC router: 7 procedures (~1166 tok)
 - `venue.ts` — tRPC router: 4 procedures (~1054 tok)
 
@@ -567,12 +579,16 @@
 - `.gitignore` — Git ignore rules (~109 tok)
 - `docker-compose.yml` — Docker Compose services (~147 tok)
 - `drizzle.config.ts` — Drizzle ORM configuration (~88 tok)
-- `package.json` — Node.js package manifest (~269 tok)
+- `package.json` — Node.js package manifest (~276 tok)
 - `tsconfig.json` — TypeScript configuration (~60 tok)
 
 ## packages/db/src/
 
 - `index.ts` — Exports createDb, db (~72 tok)
+
+## packages/db/src/__tests__/
+
+- `schema-surname.test.ts` — Declares col (~154 tok)
 
 ## packages/db/src/migrations/
 
@@ -616,7 +632,7 @@
 
 ## packages/db/src/schema/
 
-- `auth.ts` — Exports user, session, account, verification + 3 more (~1081 tok)
+- `auth.ts` — Exports user, session, account, verification + 3 more (~1089 tok)
 - `index.ts` (~17 tok)
 - `sip-and-speak.ts` — Exports languageProfile, userLanguage, userInterest, venue + 18 more (~4990 tok)
 

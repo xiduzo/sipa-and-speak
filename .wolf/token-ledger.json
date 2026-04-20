@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-10T10:02:44.507Z",
   "lifetime": {
-    "total_tokens_estimated": 1266073,
-    "total_reads": 684,
-    "total_writes": 880,
-    "total_sessions": 63,
-    "anatomy_hits": 563,
-    "anatomy_misses": 121,
-    "repeated_reads_blocked": 204,
-    "estimated_savings_vs_bare_cli": 917727
+    "total_tokens_estimated": 1325596,
+    "total_reads": 717,
+    "total_writes": 942,
+    "total_sessions": 68,
+    "anatomy_hits": 593,
+    "anatomy_misses": 124,
+    "repeated_reads_blocked": 228,
+    "estimated_savings_vs_bare_cli": 1005095
   },
   "sessions": [
     {
@@ -10010,6 +10010,580 @@
         "writes_count": 3,
         "repeated_reads_blocked": 1,
         "anatomy_lookups": 4
+      }
+    },
+    {
+      "id": "session-2026-04-19-2128",
+      "started": "2026-04-19T19:28:22.077Z",
+      "ended": "2026-04-19T19:47:28.208Z",
+      "reads": [],
+      "writes": [
+        {
+          "file": "/tmp/bug1-body.md",
+          "tokens_estimated": 540,
+          "action": "create"
+        },
+        {
+          "file": "/tmp/bug2-body.md",
+          "tokens_estimated": 558,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 1098,
+        "reads_count": 0,
+        "writes_count": 2,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-20-1741",
+      "started": "2026-04-20T15:41:12.492Z",
+      "ended": "2026-04-20T15:48:32.910Z",
+      "reads": [
+        {
+          "file": "/Users/sander/.claude/skills/wtf.implement-task/SKILL.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/auth.ts",
+          "tokens_estimated": 1081,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/package.json",
+          "tokens_estimated": 498,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 1579,
+        "output_tokens_estimated": 0,
+        "reads_count": 3,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-20-1741",
+      "started": "2026-04-20T15:41:12.492Z",
+      "ended": "2026-04-20T16:16:49.987Z",
+      "reads": [
+        {
+          "file": "/Users/sander/.claude/skills/wtf.implement-task/SKILL.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/auth.ts",
+          "tokens_estimated": 1081,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/package.json",
+          "tokens_estimated": 498,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/.claude/worktrees/agent-a5211bb6/packages/db/src/schema/auth.ts",
+          "tokens_estimated": 1081,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/package.json",
+          "tokens_estimated": 498,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/utils/trpc.ts",
+          "tokens_estimated": 394,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/jest.config.ts",
+          "tokens_estimated": 324,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/candidate-card.test.tsx",
+          "tokens_estimated": 830,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/package.json",
+          "tokens_estimated": 498,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/device-token-registration.test.tsx",
+          "tokens_estimated": 722,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts",
+          "tokens_estimated": 1909,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 5032,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/profile.tsx",
+          "tokens_estimated": 342,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 4109,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1738,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/auth.ts",
+          "tokens_estimated": 15,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/package.json",
+          "tokens_estimated": 42,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/__tests__/schema-surname.test.ts",
+          "tokens_estimated": 154,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/utils/profile-picture.ts",
+          "tokens_estimated": 406,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/profile-picture.test.ts",
+          "tokens_estimated": 942,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts",
+          "tokens_estimated": 108,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 408,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/identity-profile.test.ts",
+          "tokens_estimated": 358,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile-utils.ts",
+          "tokens_estimated": 66,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 0,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/identity-profile.test.ts",
+          "tokens_estimated": 21,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 216,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/profile.tsx",
+          "tokens_estimated": 692,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/profile-tab-display.test.tsx",
+          "tokens_estimated": 1014,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/utils/email-name-extract.ts",
+          "tokens_estimated": 131,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 156,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 147,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 579,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 661,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 71,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/edit-profile-identity.test.tsx",
+          "tokens_estimated": 1936,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/edit-profile-identity.test.tsx",
+          "tokens_estimated": 15,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/edit-profile-identity.test.tsx",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/edit-profile-identity.test.tsx",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/email-name-extract.test.ts",
+          "tokens_estimated": 258,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 207,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 236,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/onboarding-status-identity.test.ts",
+          "tokens_estimated": 300,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 19056,
+        "output_tokens_estimated": 9367,
+        "reads_count": 15,
+        "writes_count": 30,
+        "repeated_reads_blocked": 12,
+        "anatomy_lookups": 14
+      }
+    },
+    {
+      "id": "session-2026-04-20-1741",
+      "started": "2026-04-20T15:41:12.492Z",
+      "ended": "2026-04-20T16:16:52.599Z",
+      "reads": [
+        {
+          "file": "/Users/sander/.claude/skills/wtf.implement-task/SKILL.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/auth.ts",
+          "tokens_estimated": 1081,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/package.json",
+          "tokens_estimated": 498,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/.claude/worktrees/agent-a5211bb6/packages/db/src/schema/auth.ts",
+          "tokens_estimated": 1081,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/package.json",
+          "tokens_estimated": 498,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/utils/trpc.ts",
+          "tokens_estimated": 394,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/jest.config.ts",
+          "tokens_estimated": 324,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/candidate-card.test.tsx",
+          "tokens_estimated": 830,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/package.json",
+          "tokens_estimated": 498,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/device-token-registration.test.tsx",
+          "tokens_estimated": 722,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts",
+          "tokens_estimated": 1909,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 5032,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/profile.tsx",
+          "tokens_estimated": 342,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 4109,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1738,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/schema/auth.ts",
+          "tokens_estimated": 15,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/package.json",
+          "tokens_estimated": 42,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/db/src/__tests__/schema-surname.test.ts",
+          "tokens_estimated": 154,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/utils/profile-picture.ts",
+          "tokens_estimated": 406,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/profile-picture.test.ts",
+          "tokens_estimated": 942,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts",
+          "tokens_estimated": 108,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/domain-events.ts",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 408,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/identity-profile.test.ts",
+          "tokens_estimated": 358,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile-utils.ts",
+          "tokens_estimated": 66,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 0,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/identity-profile.test.ts",
+          "tokens_estimated": 21,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 216,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/profile.tsx",
+          "tokens_estimated": 692,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/profile-tab-display.test.tsx",
+          "tokens_estimated": 1014,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/utils/email-name-extract.ts",
+          "tokens_estimated": 131,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 156,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 147,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 579,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 661,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/edit-profile.tsx",
+          "tokens_estimated": 71,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/edit-profile-identity.test.tsx",
+          "tokens_estimated": 1936,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/edit-profile-identity.test.tsx",
+          "tokens_estimated": 15,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/edit-profile-identity.test.tsx",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/edit-profile-identity.test.tsx",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/email-name-extract.test.ts",
+          "tokens_estimated": 258,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
+          "tokens_estimated": 207,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 236,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/packages/api/src/__tests__/onboarding-status-identity.test.ts",
+          "tokens_estimated": 300,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 19056,
+        "output_tokens_estimated": 9367,
+        "reads_count": 15,
+        "writes_count": 30,
+        "repeated_reads_blocked": 12,
+        "anatomy_lookups": 14
       }
     }
   ],
