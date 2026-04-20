@@ -1,129 +1,251 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Button, Card, Spinner, useToast } from "heroui-native";
 import { useEffect, useState } from "react";
 import {
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   Text,
+  TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Spinner, useToast } from "heroui-native";
 
-import { Container } from "@/components/container";
 import { LanguagePickerModal } from "@/components/language-picker-modal";
+import { authClient } from "@/lib/auth-client";
 import { trpc, queryClient } from "@/utils/trpc";
+import { extractNameFromEmail } from "@/utils/email-name-extract";
+import { pickAndEncodeProfilePicture } from "@/utils/profile-picture";
 
-const PROFICIENCY_LEVELS = [
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
-  { value: "native", label: "Native" },
-] as const;
+const GOLD = "#F2C94C";
+const MUTED_BORDER = "#D9C9BC";
+const TOTAL_STEPS = 5;
+const SPOKEN_BAR_COUNT = 7;
 
 type Proficiency = "beginner" | "intermediate" | "advanced" | "native";
 type LearningProficiency = "beginner" | "intermediate" | "advanced";
+type InterestValue =
+  | "modern_art" | "tech_coding" | "jazz_music" | "culinary_arts"
+  | "sustainability" | "cinephile" | "cosmology" | "photography"
+  | "board_games" | "hiking_outdoors" | "yoga_wellness" | "literature"
+  | "entrepreneurship" | "design_architecture" | "travel" | "gaming"
+  | "fitness_sports" | "philosophy" | "theatre";
 
-interface SpokenLanguage {
-  language: string;
-  proficiency: Proficiency;
-}
+interface SpokenLanguage { language: string; proficiency: Proficiency }
+interface LearningLang { language: string; cefr: string }
 
-interface LearningLanguage {
-  language: string;
-  proficiency: LearningProficiency;
-}
+const SPOKEN_BAR_FILLS: Record<Proficiency, number> = {
+  beginner: 2, intermediate: 4, advanced: 6, native: 7,
+};
 
-const LEARNING_PROFICIENCY_LEVELS = [
-  { value: "beginner" as LearningProficiency, label: "Beginner" },
-  { value: "intermediate" as LearningProficiency, label: "Intermediate" },
-  { value: "advanced" as LearningProficiency, label: "Advanced" },
-] as const;
+const SPOKEN_LEVEL_LABEL: Record<Proficiency, string> = {
+  beginner: "A2 · Beginner",
+  intermediate: "B2 · Intermediate",
+  advanced: "C1 · Advanced",
+  native: "Native",
+};
 
-const INTERESTS = [
-  { value: "modern_art", label: "Modern Art" },
-  { value: "tech_coding", label: "Tech & Coding" },
-  { value: "jazz_music", label: "Jazz Music" },
-  { value: "culinary_arts", label: "Culinary Arts" },
+const SPOKEN_PROFICIENCY_ORDER: Proficiency[] = ["beginner", "intermediate", "advanced", "native"];
+
+const CEFR_LEVELS = [
+  { value: "A1", proficiency: "beginner" as LearningProficiency, desc: "Basic words and phrases" },
+  { value: "A2", proficiency: "beginner" as LearningProficiency, desc: "Simple everyday conversations" },
+  { value: "B1", proficiency: "intermediate" as LearningProficiency, desc: "Can handle most travel situations" },
+  { value: "B2", proficiency: "intermediate" as LearningProficiency, desc: "Comfortable in most conversations" },
+  { value: "C1", proficiency: "advanced" as LearningProficiency, desc: "Flexible and effective use" },
+  { value: "C2", proficiency: "advanced" as LearningProficiency, desc: "Near-native mastery" },
+];
+
+const INTERESTS: { value: InterestValue; label: string }[] = [
+  { value: "modern_art", label: "Art" },
+  { value: "tech_coding", label: "Tech" },
+  { value: "jazz_music", label: "Music" },
+  { value: "culinary_arts", label: "Cooking" },
   { value: "sustainability", label: "Sustainability" },
-  { value: "cinephile", label: "Cinephile" },
+  { value: "cinephile", label: "Film" },
   { value: "cosmology", label: "Cosmology" },
   { value: "photography", label: "Photography" },
-  { value: "board_games", label: "Board Games" },
-  { value: "hiking_outdoors", label: "Hiking & Outdoors" },
-  { value: "yoga_wellness", label: "Yoga & Wellness" },
+  { value: "board_games", label: "Board games" },
+  { value: "hiking_outdoors", label: "Hiking" },
+  { value: "yoga_wellness", label: "Yoga" },
   { value: "literature", label: "Literature" },
-  { value: "entrepreneurship", label: "Entrepreneurship" },
-  { value: "design_architecture", label: "Design & Architecture" },
+  { value: "entrepreneurship", label: "Startups" },
+  { value: "design_architecture", label: "Design" },
   { value: "travel", label: "Travel" },
   { value: "gaming", label: "Gaming" },
-  { value: "fitness_sports", label: "Fitness & Sports" },
+  { value: "fitness_sports", label: "Football" },
   { value: "philosophy", label: "Philosophy" },
   { value: "theatre", label: "Theatre" },
-] as const;
+];
 
-type InterestValue = (typeof INTERESTS)[number]["value"];
+const LANGUAGE_FLAGS: Record<string, string> = {
+  Afrikaans: "🇿🇦", Albanian: "🇦🇱", Arabic: "🇸🇦", Armenian: "🇦🇲",
+  Azerbaijani: "🇦🇿", Bengali: "🇧🇩", Bulgarian: "🇧🇬", Catalan: "🇪🇸",
+  Chinese: "🇨🇳", Croatian: "🇭🇷", Czech: "🇨🇿", Danish: "🇩🇰",
+  Dutch: "🇳🇱", English: "🇬🇧", Estonian: "🇪🇪", Finnish: "🇫🇮",
+  French: "🇫🇷", Georgian: "🇬🇪", German: "🇩🇪", Greek: "🇬🇷",
+  Hebrew: "🇮🇱", Hindi: "🇮🇳", Hungarian: "🇭🇺", Icelandic: "🇮🇸",
+  Indonesian: "🇮🇩", Italian: "🇮🇹", Japanese: "🇯🇵", Kazakh: "🇰🇿",
+  Korean: "🇰🇷", Latvian: "🇱🇻", Lithuanian: "🇱🇹", Macedonian: "🇲🇰",
+  Malay: "🇲🇾", Maltese: "🇲🇹", Norwegian: "🇳🇴", Persian: "🇮🇷",
+  Polish: "🇵🇱", Portuguese: "🇵🇹", Romanian: "🇷🇴", Russian: "🇷🇺",
+  Serbian: "🇷🇸", Slovak: "🇸🇰", Slovenian: "🇸🇮", Spanish: "🇪🇸",
+  Swedish: "🇸🇪", Thai: "🇹🇭", Turkish: "🇹🇷", Ukrainian: "🇺🇦",
+  Urdu: "🇵🇰", Vietnamese: "🇻🇳", Welsh: "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+};
 
-const TOTAL_STEPS = 4;
+function cefrToProficiency(cefr: string): LearningProficiency {
+  if (cefr === "C1" || cefr === "C2") return "advanced";
+  if (cefr === "B1" || cefr === "B2") return "intermediate";
+  return "beginner";
+}
+
+function GoldButton({
+  onPress, disabled, label, loading,
+}: { onPress: () => void; disabled?: boolean; label: string; loading?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled || loading}
+      style={({ pressed }) => ({
+        backgroundColor: (disabled || loading) ? "#D4C898" : pressed ? "#DFB83A" : GOLD,
+        borderRadius: 50,
+        paddingVertical: 18,
+        alignItems: "center",
+        opacity: (disabled || loading) ? 0.7 : 1,
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 8,
+      })}
+    >
+      {loading && <Spinner size="sm" color="default" />}
+      <Text
+        className="font-manrope-bold text-[17px]"
+        style={{ color: (disabled || loading) ? "#8A7570" : "#2C1810" }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ProficiencyBar({
+  proficiency,
+  onCycleUp,
+}: { proficiency: Proficiency; onCycleUp: () => void }) {
+  const filled = SPOKEN_BAR_FILLS[proficiency];
+  return (
+    <Pressable onPress={onCycleUp} className="flex-row gap-[3px]">
+      {Array.from({ length: SPOKEN_BAR_COUNT }, (_, i) => (
+        <View
+          key={i}
+          style={{
+            width: 22,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: i < filled ? GOLD : MUTED_BORDER,
+          }}
+        />
+      ))}
+    </Pressable>
+  );
+}
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const { toast } = useToast();
+  const insets = useSafeAreaInsets();
+  const { data: session } = authClient.useSession();
 
   const onboardingStatus = useQuery(trpc.profile.getOnboardingStatus.queryOptions());
-
-  useEffect(() => {
-    if (onboardingStatus.data?.complete) {
-      router.replace("/(tabs)/suggestions");
-    }
-  }, [onboardingStatus.data?.complete]);
+  const profileQuery = useQuery({
+    ...trpc.profile.getMyProfile.queryOptions(),
+    enabled: !!session,
+  });
 
   const [step, setStep] = useState(1);
+  const [initialized, setInitialized] = useState(false);
+
+  // Identity state
+  const [nameInput, setNameInput] = useState("");
+  const [surnameInput, setSurnameInput] = useState("");
+  const [imageUri, setImageUri] = useState<string | undefined>();
+
+  // Language state
   const [spokenLanguages, setSpokenLanguages] = useState<SpokenLanguage[]>([]);
-  const [learningLanguages, setLearningLanguages] = useState<LearningLanguage[]>([]);
-  const [interests, setInterests] = useState<InterestValue[]>([]);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [learningLanguages, setLearningLanguages] = useState<LearningLang[]>([]);
   const [pickerTarget, setPickerTarget] = useState<"spoken" | "learning" | null>(null);
+
+  // Interest state
+  const [interests, setInterests] = useState<InterestValue[]>([]);
+
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!onboardingStatus.data) return;
+    if (onboardingStatus.data.complete) {
+      router.replace("/(tabs)/suggestions");
+      return;
+    }
+    if (!initialized && onboardingStatus.data.identityProfileComplete) {
+      setStep(3);
+      setInitialized(true);
+    }
+  }, [onboardingStatus.data]);
+
+  useEffect(() => {
+    if (initialized || !profileQuery.data || onboardingStatus.data?.identityProfileComplete) return;
+    const identity = profileQuery.data.identity;
+    if (identity?.name || identity?.surname) {
+      setNameInput(identity.name ?? "");
+      setSurnameInput(identity.surname ?? "");
+    } else {
+      const { name, surname } = extractNameFromEmail(identity?.email ?? "");
+      setNameInput(name);
+      setSurnameInput(surname);
+    }
+    setImageUri(identity?.image ?? undefined);
+    setInitialized(true);
+  }, [profileQuery.data, onboardingStatus.data, initialized]);
+
+  const setIdentityMutation = useMutation({
+    ...trpc.profile.setIdentityProfile.mutationOptions(),
+    onError: (e) => {
+      toast.show({ variant: "danger", label: (e as { message?: string }).message ?? "Failed to save." });
+    },
+  });
 
   const upsertMutation = useMutation(trpc.profile.upsertProfile.mutationOptions());
   const partialMutation = useMutation(trpc.profile.savePartialProfile.mutationOptions());
 
-  const isSaving = upsertMutation.isPending || partialMutation.isPending;
+  const isSaving = setIdentityMutation.isPending || upsertMutation.isPending || partialMutation.isPending;
 
-  function toggleSpokenLanguage(lang: string) {
-    setValidationError(null);
-    setSpokenLanguages((prev) => {
-      const exists = prev.find((l) => l.language === lang);
-      if (exists) return prev.filter((l) => l.language !== lang);
-      return [...prev, { language: lang, proficiency: "beginner" as Proficiency }];
-    });
-  }
-
-  function setProficiency(lang: string, proficiency: Proficiency) {
+  function cycleSpokenProficiency(language: string) {
     setSpokenLanguages((prev) =>
-      prev.map((l) => (l.language === lang ? { ...l, proficiency } : l)),
+      prev.map((l) => {
+        if (l.language !== language) return l;
+        const idx = SPOKEN_PROFICIENCY_ORDER.indexOf(l.proficiency);
+        const next = SPOKEN_PROFICIENCY_ORDER[(idx + 1) % SPOKEN_PROFICIENCY_ORDER.length];
+        return { ...l, proficiency: next };
+      }),
     );
-    setLearningLanguages((prev) => prev.filter((l) => l.language !== lang));
   }
 
-  function toggleLearningLanguage(lang: string) {
-    setValidationError(null);
-    const alreadySpoken = spokenLanguages.some((l) => l.language === lang);
-    if (alreadySpoken) {
-      setValidationError(
-        `You already speak ${lang}. It cannot also be a learning language.`,
-      );
-      return;
-    }
-    setLearningLanguages((prev) => {
-      const exists = prev.find((l) => l.language === lang);
-      if (exists) return prev.filter((l) => l.language !== lang);
-      return [...prev, { language: lang, proficiency: "beginner" }];
-    });
+  function removeSpoken(language: string) {
+    setSpokenLanguages((prev) => prev.filter((l) => l.language !== language));
   }
 
-  function setLearningProficiency(lang: string, proficiency: LearningProficiency) {
+  function removeLearning(language: string) {
+    setLearningLanguages((prev) => prev.filter((l) => l.language !== language));
+  }
+
+  function setLearningCEFR(language: string, cefr: string) {
     setLearningLanguages((prev) =>
-      prev.map((l) => (l.language === lang ? { ...l, proficiency } : l)),
+      prev.map((l) => (l.language === language ? { ...l, cefr } : l)),
     );
   }
 
@@ -135,54 +257,71 @@ export default function OnboardingScreen() {
     );
   }
 
-  function handleNext() {
-    if (step === 1 && spokenLanguages.length === 0) {
-      setValidationError("Please select at least one spoken language.");
+  async function handleStep1Continue() {
+    const name = nameInput.trim();
+    const surname = surnameInput.trim();
+    if (!name) {
+      Alert.alert("Name required", "Please enter your first name.");
       return;
     }
-    if (step === 2 && learningLanguages.length === 0) {
-      setValidationError("Please select at least one language to learn.");
+    if (!surname) {
+      Alert.alert("Surname required", "Please enter your surname.");
       return;
     }
-    if (step === 3 && interests.length === 0) {
-      setValidationError("Please select at least one interest.");
-      return;
-    }
-    setValidationError(null);
-    setStep((s) => Math.min(s + 1, TOTAL_STEPS));
+    try {
+      await setIdentityMutation.mutateAsync({ name, surname, imageUrl: imageUri });
+      setValidationError(null);
+      setStep(2);
+    } catch { /* error handled in onError */ }
   }
 
-  function handleBack() {
-    setValidationError(null);
-    setStep((s) => Math.max(s - 1, 1));
+  async function handleStep2Continue() {
+    try {
+      await setIdentityMutation.mutateAsync({
+        name: nameInput.trim(),
+        surname: surnameInput.trim(),
+        imageUrl: imageUri,
+      });
+      await queryClient.invalidateQueries();
+      setValidationError(null);
+      setStep(3);
+    } catch { /* error handled in onError */ }
   }
 
-  async function handleSave() {
+  function handleStep3Continue() {
     if (spokenLanguages.length === 0) {
-      setValidationError("Please select at least one spoken language.");
-      return;
-    }
-    if (learningLanguages.length === 0) {
-      setValidationError("Please select at least one language to learn.");
-      return;
-    }
-    if (interests.length === 0) {
-      setValidationError("Please select at least one interest to enter the matching pool.");
+      setValidationError("Add at least one language you speak.");
       return;
     }
     setValidationError(null);
+    setStep(4);
+  }
 
+  function handleStep4Continue() {
+    if (learningLanguages.length === 0) {
+      setValidationError("Add at least one language to learn.");
+      return;
+    }
+    setValidationError(null);
+    setStep(5);
+  }
+
+  async function handleFinish() {
+    if (interests.length < 3) {
+      setValidationError("Pick at least 3 topics.");
+      return;
+    }
+    setValidationError(null);
     try {
       await upsertMutation.mutateAsync({
         spokenLanguages,
         learningLanguages: learningLanguages.map((l) => ({
           language: l.language,
-          proficiency: l.proficiency,
+          proficiency: cefrToProficiency(l.cefr),
         })),
-        interests: interests as InterestValue[],
+        interests,
       });
       await queryClient.refetchQueries();
-      toast.show({ variant: "success", label: "Profile saved!" });
       router.replace("/review-profile");
     } catch {
       toast.show({ variant: "danger", label: "Failed to save profile." });
@@ -190,327 +329,474 @@ export default function OnboardingScreen() {
   }
 
   async function handleSkip() {
+    if (step <= 2) {
+      // Skip identity photo or go to next step
+      if (step === 1) {
+        const name = nameInput.trim();
+        const surname = surnameInput.trim();
+        if (name && surname) {
+          await setIdentityMutation.mutateAsync({ name, surname, imageUrl: imageUri });
+        }
+        setStep(2);
+        return;
+      }
+      setStep(3);
+      return;
+    }
     try {
       const input: Record<string, unknown> = {};
       if (spokenLanguages.length > 0) input.spokenLanguages = spokenLanguages;
-      if (learningLanguages.length > 0)
+      if (learningLanguages.length > 0) {
         input.learningLanguages = learningLanguages.map((l) => ({
           language: l.language,
-          proficiency: l.proficiency,
+          proficiency: cefrToProficiency(l.cefr),
         }));
+      }
       if (interests.length > 0) input.interests = interests;
-
       await partialMutation.mutateAsync(input as Parameters<typeof partialMutation.mutateAsync>[0]);
       await queryClient.refetchQueries();
-      toast.show({ variant: "default", label: "You can complete your profile later." });
       router.replace("/review-profile");
     } catch {
       toast.show({ variant: "danger", label: "Failed to save." });
     }
   }
 
-  function renderStepIndicator() {
-    return (
-      <View className="flex-row justify-center gap-2 mb-6">
-        {Array.from({ length: TOTAL_STEPS }, (_, i) => (
-          <View
-            key={i}
-            className={`h-2 rounded-full ${
-              i + 1 <= step ? "bg-primary w-8" : "bg-muted w-8"
-            }`}
-          />
-        ))}
-      </View>
-    );
-  }
-
-  function renderStep1() {
-    return (
-      <View className="flex-1">
-        <Text className="text-foreground text-2xl font-bold mb-2">
-          Languages you speak
-        </Text>
-        <Text className="text-muted-foreground mb-4">
-          Select the languages you already speak and your proficiency level.
-        </Text>
-
-        {spokenLanguages.length > 0 && (
-          <View className="gap-3 mb-4">
-            {spokenLanguages.map((sl) => (
-              <Card key={sl.language} className="p-3">
-                <View className="flex-row items-center justify-between mb-2">
-                  <Text className="text-foreground font-medium">{sl.language}</Text>
-                  <Pressable onPress={() => toggleSpokenLanguage(sl.language)}>
-                    <Text className="text-destructive text-sm font-medium">Remove</Text>
-                  </Pressable>
-                </View>
-                <View className="flex-row flex-wrap gap-2">
-                  {PROFICIENCY_LEVELS.map((level) => (
-                    <Pressable
-                      key={level.value}
-                      onPress={() => setProficiency(sl.language, level.value)}
-                      className={`px-3 py-1.5 rounded-full border ${
-                        sl.proficiency === level.value
-                          ? "bg-primary border-primary"
-                          : "bg-background border-border"
-                      }`}
-                    >
-                      <Text
-                        className={
-                          sl.proficiency === level.value
-                            ? "text-primary-foreground text-sm"
-                            : "text-foreground text-sm"
-                        }
-                      >
-                        {level.label}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </Card>
-            ))}
-          </View>
-        )}
-
-        <Button variant="outline" onPress={() => setPickerTarget("spoken")}>
-          <Button.Label>+ Add spoken language</Button.Label>
-        </Button>
-      </View>
-    );
-  }
-
-  function renderStep2() {
-    return (
-      <View className="flex-1">
-        <Text className="text-foreground text-2xl font-bold mb-2">
-          Languages you want to learn
-        </Text>
-        <Text className="text-muted-foreground mb-4">
-          Pick the languages you'd like to practice with a partner.
-        </Text>
-
-        {learningLanguages.length > 0 && (
-          <View className="gap-3 mb-4">
-            {learningLanguages.map((ll) => (
-              <Card key={ll.language} className="p-3">
-                <View className="flex-row items-center justify-between mb-2">
-                  <Text className="text-foreground font-medium">{ll.language}</Text>
-                  <Pressable onPress={() => toggleLearningLanguage(ll.language)}>
-                    <Text className="text-destructive text-sm font-medium">Remove</Text>
-                  </Pressable>
-                </View>
-                <View className="flex-row flex-wrap gap-2">
-                  {LEARNING_PROFICIENCY_LEVELS.map((level) => (
-                    <Pressable
-                      key={level.value}
-                      onPress={() => setLearningProficiency(ll.language, level.value)}
-                      className={`px-3 py-1.5 rounded-full border ${
-                        ll.proficiency === level.value
-                          ? "bg-primary border-primary"
-                          : "bg-background border-border"
-                      }`}
-                    >
-                      <Text
-                        className={
-                          ll.proficiency === level.value
-                            ? "text-primary-foreground text-sm"
-                            : "text-foreground text-sm"
-                        }
-                      >
-                        {level.label}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </Card>
-            ))}
-          </View>
-        )}
-
-        <Button variant="outline" onPress={() => setPickerTarget("learning")}>
-          <Button.Label>+ Add learning language</Button.Label>
-        </Button>
-      </View>
-    );
-  }
-
-  function renderStep3() {
-    return (
-      <View className="flex-1">
-        <Text className="text-foreground text-2xl font-bold mb-2">
-          Your interests
-        </Text>
-        <Text className="text-muted-foreground mb-4">
-          Select topics you enjoy — we'll use these to find great matches.
-        </Text>
-        <View className="flex-row flex-wrap gap-2">
-          {INTERESTS.map((item) => {
-            const selected = interests.includes(item.value);
-            return (
-              <Pressable
-                key={item.value}
-                onPress={() => toggleInterest(item.value)}
-                className={`px-4 py-2 rounded-full border ${
-                  selected
-                    ? "bg-primary border-primary"
-                    : "bg-background border-border"
-                }`}
-              >
-                <Text
-                  className={selected ? "text-primary-foreground font-medium" : "text-foreground"}
-                >
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-    );
-  }
-
-  function renderStep4() {
-    return (
-      <View className="flex-1">
-        <Text className="text-foreground text-2xl font-bold mb-2">
-          Review your profile
-        </Text>
-        <Text className="text-muted-foreground mb-4">
-          Here's a summary of your selections.
-        </Text>
-
-        <Card className="p-4 mb-4">
-          <Text className="text-foreground font-semibold mb-2">Spoken Languages</Text>
-          {spokenLanguages.length === 0 ? (
-            <Text className="text-muted-foreground text-sm">None selected</Text>
-          ) : (
-            <View className="flex-row flex-wrap gap-2">
-              {spokenLanguages.map((sl) => (
-                <View key={sl.language} className="bg-muted px-3 py-1 rounded-full">
-                  <Text className="text-foreground text-sm">
-                    {sl.language} · {sl.proficiency}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </Card>
-
-        <Card className="p-4 mb-4">
-          <Text className="text-foreground font-semibold mb-2">Learning Languages</Text>
-          {learningLanguages.length === 0 ? (
-            <Text className="text-muted-foreground text-sm">None selected</Text>
-          ) : (
-            <View className="flex-row flex-wrap gap-2">
-              {learningLanguages.map((ll) => (
-                <View key={ll.language} className="bg-muted px-3 py-1 rounded-full">
-                  <Text className="text-foreground text-sm">
-                    {ll.language} · {ll.proficiency}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </Card>
-
-        <Card className="p-4">
-          <Text className="text-foreground font-semibold mb-2">Interests</Text>
-          {interests.length === 0 ? (
-            <Text className="text-muted-foreground text-sm">None selected</Text>
-          ) : (
-            <View className="flex-row flex-wrap gap-2">
-              {interests.map((val) => {
-                const label = INTERESTS.find((i) => i.value === val)?.label ?? val;
-                return (
-                  <View key={val} className="bg-muted px-3 py-1 rounded-full">
-                    <Text className="text-foreground text-sm">{label}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-        </Card>
-      </View>
-    );
+  async function handlePickPicture() {
+    const result = await pickAndEncodeProfilePicture();
+    if (result.error) {
+      toast.show({ variant: "danger", label: result.error });
+      return;
+    }
+    if (result.imageDataUri) {
+      setImageUri(result.imageDataUri);
+    }
   }
 
   if (onboardingStatus.isPending) {
     return (
-      <Container isScrollable={false}>
-        <View className="flex-1 items-center justify-center">
-          <Spinner />
-        </View>
-      </Container>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <Spinner />
+      </View>
     );
   }
 
+  const stepTitles = [
+    "How should\npeople greet you?",
+    "Add a face\nto your name.",
+    "What do\nyou speak?",
+    "What are\nyou learning?",
+    "What do\nyou talk about?",
+  ];
+
+  const stepSubtitles = [
+    "Pulled from TU/e. Change if you go by something else.",
+    "So your partner can spot you across the café.",
+    "Languages you can hold a conversation in.",
+    "We'll pair you with native speakers.",
+    "Pick 3–7. Seeds your first match.",
+  ];
+
   return (
-    <Container isScrollable={false}>
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
+    <View
+      className="flex-1 bg-background"
+      style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}
+    >
+      <KeyboardAvoidingView
+        className="flex-1"
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View className="flex-1 p-6">
-          {renderStepIndicator()}
-
-          {step === 1 && renderStep1()}
-          {step === 2 && renderStep2()}
-          {step === 3 && renderStep3()}
-          {step === 4 && renderStep4()}
-
-          {validationError && (
-            <View className="bg-destructive/10 border border-destructive rounded-lg p-3 mt-4">
-              <Text className="text-destructive text-sm">{validationError}</Text>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View className="flex-1 px-6 pt-6 pb-10" style={{ flex: 1 }}>
+            {/* Header */}
+            <View className="flex-row items-center justify-between mb-3">
+              <Text
+                className="font-manrope-semi text-[11px] tracking-[2px] uppercase"
+                style={{ color: GOLD }}
+              >
+                ABOUT YOU · {step} OF {TOTAL_STEPS}
+              </Text>
+              <Pressable onPress={handleSkip} disabled={isSaving}>
+                <Text className="font-manrope-semi text-[15px] text-foreground">Skip</Text>
+              </Pressable>
             </View>
-          )}
 
-          <View className="mt-6 gap-3">
-            {step < TOTAL_STEPS ? (
-              <>
-                <View className="flex-row gap-3">
-                  {step > 1 && (
-                    <Button variant="outline" onPress={handleBack} className="flex-1">
-                      <Button.Label>Back</Button.Label>
-                    </Button>
-                  )}
-                  <Button onPress={handleNext} className="flex-1">
-                    <Button.Label>Next</Button.Label>
-                  </Button>
+            {/* Progress segments */}
+            <View className="flex-row gap-[4px] mb-8">
+              {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+                <View
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: 3,
+                    borderRadius: 2,
+                    backgroundColor: i < step ? GOLD : MUTED_BORDER,
+                  }}
+                />
+              ))}
+            </View>
+
+            {/* Title + subtitle */}
+            <View className="mb-8">
+              <Text className="font-caveat text-[42px] text-foreground leading-[46px]">
+                {stepTitles[step - 1]}
+              </Text>
+              <Text
+                className="font-manrope text-[15px] italic mt-3 leading-[22px]"
+                style={{ color: "#8A7570" }}
+              >
+                {stepSubtitles[step - 1]}
+              </Text>
+            </View>
+
+            {/* Step content */}
+            {step === 1 && (
+              <View className="gap-4">
+                <View className="gap-2">
+                  <Text
+                    className="font-manrope-semi text-[11px] tracking-[1.8px] uppercase"
+                    style={{ color: "#8A7570" }}
+                  >
+                    First name
+                  </Text>
+                  <TextInput
+                    value={nameInput}
+                    onChangeText={setNameInput}
+                    placeholder="Anna"
+                    placeholderTextColor={MUTED_BORDER}
+                    autoCapitalize="words"
+                    returnKeyType="next"
+                    className="font-manrope-md text-[17px] text-foreground bg-brand-input rounded-2xl px-5 py-4"
+                    style={{ borderWidth: 2, borderColor: MUTED_BORDER }}
+                  />
                 </View>
-                <Button variant="ghost" onPress={handleSkip} isDisabled={isSaving}>
-                  {isSaving ? (
-                    <Spinner size="sm" color="default" />
-                  ) : (
-                    <Button.Label>Skip for now</Button.Label>
-                  )}
-                </Button>
-              </>
-            ) : (
-              <>
-                <View className="flex-row gap-3">
-                  <Button variant="outline" onPress={handleBack} className="flex-1">
-                    <Button.Label>Back</Button.Label>
-                  </Button>
-                  <Button onPress={handleSave} isDisabled={isSaving} className="flex-1">
-                    {isSaving ? (
-                      <Spinner size="sm" color="default" />
-                    ) : (
-                      <Button.Label>Save and Continue</Button.Label>
-                    )}
-                  </Button>
+                <View className="gap-2">
+                  <Text
+                    className="font-manrope-semi text-[11px] tracking-[1.8px] uppercase"
+                    style={{ color: "#8A7570" }}
+                  >
+                    Surname
+                  </Text>
+                  <TextInput
+                    value={surnameInput}
+                    onChangeText={setSurnameInput}
+                    placeholder="de Vries"
+                    placeholderTextColor={MUTED_BORDER}
+                    autoCapitalize="words"
+                    returnKeyType="done"
+                    onSubmitEditing={handleStep1Continue}
+                    className="font-manrope-md text-[17px] text-foreground bg-brand-input rounded-2xl px-5 py-4"
+                    style={{ borderWidth: 2, borderColor: MUTED_BORDER }}
+                  />
                 </View>
-                <Button variant="ghost" onPress={handleSkip} isDisabled={isSaving}>
-                  {isSaving ? (
-                    <Spinner size="sm" color="default" />
-                  ) : (
-                    <Button.Label>Skip for now</Button.Label>
-                  )}
-                </Button>
-              </>
+              </View>
             )}
+
+            {step === 2 && (
+              <View className="flex-1 items-center justify-center gap-4">
+                <Pressable onPress={handlePickPicture}>
+                  {imageUri ? (
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={{
+                        width: 180,
+                        height: 180,
+                        borderRadius: 90,
+                        borderWidth: 3,
+                        borderColor: GOLD,
+                      }}
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        width: 180,
+                        height: 180,
+                        borderRadius: 90,
+                        borderWidth: 3,
+                        borderColor: GOLD,
+                        backgroundColor: "#F5F0EB",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text style={{ fontSize: 40, color: MUTED_BORDER }}>+</Text>
+                    </View>
+                  )}
+                </Pressable>
+                <Text
+                  className="font-manrope text-sm"
+                  style={{ color: "#8A7570" }}
+                >
+                  Tap to upload or take a photo
+                </Text>
+              </View>
+            )}
+
+            {step === 3 && (
+              <View className="gap-3">
+                {spokenLanguages.map((sl) => (
+                  <View
+                    key={sl.language}
+                    className="bg-brand-input rounded-2xl px-5 py-4"
+                    style={{ borderWidth: 2, borderColor: MUTED_BORDER }}
+                  >
+                    <View className="flex-row items-center justify-between mb-3">
+                      <View className="flex-row items-center gap-3">
+                        <Text style={{ fontSize: 24 }}>
+                          {LANGUAGE_FLAGS[sl.language] ?? "🌐"}
+                        </Text>
+                        <View>
+                          <Text className="font-manrope-bold text-[16px] text-foreground">
+                            {sl.language}
+                          </Text>
+                          <Text
+                            className="font-manrope text-[13px]"
+                            style={{ color: "#8A7570" }}
+                          >
+                            {SPOKEN_LEVEL_LABEL[sl.proficiency]}
+                          </Text>
+                        </View>
+                      </View>
+                      <Pressable onPress={() => removeSpoken(sl.language)}>
+                        <Text
+                          className="font-manrope text-[13px]"
+                          style={{ color: "#C0876A" }}
+                        >
+                          Remove
+                        </Text>
+                      </Pressable>
+                    </View>
+                    <ProficiencyBar
+                      proficiency={sl.proficiency}
+                      onCycleUp={() => cycleSpokenProficiency(sl.language)}
+                    />
+                  </View>
+                ))}
+
+                <Pressable
+                  onPress={() => setPickerTarget("spoken")}
+                  className="flex-row items-center gap-2 py-2"
+                >
+                  <Text
+                    className="font-manrope-semi text-[15px]"
+                    style={{ color: GOLD }}
+                  >
+                    + Add a language
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+
+            {step === 4 && (
+              <View className="gap-3">
+                {learningLanguages.map((ll) => {
+                  const selectedCefr = CEFR_LEVELS.find((c) => c.value === ll.cefr);
+                  return (
+                    <View
+                      key={ll.language}
+                      className="bg-brand-input rounded-2xl px-5 py-4"
+                      style={{ borderWidth: 2, borderColor: MUTED_BORDER }}
+                    >
+                      <View className="flex-row items-center justify-between mb-4">
+                        <View className="flex-row items-center gap-3">
+                          <Text style={{ fontSize: 24 }}>
+                            {LANGUAGE_FLAGS[ll.language] ?? "🌐"}
+                          </Text>
+                          <View>
+                            <Text className="font-manrope-bold text-[16px] text-foreground">
+                              {ll.language}
+                            </Text>
+                            <Text
+                              className="font-manrope text-[13px]"
+                              style={{ color: "#8A7570" }}
+                            >
+                              Your level
+                            </Text>
+                          </View>
+                        </View>
+                        <Pressable onPress={() => removeLearning(ll.language)}>
+                          <Text
+                            className="font-manrope text-[13px]"
+                            style={{ color: "#C0876A" }}
+                          >
+                            Remove
+                          </Text>
+                        </Pressable>
+                      </View>
+
+                      <View className="flex-row gap-2 mb-3">
+                        {CEFR_LEVELS.map((level) => {
+                          const selected = ll.cefr === level.value;
+                          return (
+                            <Pressable
+                              key={level.value}
+                              onPress={() => setLearningCEFR(ll.language, level.value)}
+                              style={{
+                                flex: 1,
+                                paddingVertical: 8,
+                                borderRadius: 8,
+                                alignItems: "center",
+                                backgroundColor: selected ? "#2C1810" : "transparent",
+                                borderWidth: 1.5,
+                                borderColor: selected ? "#2C1810" : MUTED_BORDER,
+                              }}
+                            >
+                              <Text
+                                className="font-manrope-bold text-[13px]"
+                                style={{ color: selected ? GOLD : "#8A7570" }}
+                              >
+                                {level.value}
+                              </Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+
+                      {selectedCefr && (
+                        <Text
+                          className="font-manrope text-[13px]"
+                          style={{ color: "#8A7570" }}
+                        >
+                          {ll.cefr} — {selectedCefr.desc}
+                        </Text>
+                      )}
+                    </View>
+                  );
+                })}
+
+                <Pressable
+                  onPress={() => setPickerTarget("learning")}
+                  className="flex-row items-center gap-2 py-2"
+                >
+                  <Text
+                    className="font-manrope-semi text-[15px]"
+                    style={{ color: GOLD }}
+                  >
+                    + Add another
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+
+            {step === 5 && (
+              <View>
+                <View className="flex-row flex-wrap gap-2">
+                  {INTERESTS.map((item) => {
+                    const selected = interests.includes(item.value);
+                    return (
+                      <Pressable
+                        key={item.value}
+                        onPress={() => toggleInterest(item.value)}
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 9,
+                          borderRadius: 50,
+                          backgroundColor: selected ? "#2C1810" : "transparent",
+                          borderWidth: 1.5,
+                          borderColor: selected ? "#2C1810" : MUTED_BORDER,
+                        }}
+                      >
+                        <Text
+                          className="font-manrope-semi text-[14px]"
+                          style={{ color: selected ? GOLD : "#5C4A3F" }}
+                        >
+                          {item.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                <View className="flex-row justify-between items-center mt-5">
+                  <Text
+                    className="font-manrope text-[14px]"
+                    style={{ color: "#8A7570" }}
+                  >
+                    {interests.length} picked
+                  </Text>
+                  {interests.length >= 3 && (
+                    <Text
+                      className="font-manrope-semi text-[14px]"
+                      style={{ color: GOLD }}
+                    >
+                      ready ✓
+                    </Text>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {validationError && (
+              <View
+                className="rounded-xl p-3 mt-4"
+                style={{ backgroundColor: "#FDF0ED", borderWidth: 1, borderColor: "#C0876A" }}
+              >
+                <Text className="font-manrope text-[13px]" style={{ color: "#C0876A" }}>
+                  {validationError}
+                </Text>
+              </View>
+            )}
+
+            <View className="flex-1" />
+
+            {/* CTA */}
+            <View className="gap-3 mt-8">
+              {step === 1 && (
+                <GoldButton
+                  onPress={handleStep1Continue}
+                  loading={setIdentityMutation.isPending}
+                  label="Continue →"
+                />
+              )}
+              {step === 2 && (
+                <>
+                  <GoldButton
+                    onPress={handleStep2Continue}
+                    loading={setIdentityMutation.isPending}
+                    label="Continue →"
+                  />
+                  <Pressable
+                    onPress={() => setStep(3)}
+                    className="items-center py-2.5"
+                  >
+                    <Text
+                      className="font-manrope text-sm"
+                      style={{ color: "#8A7570" }}
+                    >
+                      Or do this later
+                    </Text>
+                  </Pressable>
+                </>
+              )}
+              {step === 3 && (
+                <GoldButton
+                  onPress={handleStep3Continue}
+                  disabled={spokenLanguages.length === 0}
+                  label="Continue →"
+                />
+              )}
+              {step === 4 && (
+                <GoldButton
+                  onPress={handleStep4Continue}
+                  disabled={learningLanguages.length === 0}
+                  label="Continue →"
+                />
+              )}
+              {step === 5 && (
+                <GoldButton
+                  onPress={handleFinish}
+                  loading={upsertMutation.isPending}
+                  disabled={interests.length < 3}
+                  label="Finish — find matches →"
+                />
+              )}
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <LanguagePickerModal
         visible={pickerTarget !== null}
@@ -520,12 +806,15 @@ export default function OnboardingScreen() {
           ...learningLanguages.map((l) => l.language),
         ]}
         onSelect={(lang) => {
-          if (pickerTarget === "spoken") toggleSpokenLanguage(lang);
-          else toggleLearningLanguage(lang);
+          if (pickerTarget === "spoken") {
+            setSpokenLanguages((prev) => [...prev, { language: lang, proficiency: "beginner" }]);
+          } else {
+            setLearningLanguages((prev) => [...prev, { language: lang, cefr: "A2" }]);
+          }
           setPickerTarget(null);
         }}
         onClose={() => setPickerTarget(null)}
       />
-    </Container>
+    </View>
   );
 }

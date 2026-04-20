@@ -21,7 +21,7 @@ import {
 } from "@/utils/profile-picture";
 
 const SMALL_BASE64 = "A".repeat(100); // ~75 bytes
-const LARGE_BASE64 = "A".repeat(700_000); // ~525 KB, exceeds 500 KB limit
+const LARGE_BASE64 = "A".repeat(2_800_000); // ~2.1 MB, exceeds 2 MB limit
 
 describe("validateImageMimeType", () => {
   it("accepts image/jpeg", () => {
@@ -42,11 +42,11 @@ describe("validateImageMimeType", () => {
 });
 
 describe("validateImageSize", () => {
-  it("accepts base64 string within 500 KB limit", () => {
+  it("accepts base64 string within 2 MB limit", () => {
     expect(validateImageSize(SMALL_BASE64)).toBe(true);
   });
 
-  it("rejects base64 string exceeding 500 KB limit", () => {
+  it("rejects base64 string exceeding 2 MB limit", () => {
     expect(validateImageSize(LARGE_BASE64)).toBe(false);
   });
 });
@@ -84,7 +84,7 @@ describe("pickAndEncodeProfilePicture", () => {
     const result = await pickAndEncodeProfilePicture();
 
     expect(result.imageDataUri).toBeNull();
-    expect(result.error).toBe("Image is too large (max 500 KB)");
+    expect(result.error).toBe("Image is too large (max 2 MB)");
   });
 
   it("Scenario 3: rejects non-image file with error", async () => {

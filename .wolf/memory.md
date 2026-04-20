@@ -7,6 +7,7 @@
 
 | 21:49 | Fix receiver not seeing pending meetup proposal in meetups tab | apps/native/app/(tabs)/confirmed-meetups.tsx | fixed spinner to check both queries; guarded empty state against isFetching | ~100 |
 | 21:52 | Global query revalidation on route change + app foreground | apps/native/utils/trpc.ts, apps/native/app/_layout.tsx | staleTime 5min default; AppState→focusManager; segments useEffect refetchQueries stale:true | ~150 |
+| 22:18 | Redesigned onboarding to 5-step unified flow matching mockups | apps/native/app/index.tsx, apps/native/components/onboarding-modal.tsx | identity (name+photo) merged as steps 1-2; segmented progress bar; CEFR level picker for learning; dash bar for spoken proficiency; modal gated to edge case only | ~3500 tok |
 
 | 00:03 | Implemented feature #11 tasks #56–59: profile review screen, completeness validation, incomplete-section CTAs, submitProfile mutation, ProfileCompleted event, auto-restore via syncMatchingEligibility | apps/native/app/review-profile.tsx, edit-profile.tsx, _layout.tsx, index.tsx, packages/api/src/routers/profile.ts, domain-events.ts | PR #166 opened | ~4200 |
 
@@ -1236,3 +1237,30 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+
+## Session: 2026-04-20 22:09
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-20 22:09
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-20 22:11
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 22:13 | Edited apps/native/utils/profile-picture.ts | inline fix | ~12 |
+| 22:13 | Edited apps/native/utils/profile-picture.ts | 5→7 lines | ~50 |
+| 22:13 | Edited apps/native/__tests__/profile-picture.test.ts | inline fix | ~22 |
+| 22:14 | Edited apps/native/__tests__/profile-picture.test.ts | "accepts base64 string wit" → "accepts base64 string wit" | ~16 |
+| 22:14 | Edited apps/native/__tests__/profile-picture.test.ts | "rejects base64 string exc" → "rejects base64 string exc" | ~17 |
+| 22:14 | Edited apps/native/__tests__/profile-picture.test.ts | "Image is too large (max 5" → "Image is too large (max 2" | ~18 |
+| 22:14 | Edited apps/native/utils/profile-picture.ts | "Image is too large (max 5" → "Image is too large (max 2" | ~22 |
+| 22:14 | Session end: 7 writes across 2 files (profile-picture.ts, profile-picture.test.ts) | 4 reads | ~9607 tok |
+| 22:18 | Created apps/native/app/index.tsx | — | ~8523 |
+| 22:18 | Edited apps/native/components/onboarding-modal.tsx | 4→7 lines | ~93 |
+| 22:18 | Edited apps/native/app/index.tsx | inline fix | ~13 |
+| 22:19 | Session end: 10 writes across 4 files (profile-picture.ts, profile-picture.test.ts, index.tsx, onboarding-modal.tsx) | 5 reads | ~23226 tok |

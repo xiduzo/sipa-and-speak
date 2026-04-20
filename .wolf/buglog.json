@@ -52,7 +52,7 @@
     {
       "id": "bug-005",
       "timestamp": "2026-04-12T20:22:00.000Z",
-      "error_message": "Invalid code. Please check and try again \u2014 400 on /api/auth/email-otp/verify-email despite correct OTP",
+      "error_message": "Invalid code. Please check and try again — 400 on /api/auth/email-otp/verify-email despite correct OTP",
       "file": "apps/native/app/enrolment.tsx",
       "root_cause": "Used authClient.emailOtp.verifyEmail for sign-in OTP. That method is for type:email-verification only. Sign-in requires authClient.signIn.emailOtp({ email, otp }).",
       "fix": "Changed verifyEmail call to authClient.signIn.emailOtp in both enrolment.tsx and sign-in-form.tsx",
@@ -71,7 +71,7 @@
       "timestamp": "2026-04-12T20:20:00.000Z",
       "error_message": "Unauthenticated users land on onboarding screen instead of enrolment screen",
       "file": "apps/native/app/_layout.tsx",
-      "root_cause": "No auth guard \u2014 app had no logic to check session state and redirect unauthenticated users to /enrolment",
+      "root_cause": "No auth guard — app had no logic to check session state and redirect unauthenticated users to /enrolment",
       "fix": "Added AuthGuard component using authClient.useSession() + useEffect redirect to /enrolment when no session",
       "tags": [
         "auth",
@@ -104,7 +104,7 @@
       "timestamp": "2026-04-12T18:27:36.148Z",
       "error_message": "Missing error handling in unknown",
       "file": "apps/server/src/index.ts",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -121,7 +121,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/auth/src/index.ts",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 7\u21924 lines (3 removed)",
+      "fix": "Rewrote 7→4 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -137,7 +137,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/updated-task-37.md",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 8\u219221 lines (4 removed)",
+      "fix": "Rewrote 8→21 lines (4 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -153,7 +153,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/server/src/index.ts",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 31\u219241 lines (2 removed)",
+      "fix": "Rewrote 31→41 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -168,8 +168,8 @@
       "timestamp": "2026-04-12T18:57:26.333Z",
       "error_message": "CSS fix: title",
       "file": "apps/native/app/_layout.tsx",
-      "root_cause": "title: \"Enrol with TU/e\", headerBackVisible: false \u2192 \"Alumni Enrolment\", headerBackVisible: false",
-      "fix": "Changed title: \"Enrol with TU/e\", headerBackVisible: false \u2192 \"Alumni Enrolment\", headerBackVisible: false",
+      "root_cause": "title: \"Enrol with TU/e\", headerBackVisible: false → \"Alumni Enrolment\", headerBackVisible: false",
+      "fix": "Changed title: \"Enrol with TU/e\", headerBackVisible: false → \"Alumni Enrolment\", headerBackVisible: false",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -185,7 +185,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/enrolment.tsx",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 18\u219211 lines (3 removed)",
+      "fix": "Rewrote 18→11 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -201,7 +201,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/web/src/components/sign-in-form.tsx",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 29\u219219 lines (4 removed)",
+      "fix": "Rewrote 29→19 lines (4 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -214,7 +214,7 @@
     {
       "id": "bug-015",
       "timestamp": "2026-04-12T20:45:00.000Z",
-      "error_message": "Alumni OTP sign-in fails \u2014 no code works for alumni registry emails",
+      "error_message": "Alumni OTP sign-in fails — no code works for alumni registry emails",
       "file": "apps/server/src/index.ts",
       "root_cause": "Email validation middleware was only applied to /api/auth/email-otp/send-verification-otp, not to /api/auth/sign-in/email-otp. The sign-in endpoint had no domain/registry check, meaning alumni emails were not consistently validated through the enrolment gate.",
       "fix": "Extracted validateEnrolmentEmail into a shared middleware function and applied it to both /send-verification-otp and /sign-in/email-otp paths.",
@@ -238,7 +238,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/server/src/index.ts",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 17\u219220 lines (2 removed)",
+      "fix": "Rewrote 17→20 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -254,7 +254,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/server/src/index.ts",
       "root_cause": "11 lines replaced/restructured",
-      "fix": "Rewrote 22\u219237 lines (11 removed)",
+      "fix": "Rewrote 22→37 lines (11 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -285,7 +285,7 @@
       "timestamp": "2026-04-12T20:00:14.921Z",
       "error_message": "Missing await",
       "file": "apps/server/src/index.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call | Also: app.post(\"/api/auth/sign-in/email-otp\", async (c) => {; const res = await auth.handler(c.req.raw);",
       "tags": [
         "auto-detected",
@@ -302,7 +302,7 @@
       "error_message": "Wrong reference: true should be false",
       "file": "packages/auth/src/index.ts",
       "root_cause": "Used \"true\" instead of \"false\"",
-      "fix": "Changed true \u2192 false",
+      "fix": "Changed true → false",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -318,7 +318,7 @@
       "error_message": "POST /api/auth/sign-in/email-otp 500 for @alumni.tue.nl emails",
       "file": "packages/auth/src/index.ts",
       "root_cause": "Polar plugin had createCustomerOnSignUp: true. Polar's API validates email domains via DNS. alumni.tue.nl does not resolve as a valid DNS domain, so Polar rejects the email and Better-Auth returns 500.",
-      "fix": "Set createCustomerOnSignUp: false \u2014 Polar customers are created lazily at checkout time rather than on every sign-up.",
+      "fix": "Set createCustomerOnSignUp: false — Polar customers are created lazily at checkout time rather than on every sign-up.",
       "tags": [
         "auth",
         "polar",
@@ -337,7 +337,7 @@
       "timestamp": "2026-04-12T20:04:39.853Z",
       "error_message": "Missing error handling in createAuth",
       "file": "packages/auth/src/index.ts",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block | Also: createCustomerOnSignUp: false, // handled in databaseHooks w",
       "tags": [
         "auto-detected",
@@ -354,7 +354,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/updated-task-42-body.md",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 6\u219214 lines (4 removed)",
+      "fix": "Rewrote 6→14 lines (4 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -370,7 +370,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/updated-task-43-body.md",
       "root_cause": "7 lines replaced/restructured",
-      "fix": "Rewrote 12\u219220 lines (7 removed)",
+      "fix": "Rewrote 12→20 lines (7 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -386,7 +386,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/updated-task-44-body.md",
       "root_cause": "5 lines replaced/restructured",
-      "fix": "Rewrote 7\u219214 lines (5 removed)",
+      "fix": "Rewrote 7→14 lines (5 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -401,7 +401,7 @@
       "timestamp": "2026-04-12T20:19:36.691Z",
       "error_message": "Missing error handling in unknown",
       "file": "../../../../tmp/updated-task-45-body.md",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -418,7 +418,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/updated-task-46-body.md",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 6\u219213 lines (4 removed)",
+      "fix": "Rewrote 6→13 lines (4 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -434,7 +434,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/updated-task-47-body.md",
       "root_cause": "7 lines replaced/restructured",
-      "fix": "Rewrote 12\u219219 lines (7 removed)",
+      "fix": "Rewrote 12→19 lines (7 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -450,7 +450,7 @@
       "error_message": "Alumni email not in registry shows student-centric error: 'Only TU/e institutional email addresses are accepted'",
       "file": "apps/server/src/index.ts",
       "root_cause": "isAllowedEnrolmentEmail() combined student+alumni validation into one boolean, so both rejection cases returned TUE_DOMAIN_ERROR regardless of whether the email was a failed alumni lookup. ALUMNI_REGISTRY_ERROR and ALUMNI_REGISTRY_UNAVAILABLE_ERROR constants existed but were unused.",
-      "fix": "Split handleSendOtp into explicit branches: TU/e domain \u2192 proceed; non-TU/e + in alumni registry \u2192 proceed; non-TU/e + not in registry \u2192 ALUMNI_REGISTRY_ERROR (400); registry throws \u2192 ALUMNI_REGISTRY_UNAVAILABLE_ERROR (503). Removed isAllowedEnrolmentEmail helper.",
+      "fix": "Split handleSendOtp into explicit branches: TU/e domain → proceed; non-TU/e + in alumni registry → proceed; non-TU/e + not in registry → ALUMNI_REGISTRY_ERROR (400); registry throws → ALUMNI_REGISTRY_UNAVAILABLE_ERROR (503). Removed isAllowedEnrolmentEmail helper.",
       "tags": [
         "auth",
         "alumni",
@@ -520,7 +520,7 @@
       "error_message": "Wrong reference: string should be LearningLanguage",
       "file": "apps/native/app/index.tsx",
       "root_cause": "Used \"string\" instead of \"LearningLanguage\"",
-      "fix": "Changed string \u2192 LearningLanguage",
+      "fix": "Changed string → LearningLanguage",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -551,8 +551,8 @@
       "timestamp": "2026-04-12T20:29:25.655Z",
       "error_message": "CSS fix: learningLanguages",
       "file": "apps/native/app/index.tsx",
-      "root_cause": "learningLanguages: learningLanguages.map((l) => ({ language: l \u2192 learningLanguages.map((l) => ({",
-      "fix": "Changed learningLanguages: learningLanguages.map((l) => ({ language: l \u2192 learningLanguages.map((l) => ({",
+      "root_cause": "learningLanguages: learningLanguages.map((l) => ({ language: l → learningLanguages.map((l) => ({",
+      "fix": "Changed learningLanguages: learningLanguages.map((l) => ({ language: l → learningLanguages.map((l) => ({",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -568,7 +568,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/index.tsx",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 34\u219278 lines (2 removed)",
+      "fix": "Rewrote 34→78 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -647,8 +647,8 @@
       "timestamp": "2026-04-12T22:55:00.000Z",
       "error_message": "No procedure found on path 'profile.upsertLanguage'",
       "file": "apps/native/app/edit-profile.tsx",
-      "root_cause": "bun --hot only watches apps/server/src/ \u2014 changes to workspace packages (packages/api/) are not hot-reloaded. Server was running old compiled code that predated the new procedures.",
-      "fix": "Restart the dev server (bun run dev in apps/server). No code change needed \u2014 source is correct.",
+      "root_cause": "bun --hot only watches apps/server/src/ — changes to workspace packages (packages/api/) are not hot-reloaded. Server was running old compiled code that predated the new procedures.",
+      "fix": "Restart the dev server (bun run dev in apps/server). No code change needed — source is correct.",
       "tags": [
         "trpc",
         "dev-server",
@@ -665,7 +665,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/edit-profile.tsx",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 6\u219210 lines (2 removed) | Also: if (type === \"learning\") {; const isNativeSpoken = spokenLanguages.some( | Also: {availableForLearning.map((lang) => {; const isNativeSpoken = spokenLanguages.some(",
+      "fix": "Rewrote 6→10 lines (2 removed) | Also: if (type === \"learning\") {; const isNativeSpoken = spokenLanguages.some( | Also: {availableForLearning.map((lang) => {; const isNativeSpoken = spokenLanguages.some(",
       "tags": [
         "auto-detected",
         "refactor",
@@ -680,8 +680,8 @@
       "timestamp": "2026-04-12T21:37:52.489Z",
       "error_message": "CSS fix: variant",
       "file": "apps/native/app/edit-profile.tsx",
-      "root_cause": "variant: \"danger\", label: \"Failed to remove language.\" \u2192 \"danger\", label: \"Failed to update interest.\"",
-      "fix": "Changed variant: \"danger\", label: \"Failed to remove language.\" \u2192 \"danger\", label: \"Failed to update interest.\"",
+      "root_cause": "variant: \"danger\", label: \"Failed to remove language.\" → \"danger\", label: \"Failed to update interest.\"",
+      "fix": "Changed variant: \"danger\", label: \"Failed to remove language.\" → \"danger\", label: \"Failed to update interest.\"",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -697,7 +697,7 @@
       "error_message": "TS2304 Cannot find name setError in edit-profile.tsx",
       "file": "apps/native/app/edit-profile.tsx",
       "root_cause": "handleAdd called setError(null) but no setError state was declared in EditProfileScreen",
-      "fix": "Removed the stray setError(null) call \u2014 edit-profile has no server-error state",
+      "fix": "Removed the stray setError(null) call — edit-profile has no server-error state",
       "tags": [
         "typescript",
         "pre-existing",
@@ -712,7 +712,7 @@
       "timestamp": "2026-04-12T21:54:02.743Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/profile.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call | Also: await syncMatchingEligibility(userId);",
       "tags": [
         "auto-detected",
@@ -760,8 +760,8 @@
       "timestamp": "2026-04-12T21:54:59.481Z",
       "error_message": "CSS fix: title",
       "file": "apps/native/app/_layout.tsx",
-      "root_cause": "title: \"Edit Profile\" \u2192 \"Review Profile\"",
-      "fix": "Changed title: \"Edit Profile\" \u2192 \"Review Profile\"",
+      "root_cause": "title: \"Edit Profile\" → \"Review Profile\"",
+      "fix": "Changed title: \"Edit Profile\" → \"Review Profile\"",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -824,7 +824,7 @@
       "timestamp": "2026-04-13T09:52:48.476Z",
       "error_message": "Missing error handling in unknown",
       "file": "../../../../tmp/task-123-body.md",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -856,8 +856,8 @@
       "timestamp": "2026-04-13T09:53:09.786Z",
       "error_message": "CSS fix: matchRequestStatus",
       "file": "apps/native/__tests__/partner-profile.test.tsx",
-      "root_cause": "matchRequestStatus: \"pending\" \u2192 \"declined\"",
-      "fix": "Changed matchRequestStatus: \"pending\" \u2192 \"declined\"",
+      "root_cause": "matchRequestStatus: \"pending\" → \"declined\"",
+      "fix": "Changed matchRequestStatus: \"pending\" → \"declined\"",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -905,7 +905,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/task-123-body.md",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 6\u21926 lines (2 removed)",
+      "fix": "Rewrote 6→6 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -936,7 +936,7 @@
       "timestamp": "2026-04-13T10:49:11.265Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/profile.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1001,7 +1001,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/task-127-body.md",
       "root_cause": "5 lines replaced/restructured",
-      "fix": "Rewrote 20\u219220 lines (5 removed)",
+      "fix": "Rewrote 20→20 lines (5 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1016,8 +1016,8 @@
       "timestamp": "2026-04-13T11:07:47.901Z",
       "error_message": "CSS fix: useRouter",
       "file": "apps/native/__tests__/suggestions.test.tsx",
-      "root_cause": "useRouter: () => ({ push: jest.fn() \u2192 () => ({ push: mockPush",
-      "fix": "Changed useRouter: () => ({ push: jest.fn() \u2192 () => ({ push: mockPush",
+      "root_cause": "useRouter: () => ({ push: jest.fn() → () => ({ push: mockPush",
+      "fix": "Changed useRouter: () => ({ push: jest.fn() → () => ({ push: mockPush",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -1048,8 +1048,8 @@
       "timestamp": "2026-04-13T11:09:22.203Z",
       "error_message": "CSS fix: useLocalSearchParams",
       "file": "apps/native/__tests__/partner-profile.test.tsx",
-      "root_cause": "useLocalSearchParams: () => ({ id: \"candidate-123\" \u2192 () => mockSearchParams,",
-      "fix": "Changed useLocalSearchParams: () => ({ id: \"candidate-123\" \u2192 () => mockSearchParams,",
+      "root_cause": "useLocalSearchParams: () => ({ id: \"candidate-123\" → () => mockSearchParams,",
+      "fix": "Changed useLocalSearchParams: () => ({ id: \"candidate-123\" → () => mockSearchParams,",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -1065,7 +1065,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/partner/[id].tsx",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 20\u219242 lines (2 removed)",
+      "fix": "Rewrote 20→42 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1081,7 +1081,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/updated-task-body-test-mapping.md",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 6\u21926 lines (2 removed)",
+      "fix": "Rewrote 6→6 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1113,7 +1113,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/updated-task-131.md",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 6\u21926 lines (2 removed)",
+      "fix": "Rewrote 6→6 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1144,7 +1144,7 @@
       "timestamp": "2026-04-13T11:20:22.760Z",
       "error_message": "Missing error handling in EnableNotificationsBanner",
       "file": "apps/native/app/suggestions.tsx",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1192,7 +1192,7 @@
       "timestamp": "2026-04-13T14:49:18.812Z",
       "error_message": "Missing error handling in function",
       "file": "apps/server/src/notifications.ts",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1209,7 +1209,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/task-134-body.md",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 5\u21925 lines (2 removed) | Also: - Backend: push notification handler \u2014 new event h; - Database: `userDeviceToken` table (read)",
+      "fix": "Rewrote 5→5 lines (2 removed) | Also: - Backend: push notification handler — new event h; - Database: `userDeviceToken` table (read)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1225,7 +1225,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/db/src/schema/sip-and-speak.ts",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 12\u219221 lines (2 removed)",
+      "fix": "Rewrote 12→21 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1256,7 +1256,7 @@
       "timestamp": "2026-04-13T16:08:40.569Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/venue.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1273,7 +1273,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/api/src/routers/meetup.ts",
       "root_cause": "18 lines replaced/restructured",
-      "fix": "Rewrote 59\u2192127 lines (18 removed)",
+      "fix": "Rewrote 59→127 lines (18 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1288,7 +1288,7 @@
       "timestamp": "2026-04-13T16:14:31.607Z",
       "error_message": "Missing error handling in function",
       "file": "apps/server/src/notifications.ts",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1304,7 +1304,7 @@
       "timestamp": "2026-04-13T16:22:39.784Z",
       "error_message": "Missing error handling in function",
       "file": "apps/server/src/notifications.ts",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1320,8 +1320,8 @@
       "timestamp": "2026-04-13T16:23:52.491Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/meetup.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
-      "fix": "Added await to async call | Also: // #77 \u2014 Decline a pending proposal \u2192 reset to Matched state; declineProposal: protectedProcedure",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call | Also: // #77 — Decline a pending proposal → reset to Matched state; declineProposal: protectedProcedure",
       "tags": [
         "auto-detected",
         "async-fix",
@@ -1384,7 +1384,7 @@
       "timestamp": "2026-04-13T16:39:31.189Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/meetup.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1400,7 +1400,7 @@
       "timestamp": "2026-04-13T16:39:51.697Z",
       "error_message": "Missing error handling in function",
       "file": "apps/server/src/notifications.ts",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1464,7 +1464,7 @@
       "timestamp": "2026-04-13T17:59:00.983Z",
       "error_message": "Missing error handling in function",
       "file": "apps/server/src/notifications.ts",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1480,7 +1480,7 @@
       "timestamp": "2026-04-13T19:05:48.319Z",
       "error_message": "Missing error handling in function",
       "file": "apps/server/src/notifications.ts",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -1497,7 +1497,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/task-138-body.md",
       "root_cause": "6 lines replaced/restructured",
-      "fix": "Rewrote 20\u219220 lines (6 removed) | Also: | Both Students receive opt-in prompt | | |; | No duplicate push on repeat completion | | |",
+      "fix": "Rewrote 20→20 lines (6 removed) | Also: | Both Students receive opt-in prompt | | |; | No duplicate push on repeat completion | | |",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1513,7 +1513,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/verify-138-body.md",
       "root_cause": "4 lines replaced/restructured",
-      "fix": "Rewrote 6\u21926 lines (4 removed)",
+      "fix": "Rewrote 6→6 lines (4 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1545,7 +1545,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/task-139-body.md",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 5\u21925 lines (3 removed)",
+      "fix": "Rewrote 5→5 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1560,7 +1560,7 @@
       "timestamp": "2026-04-13T19:40:16.258Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/messaging.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1576,8 +1576,8 @@
       "timestamp": "2026-04-13T19:41:23.411Z",
       "error_message": "Missing error handling in function",
       "file": "apps/server/src/notifications.ts",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
-      "fix": "Added try/catch block | Also: // #141 \u2014 Notify both Students when their conversation chann; export async function handleConversationOpened(event: Conver | Also: // #142 \u2014 Notify both Students when messaging won't be avail; export async function handleMessagingDeclineOutcome(event: M",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block | Also: // #141 — Notify both Students when their conversation chann; export async function handleConversationOpened(event: Conver | Also: // #142 — Notify both Students when messaging won't be avail; export async function handleMessagingDeclineOutcome(event: M",
       "tags": [
         "auto-detected",
         "error-handling",
@@ -1593,7 +1593,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/task-140-body.md",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 5\u21925 lines (3 removed)",
+      "fix": "Rewrote 5→5 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1641,7 +1641,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/task-141-body.md",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 4\u21924 lines (2 removed)",
+      "fix": "Rewrote 4→4 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1656,7 +1656,7 @@
       "timestamp": "2026-04-13T19:47:48.755Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/messaging.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1672,7 +1672,7 @@
       "timestamp": "2026-04-13T19:59:07.734Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/messaging.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1689,7 +1689,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/api/src/routers/messaging.ts",
       "root_cause": "37 lines replaced/restructured",
-      "fix": "Rewrote 64\u219223 lines (37 removed)",
+      "fix": "Rewrote 64→23 lines (37 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1705,7 +1705,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/wtf-implement-task-approach.md",
       "root_cause": "7 lines replaced/restructured",
-      "fix": "Rewrote 20\u219220 lines (7 removed) | Also: | Student sends a message | | |; | Empty input blocked | | |",
+      "fix": "Rewrote 20→20 lines (7 removed) | Also: | Student sends a message | | |; | Empty input blocked | | |",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1721,7 +1721,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/verify-143-body.md",
       "root_cause": "5 lines replaced/restructured",
-      "fix": "Rewrote 7\u219224 lines (5 removed)",
+      "fix": "Rewrote 7→24 lines (5 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1768,7 +1768,7 @@
       "timestamp": "2026-04-13T20:09:52.113Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/messaging.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1800,8 +1800,8 @@
       "timestamp": "2026-04-13T22:21:33.861Z",
       "error_message": "CSS fix: item",
       "file": "apps/native/__tests__/conversation-inbox.test.tsx",
-      "root_cause": "item: unknown \u2192 unknown, index: number) => renderItem({ item, index",
-      "fix": "Changed item: unknown \u2192 unknown, index: number) => renderItem({ item, index",
+      "root_cause": "item: unknown → unknown, index: number) => renderItem({ item, index",
+      "fix": "Changed item: unknown → unknown, index: number) => renderItem({ item, index",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -1817,7 +1817,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/__tests__/conversation-inbox.test.tsx",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 4\u21923 lines (2 removed)",
+      "fix": "Rewrote 4→3 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1849,7 +1849,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/flag-user.tsx",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 7\u219214 lines (2 removed)",
+      "fix": "Rewrote 7→14 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1896,7 +1896,7 @@
       "timestamp": "2026-04-14T08:28:57.682Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/moderation.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1928,7 +1928,7 @@
       "timestamp": "2026-04-14T08:37:20.035Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/moderation.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1945,7 +1945,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/wtf-implement-task-approach.md",
       "root_cause": "6 lines replaced/restructured",
-      "fix": "Rewrote 20\u219220 lines (6 removed)",
+      "fix": "Rewrote 20→20 lines (6 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1960,7 +1960,7 @@
       "timestamp": "2026-04-14T08:57:02.423Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/moderation.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -1977,7 +1977,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/web/src/__tests__/moderator-flag-detail.test.tsx",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 60\u2192102 lines (2 removed)",
+      "fix": "Rewrote 60→102 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -1992,8 +1992,8 @@
       "timestamp": "2026-04-14T08:58:05.695Z",
       "error_message": "CSS fix: flaggedStudent",
       "file": "apps/web/src/__tests__/moderator-flag-detail.test.tsx",
-      "root_cause": "flaggedStudent: { id: \"user-2\", name: \"Jane Doe\", removed: false \u2192 { id: \"user-2\", name: \"Jane Doe\", removed: false, suspended: false",
-      "fix": "Changed flaggedStudent: { id: \"user-2\", name: \"Jane Doe\", removed: false \u2192 { id: \"user-2\", name: \"Jane Doe\", removed: false, suspended: false",
+      "root_cause": "flaggedStudent: { id: \"user-2\", name: \"Jane Doe\", removed: false → { id: \"user-2\", name: \"Jane Doe\", removed: false, suspended: false",
+      "fix": "Changed flaggedStudent: { id: \"user-2\", name: \"Jane Doe\", removed: false → { id: \"user-2\", name: \"Jane Doe\", removed: false, suspended: false",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -2025,7 +2025,7 @@
       "error_message": "Significant refactor of ",
       "file": "../../../../tmp/wtf-implement-task-approach.md",
       "root_cause": "5 lines replaced/restructured",
-      "fix": "Rewrote 20\u219220 lines (5 removed)",
+      "fix": "Rewrote 20→20 lines (5 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2057,7 +2057,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/api/src/routers/moderation.ts",
       "root_cause": "9 lines replaced/restructured",
-      "fix": "Rewrote 20\u219233 lines (9 removed)",
+      "fix": "Rewrote 20→33 lines (9 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2089,7 +2089,7 @@
       "error_message": "Wrong reference: registerNotificationHandlers should be domainEvents",
       "file": "apps/server/src/__tests__/notifications-student-warned.test.ts",
       "root_cause": "Used \"registerNotificationHandlers\" instead of \"domainEvents\"",
-      "fix": "Changed registerNotificationHandlers \u2192 domainEvents",
+      "fix": "Changed registerNotificationHandlers → domainEvents",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -2105,7 +2105,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/api/src/routers/moderation-utils.ts",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 8\u219267 lines (2 removed)",
+      "fix": "Rewrote 8→67 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2121,7 +2121,7 @@
       "error_message": "Null/undefined access in ",
       "file": "packages/api/src/routers/moderation.ts",
       "root_cause": "Property access on potentially null/undefined value",
-      "fix": "Added null safety (optional chaining or null check) | Also: * #100/#103 \u2014 Suspend a flagged Student.; * Sets studentStatus to 'suspended', resolves flag with outc",
+      "fix": "Added null safety (optional chaining or null check) | Also: * #100/#103 — Suspend a flagged Student.; * Sets studentStatus to 'suspended', resolves flag with outc",
       "tags": [
         "auto-detected",
         "null-safety",
@@ -2185,7 +2185,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/api/src/routers/matching.ts",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 5\u21925 lines (2 removed)",
+      "fix": "Rewrote 5→5 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2217,7 +2217,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/web/src/routes/moderator/flags.$flagId.tsx",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 30\u219240 lines (2 removed)",
+      "fix": "Rewrote 30→40 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2248,8 +2248,8 @@
       "timestamp": "2026-04-14T10:58:50.467Z",
       "error_message": "CSS fix: mutationOptions",
       "file": "apps/web/src/__tests__/moderator-flag-detail.test.tsx",
-      "root_cause": "mutationOptions: vi.fn((opts) => ({ mutationKey: [\"suspendStudent\"], ...opts \u2192 vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts",
-      "fix": "Changed mutationOptions: vi.fn((opts) => ({ mutationKey: [\"suspendStudent\"], ...opts \u2192 vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts",
+      "root_cause": "mutationOptions: vi.fn((opts) => ({ mutationKey: [\"suspendStudent\"], ...opts → vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts",
+      "fix": "Changed mutationOptions: vi.fn((opts) => ({ mutationKey: [\"suspendStudent\"], ...opts → vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -2280,8 +2280,8 @@
       "timestamp": "2026-04-14T11:06:08.604Z",
       "error_message": "CSS fix: mutationOptions",
       "file": "apps/web/src/__tests__/moderator-flag-detail.test.tsx",
-      "root_cause": "mutationOptions: vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts \u2192 vi.fn((opts) => ({ mutationKey: [\"removeStudent\"], ...opts",
-      "fix": "Changed mutationOptions: vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts \u2192 vi.fn((opts) => ({ mutationKey: [\"removeStudent\"], ...opts",
+      "root_cause": "mutationOptions: vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts → vi.fn((opts) => ({ mutationKey: [\"removeStudent\"], ...opts",
+      "fix": "Changed mutationOptions: vi.fn((opts) => ({ mutationKey: [\"liftSuspension\"], ...opts → vi.fn((opts) => ({ mutationKey: [\"removeStudent\"], ...opts",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -2296,7 +2296,7 @@
       "timestamp": "2026-04-14T11:06:53.835Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/moderation.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -2313,7 +2313,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/web/src/routes/moderator/flags.$flagId.tsx",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 6\u219210 lines (3 removed)",
+      "fix": "Rewrote 6→10 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2344,7 +2344,7 @@
       "timestamp": "2026-04-14T11:11:42.841Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/moderation-persist.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -2408,7 +2408,7 @@
       "timestamp": "2026-04-14T11:28:10.066Z",
       "error_message": "Missing await",
       "file": "packages/api/src/routers/moderation-persist.ts",
-      "root_cause": "Async call without await \u2014 returned Promise instead of value",
+      "root_cause": "Async call without await — returned Promise instead of value",
       "fix": "Added await to async call",
       "tags": [
         "auto-detected",
@@ -2456,7 +2456,7 @@
       "timestamp": "2026-04-14T11:30:58.330Z",
       "error_message": "Missing error handling in function",
       "file": "apps/server/src/notifications.ts",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -2489,7 +2489,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/api/src/routers/chat.ts",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 6\u21928 lines (2 removed)",
+      "fix": "Rewrote 6→8 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2568,7 +2568,7 @@
       "timestamp": "2026-04-15T00:00:00.000Z",
       "error_message": "nothing happens after accepting an invite",
       "file": "apps/native/app/partner/[id].tsx",
-      "root_cause": "acceptMutation.onSuccess only invalidated queries \u2014 no router.back() call, so user stayed on profile screen after accepting",
+      "root_cause": "acceptMutation.onSuccess only invalidated queries — no router.back() call, so user stayed on profile screen after accepting",
       "fix": "Added router.back() in acceptMutation.onSuccess, matching decline behavior",
       "tags": [
         "ux",
@@ -2618,7 +2618,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/(tabs)/suggestions.tsx",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 13\u219215 lines (2 removed)",
+      "fix": "Rewrote 13→15 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2649,8 +2649,8 @@
       "timestamp": "2026-04-15T19:05:51.772Z",
       "error_message": "CSS fix: pathname",
       "file": "apps/native/app/(tabs)/suggestions.tsx",
-      "root_cause": "pathname: \"/partner/[id]\", params: { id: req.requesterId, matchRequestId: req.matchRequestId \u2192 \"/propose-meetup\", params: { partnerId: match.partnerId, partnerName: match.partnerName",
-      "fix": "Changed pathname: \"/partner/[id]\", params: { id: req.requesterId, matchRequestId: req.matchRequestId \u2192 \"/propose-meetup\", params: { partnerId: match.partnerId, partnerName: match.partnerName",
+      "root_cause": "pathname: \"/partner/[id]\", params: { id: req.requesterId, matchRequestId: req.matchRequestId → \"/propose-meetup\", params: { partnerId: match.partnerId, partnerName: match.partnerName",
+      "fix": "Changed pathname: \"/partner/[id]\", params: { id: req.requesterId, matchRequestId: req.matchRequestId → \"/propose-meetup\", params: { partnerId: match.partnerId, partnerName: match.partnerName",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -2666,7 +2666,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/partner/[id].tsx",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 3\u21924 lines (3 removed) | Also: isDisabled={acceptMutation.isPending || acceptMuta; <Button.Label>{acceptMutation.isSuccess ? \"Accepte",
+      "fix": "Rewrote 3→4 lines (3 removed) | Also: isDisabled={acceptMutation.isPending || acceptMuta; <Button.Label>{acceptMutation.isSuccess ? \"Accepte",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2682,7 +2682,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/api/src/routers/matching.ts",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 12\u219236 lines (2 removed)",
+      "fix": "Rewrote 12→36 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2698,7 +2698,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/propose-meetup.tsx",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 5\u21929 lines (3 removed)",
+      "fix": "Rewrote 5→9 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2796,7 +2796,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/(tabs)/confirmed-meetups.tsx",
       "root_cause": "7 lines replaced/restructured",
-      "fix": "Rewrote 11\u21923 lines (7 removed)",
+      "fix": "Rewrote 11→3 lines (7 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2811,8 +2811,8 @@
       "timestamp": "2026-04-19T19:27:34.921Z",
       "error_message": "CSS fix: value",
       "file": "apps/native/app/index.tsx",
-      "root_cause": "value: \"cosmology\", label: \"Cosmology\" \u2192 \"theatre\", label: \"Theatre\"",
-      "fix": "Changed value: \"cosmology\", label: \"Cosmology\" \u2192 \"theatre\", label: \"Theatre\"",
+      "root_cause": "value: \"cosmology\", label: \"Cosmology\" → \"theatre\", label: \"Theatre\"",
+      "fix": "Changed value: \"cosmology\", label: \"Cosmology\" → \"theatre\", label: \"Theatre\"",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -2827,8 +2827,8 @@
       "timestamp": "2026-04-19T19:27:42.105Z",
       "error_message": "CSS fix: value",
       "file": "apps/native/app/edit-profile.tsx",
-      "root_cause": "value: \"cosmology\", label: \"Cosmology\" \u2192 \"theatre\", label: \"Theatre\"",
-      "fix": "Changed value: \"cosmology\", label: \"Cosmology\" \u2192 \"theatre\", label: \"Theatre\"",
+      "root_cause": "value: \"cosmology\", label: \"Cosmology\" → \"theatre\", label: \"Theatre\"",
+      "fix": "Changed value: \"cosmology\", label: \"Cosmology\" → \"theatre\", label: \"Theatre\"",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -2876,7 +2876,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/api/src/routers/profile.ts",
       "root_cause": "10 lines replaced/restructured",
-      "fix": "Rewrote 23\u219223 lines (10 removed)",
+      "fix": "Rewrote 23→23 lines (10 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2892,7 +2892,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/edit-profile.tsx",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 8\u219210 lines (2 removed)",
+      "fix": "Rewrote 8→10 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2956,7 +2956,7 @@
       "error_message": "Significant refactor of ",
       "file": "packages/api/src/routers/profile.ts",
       "root_cause": "2 lines replaced/restructured",
-      "fix": "Rewrote 13\u219224 lines (2 removed)",
+      "fix": "Rewrote 13→24 lines (2 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -2988,7 +2988,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/edit-profile.tsx",
       "root_cause": "10 lines replaced/restructured",
-      "fix": "Rewrote 10\u21924 lines (10 removed) | Also: {addingType === \"spoken\" ? (; <View className=\"mt-3\"> | Also: {addingType === \"learning\" ? (; <View className=\"mt-3\">",
+      "fix": "Rewrote 10→4 lines (10 removed) | Also: {addingType === \"spoken\" ? (; <View className=\"mt-3\"> | Also: {addingType === \"learning\" ? (; <View className=\"mt-3\">",
       "tags": [
         "auto-detected",
         "refactor",
@@ -3019,7 +3019,7 @@
       "timestamp": "2026-04-20T17:21:43.504Z",
       "error_message": "Missing error handling in function",
       "file": "apps/native/app/_layout.tsx",
-      "root_cause": "Code path had no error handling \u2014 exceptions would propagate uncaught",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
       "fix": "Added try/catch block",
       "tags": [
         "auto-detected",
@@ -3067,8 +3067,8 @@
       "timestamp": "2026-04-20T17:57:35.512Z",
       "error_message": "CSS fix: title",
       "file": "apps/native/app/_layout.tsx",
-      "root_cause": "title: \"Modal\", presentation: \"modal\" \u2192 \"Report Student\", presentation: \"modal\"",
-      "fix": "Changed title: \"Modal\", presentation: \"modal\" \u2192 \"Report Student\", presentation: \"modal\"",
+      "root_cause": "title: \"Modal\", presentation: \"modal\" → \"Report Student\", presentation: \"modal\"",
+      "fix": "Changed title: \"Modal\", presentation: \"modal\" → \"Report Student\", presentation: \"modal\"",
       "tags": [
         "auto-detected",
         "style-fix",
@@ -3084,7 +3084,7 @@
       "error_message": "Wrong reference: SafeAreaView should be View",
       "file": "apps/native/app/enrolment.tsx",
       "root_cause": "Used \"SafeAreaView\" instead of \"View\"",
-      "fix": "Changed SafeAreaView \u2192 View",
+      "fix": "Changed SafeAreaView → View",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -3100,7 +3100,7 @@
       "error_message": "Wrong reference: SafeAreaView should be useSafeAreaInsets",
       "file": "apps/native/app/edit-profile.tsx",
       "root_cause": "Used \"SafeAreaView\" instead of \"useSafeAreaInsets\"",
-      "fix": "Changed SafeAreaView \u2192 useSafeAreaInsets",
+      "fix": "Changed SafeAreaView → useSafeAreaInsets",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -3132,7 +3132,7 @@
       "error_message": "Significant refactor of ",
       "file": "apps/native/app/edit-profile.tsx",
       "root_cause": "3 lines replaced/restructured",
-      "fix": "Rewrote 10\u219210 lines (3 removed)",
+      "fix": "Rewrote 10→10 lines (3 removed)",
       "tags": [
         "auto-detected",
         "refactor",
@@ -3148,7 +3148,7 @@
       "error_message": "Wrong reference: StackLayout should be OnboardingModal",
       "file": "apps/native/app/_layout.tsx",
       "root_cause": "Used \"StackLayout\" instead of \"OnboardingModal\"",
-      "fix": "Changed StackLayout \u2192 OnboardingModal",
+      "fix": "Changed StackLayout → OnboardingModal",
       "tags": [
         "auto-detected",
         "wrong-reference",
@@ -3225,9 +3225,9 @@
     {
       "id": "bug-201",
       "timestamp": "2026-04-20T20:40:00Z",
-      "error_message": "Unmatched Route \u2014 sip-and-speak:/// after router.replace(\"/(tabs)\")",
+      "error_message": "Unmatched Route — sip-and-speak:/// after router.replace(\"/(tabs)\")",
       "file": "apps/native/app/_layout.tsx, apps/native/app/enrolment.tsx, apps/native/app/index.tsx",
-      "root_cause": "Expo Router route groups (e.g. (tabs)) cannot be navigated to directly \u2014 they resolve to empty URL. Must specify a concrete route inside the group.",
+      "root_cause": "Expo Router route groups (e.g. (tabs)) cannot be navigated to directly — they resolve to empty URL. Must specify a concrete route inside the group.",
       "fix": "Changed router.replace(\"/(tabs)\") to router.replace(\"/(tabs)/suggestions\") in all three files",
       "tags": [
         "expo-router",
@@ -3238,6 +3238,54 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-20"
+    },
+    {
+      "id": "bug-202",
+      "timestamp": "2026-04-20T20:13:49.895Z",
+      "error_message": "Wrong reference: 500 should be 2",
+      "file": "apps/native/utils/profile-picture.ts",
+      "root_cause": "Used \"500\" instead of \"2\"",
+      "fix": "Changed 500 → 2",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T20:13:49.895Z"
+    },
+    {
+      "id": "bug-203",
+      "timestamp": "2026-04-20T20:14:02.077Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/__tests__/profile-picture.test.ts",
+      "root_cause": "Had \"accepts base64 string within 500 KB limit\"",
+      "fix": "Changed to \"accepts base64 string within 2 MB limit\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-20T20:14:08.088Z"
+    },
+    {
+      "id": "bug-204",
+      "timestamp": "2026-04-20T20:14:13.936Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/utils/profile-picture.ts",
+      "root_cause": "Had \"Image is too large (max 500 KB)\"",
+      "fix": "Changed to \"Image is too large (max 2 MB)\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T20:14:13.936Z"
     }
   ]
 }

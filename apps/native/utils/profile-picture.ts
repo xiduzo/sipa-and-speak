@@ -1,6 +1,6 @@
 import * as ImagePicker from "expo-image-picker";
 
-const MAX_SIZE_BYTES = 500 * 1024;
+const MAX_SIZE_BYTES = 2 * 1024 * 1024;
 
 export function validateImageMimeType(mimeType: string): boolean {
   return mimeType.startsWith("image/");
@@ -25,7 +25,9 @@ export async function pickAndEncodeProfilePicture(): Promise<PickResult> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: "images",
     base64: true,
-    quality: 0.8,
+    quality: 0.7,
+    allowsEditing: true,
+    aspect: [1, 1],
   });
 
   if (result.canceled) return { imageDataUri: null, error: null };
@@ -40,7 +42,7 @@ export async function pickAndEncodeProfilePicture(): Promise<PickResult> {
   }
 
   if (!validateImageSize(asset.base64)) {
-    return { imageDataUri: null, error: "Image is too large (max 500 KB)" };
+    return { imageDataUri: null, error: "Image is too large (max 2 MB)" };
   }
 
   return { imageDataUri: buildDataUri(mimeType, asset.base64), error: null };

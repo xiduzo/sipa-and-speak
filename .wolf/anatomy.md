@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T18:44:59.915Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T20:18:30.152Z
 > Files: 346 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
@@ -318,7 +318,7 @@
 - `notification-match-declined.test.tsx` — Tests for task #137 — Suggestion list deep-link in decline notification (~861 tok)
 - `notification-message-deep-link.test.tsx` — Tests for task #155 — Deep-link notification tap to the relevant conversation view (~841 tok)
 - `partner-profile.test.tsx` — Tests for tasks: (~3997 tok)
-- `profile-picture.test.ts` — Tests for task #278 — Base64 image encoding and validation for profile picture (~942 tok)
+- `profile-picture.test.ts` — Tests for task #278 — Base64 image encoding and validation for profile picture (~941 tok)
 - `profile-tab-display.test.tsx` — Tests for task #281 — Display name, surname, and picture in the profile tab (~1014 tok)
 - `push-suppression-presence.test.tsx` — Tests for task #153 — Suppress push notification when recipient is actively viewing (~1321 tok)
 - `read-unread-indicators.test.tsx` — Tests for task #148 — Render read/unread status indicators on messages (~1309 tok)
@@ -332,7 +332,7 @@
 - `edit-profile.tsx` — GOLD (~6919 tok)
 - `enrolment.tsx` — OTP_RESEND_COOLDOWN (~3879 tok)
 - `flag-user.tsx` — DETAIL_MAX — uses useRouter, useState, useMutation (~1486 tok)
-- `index.tsx` — PROFICIENCY_LEVELS (~5404 tok)
+- `index.tsx` — GOLD (~8506 tok)
 - `propose-meetup.tsx` — ProposeMeetupScreen — uses useRouter, useState, useQuery, useMutation (~1912 tok)
 - `respond-meetup.tsx` — RespondMeetupScreen — uses useRouter, useState, useQuery, useMutation (~3171 tok)
 - `review-profile.tsx` — INTERESTS_LABEL — uses useRouter, useQuery, useMutation (~2394 tok)
@@ -358,7 +358,7 @@
 - `candidate-card.tsx` — CandidateCard — uses useRouter, useMutation (~1406 tok)
 - `container.tsx` — AnimatedView (~360 tok)
 - `language-picker-modal.tsx` — ALL_LANGUAGES — renders modal (~694 tok)
-- `onboarding-modal.tsx` — OnboardingModal — full-screen React Native Modal for identity setup (name/surname/photo), shown when identityProfileComplete is false (~2698 tok)
+- `onboarding-modal.tsx` — GOLD — renders modal (~2753 tok)
 - `sign-up.tsx` — signUpSchema — renders form — uses useForm (~1680 tok)
 - `theme-toggle.tsx` — StyledIonicons (~309 tok)
 
@@ -386,7 +386,7 @@
 ## apps/native/utils/
 
 - `email-name-extract.ts` — Exports extractNameFromEmail (~131 tok)
-- `profile-picture.ts` — Exports validateImageMimeType, validateImageSize, buildDataUri, PickResult, pickAndEncodeProfilePict (~406 tok)
+- `profile-picture.ts` — Exports validateImageMimeType, validateImageSize, buildDataUri, PickResult, pickAndEncodeProfilePict (~420 tok)
 - `trpc.ts` — Exports queryClient, trpc (~394 tok)
 
 ## apps/server/

@@ -114,10 +114,13 @@ export function OnboardingModal() {
     },
   });
 
+  // Only show if language onboarding is done but identity is missing.
+  // If language onboarding is also pending, index.tsx handles all steps.
   const visible =
     !!session &&
     !onboardingStatus.isPending &&
-    onboardingStatus.data?.identityProfileComplete === false;
+    onboardingStatus.data?.identityProfileComplete === false &&
+    onboardingStatus.data?.complete === true;
 
   if (!visible) return null;
 
