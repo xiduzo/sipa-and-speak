@@ -3,6 +3,8 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
+| 21:47 | Filed bugs: missing in-app visual feedback for match formed (#284) and meetup confirmed (#285) | GitHub issues | created | ~800 |
+
 | 21:49 | Fix receiver not seeing pending meetup proposal in meetups tab | apps/native/app/(tabs)/confirmed-meetups.tsx | fixed spinner to check both queries; guarded empty state against isFetching | ~100 |
 | 21:52 | Global query revalidation on route change + app foreground | apps/native/utils/trpc.ts, apps/native/app/_layout.tsx | staleTime 5min default; AppState→focusManager; segments useEffect refetchQueries stale:true | ~150 |
 
@@ -1054,3 +1056,64 @@
 | 21:27 | Edited apps/native/app/index.tsx | expanded (+12 lines) | ~286 |
 | 21:27 | Edited apps/native/app/edit-profile.tsx | expanded (+12 lines) | ~286 |
 | 21:27 | Session end: 3 writes across 3 files (sip-and-speak.ts, index.tsx, edit-profile.tsx) | 4 reads | ~14910 tok |
+| 21:28 | Created ../../../../tmp/bug-lang-validation.md | — | ~971 |
+
+## Session: 2026-04-19 21:28
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:46 | Created ../../../../tmp/bug1-body.md | — | ~504 |
+| 21:46 | Created ../../../../tmp/bug2-body.md | — | ~520 |
+| 21:47 | Session end: 2 writes across 2 files (bug1-body.md, bug2-body.md) | 0 reads | ~1098 tok |
+
+## Session: 2026-04-19 21:47
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-20 17:35
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-20 17:41
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:56 | Edited packages/db/src/schema/auth.ts | 1→2 lines | ~15 |
+| 17:57 | Edited packages/db/package.json | 3→4 lines | ~42 |
+| 17:57 | Created packages/db/src/__tests__/schema-surname.test.ts | — | ~154 |
+| 17:59 | Created apps/native/utils/profile-picture.ts | — | ~406 |
+| 17:59 | Created apps/native/__tests__/profile-picture.test.ts | — | ~942 |
+| 18:00 | Edited packages/api/src/domain-events.ts | expanded (+12 lines) | ~108 |
+| 18:01 | Edited packages/api/src/domain-events.ts | 3→5 lines | ~58 |
+| 18:01 | Edited packages/api/src/routers/profile.ts | added optional chaining | ~408 |
+| 18:01 | Created packages/api/src/__tests__/identity-profile.test.ts | — | ~358 |
+| 18:01 | Created packages/api/src/routers/profile-utils.ts | — | ~66 |
+| 18:01 | Edited packages/api/src/routers/profile.ts | — | ~0 |
+| 18:01 | Edited packages/api/src/routers/profile.ts | added 1 import(s) | ~48 |
+| 18:02 | Edited packages/api/src/__tests__/identity-profile.test.ts | "../routers/profile" → "../routers/profile-utils" | ~21 |
+| 18:03 | Edited packages/api/src/routers/profile.ts | 23→23 lines | ~216 |
+| 18:03 | Created apps/native/app/(tabs)/profile.tsx | — | ~692 |
+| 18:04 | Created apps/native/__tests__/profile-tab-display.test.tsx | — | ~1014 |
+| 18:07 | Created apps/native/utils/email-name-extract.ts | — | ~131 |
+| 18:07 | Edited apps/native/app/edit-profile.tsx | added 2 import(s) | ~156 |
+| 18:07 | Edited apps/native/app/edit-profile.tsx | modified EditProfileScreen() | ~147 |
+| 18:07 | Edited apps/native/app/edit-profile.tsx | added optional chaining | ~579 |
+| 18:08 | Edited apps/native/app/edit-profile.tsx | expanded (+52 lines) | ~661 |
+| 18:08 | Edited apps/native/app/edit-profile.tsx | 5→5 lines | ~71 |
+| 18:08 | Created apps/native/__tests__/edit-profile-identity.test.tsx | — | ~1936 |
+| 18:08 | Edited apps/native/__tests__/edit-profile-identity.test.tsx | 3→1 lines | ~15 |
+| 18:11 | Edited apps/native/__tests__/edit-profile-identity.test.tsx | 5→6 lines | ~60 |
+| 18:11 | Edited apps/native/__tests__/edit-profile-identity.test.tsx | 5→6 lines | ~62 |
+| 18:14 | Created apps/native/__tests__/email-name-extract.test.ts | — | ~258 |
+| 18:15 | Edited packages/api/src/routers/profile.ts | expanded (+11 lines) | ~207 |
+| 18:15 | Edited apps/native/app/_layout.tsx | added 1 condition(s) | ~236 |
+| 18:15 | Created packages/api/src/__tests__/onboarding-status-identity.test.ts | — | ~300 |
+| 18:16 | Session end: 30 writes across 17 files (auth.ts, package.json, schema-surname.test.ts, profile-picture.ts, profile-picture.test.ts) | 15 reads | ~28423 tok |
+| 18:16 | Session end: 30 writes across 17 files (auth.ts, package.json, schema-surname.test.ts, profile-picture.ts, profile-picture.test.ts) | 15 reads | ~28423 tok |
+
+## Session: 2026-04-20 18:18
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
