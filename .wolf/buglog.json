@@ -2034,6 +2034,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-21T06:17:27.286Z"
+    },
+    {
+      "id": "bug-127",
+      "timestamp": "2026-04-21T06:59:52.353Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/app/partner/[id].tsx",
+      "root_cause": "Had \"@/utils/trpc\"",
+      "fix": "Changed to \"@/components/match-celebration-modal\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-21T06:59:52.353Z"
+    },
+    {
+      "id": "bug-128",
+      "timestamp": "2026-04-21T07:00:36.570Z",
+      "error_message": "Null/undefined access in ",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-21T07:00:36.570Z"
     }
   ]
 }

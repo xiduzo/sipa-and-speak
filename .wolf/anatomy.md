@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-21T06:17:27.252Z
-> Files: 342 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-21T07:00:43.226Z
+> Files: 343 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -344,7 +344,7 @@
 
 ## apps/native/app/
 
-- `_layout.tsx` — unstable_settings — uses useEffect, useMutation, useRouter, useQuery (~1581 tok)
+- `_layout.tsx` — useNotificationCategories (~2052 tok)
 - `edit-profile.tsx` — LANGUAGES — uses useRouter, useQuery, useMutation (~3810 tok)
 - `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)
 - `flag-user.tsx` — DETAIL_MAX (~1486 tok)
@@ -367,13 +367,14 @@
 
 ## apps/native/app/partner/
 
-- `[id].tsx` — PartnerProfileScreen — uses useRouter, useQuery, useMutation, useEffect (~2944 tok)
+- `[id].tsx` — PartnerProfileScreen (~3521 tok)
 
 ## apps/native/components/
 
 - `candidate-card.tsx` — CandidateCard — uses useRouter, useMutation (~1406 tok)
 - `container.tsx` — AnimatedView (~360 tok)
 - `language-picker-modal.tsx` — ALL_LANGUAGES — renders modal (~694 tok)
+- `match-celebration-modal.tsx` — MatchCelebrationModal — renders modal (~414 tok)
 - `onboarding-modal.tsx` — GOLD — renders modal (~7720 tok)
 - `sign-up.tsx` — signUpSchema — renders form — uses useForm (~1680 tok)
 - `theme-toggle.tsx` — StyledIonicons (~309 tok)

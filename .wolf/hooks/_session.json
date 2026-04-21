@@ -1,12 +1,38 @@
 {
-  "session_id": "session-2026-04-21-0854",
-  "started": "2026-04-21T06:54:44.537Z",
-  "files_read": {},
+  "session_id": "session-2026-04-21-0855",
+  "started": "2026-04-21T06:55:45.833Z",
+  "files_read": {
+    "/Users/sander/personal/sip-and-speak/apps/native/__tests__/notification-match-accepted.test.tsx": {
+      "count": 1,
+      "tokens": 1085,
+      "first_read": "2026-04-21T06:56:24.933Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/hooks/use-notification-tap-handler.ts": {
+      "count": 1,
+      "tokens": 561,
+      "first_read": "2026-04-21T06:56:24.986Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/app/partner/[id].tsx": {
+      "count": 1,
+      "tokens": 2944,
+      "first_read": "2026-04-21T06:57:19.446Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx": {
+      "count": 1,
+      "tokens": 1581,
+      "first_read": "2026-04-21T06:57:36.811Z"
+    },
+    "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts": {
+      "count": 2,
+      "tokens": 8634,
+      "first_read": "2026-04-21T06:57:48.710Z"
+    }
+  },
   "files_written": [],
   "edit_counts": {},
-  "anatomy_hits": 0,
+  "anatomy_hits": 5,
   "anatomy_misses": 0,
-  "repeated_reads_warned": 0,
+  "repeated_reads_warned": 1,
   "cerebrum_warnings": 0,
-  "stop_count": 0
+  "stop_count": 2
 }
