@@ -1,42 +1,12 @@
 {
-  "session_id": "session-2026-04-20-2257",
-  "started": "2026-04-20T20:57:52.465Z",
-  "files_read": {
-    "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts": {
-      "count": 1,
-      "tokens": 5126,
-      "first_read": "2026-04-20T20:58:11.086Z"
-    },
-    "/Users/sander/personal/sip-and-speak/apps/native/app/(tabs)/profile.tsx": {
-      "count": 1,
-      "tokens": 5804,
-      "first_read": "2026-04-20T20:58:11.292Z"
-    },
-    "/Users/sander/personal/sip-and-speak/packages/db/src/schema/sip-and-speak.ts": {
-      "count": 1,
-      "tokens": 4990,
-      "first_read": "2026-04-20T20:58:47.677Z"
-    },
-    "/Users/sander/personal/sip-and-speak/apps/native/components/onboarding-modal.tsx": {
-      "count": 1,
-      "tokens": 7720,
-      "first_read": "2026-04-20T20:58:48.142Z"
-    }
-  },
-  "files_written": [
-    {
-      "file": "/Users/sander/personal/sip-and-speak/packages/api/src/routers/profile.ts",
-      "action": "edit",
-      "tokens": 104,
-      "at": "2026-04-20T20:58:53.862Z"
-    }
-  ],
-  "edit_counts": {
-    "packages/api/src/routers/profile.ts": 1
-  },
-  "anatomy_hits": 4,
+  "session_id": "session-2026-04-21-0854",
+  "started": "2026-04-21T06:54:44.537Z",
+  "files_read": {},
+  "files_written": [],
+  "edit_counts": {},
+  "anatomy_hits": 0,
   "anatomy_misses": 0,
   "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 1
+  "stop_count": 0
 }

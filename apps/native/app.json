@@ -1,5 +1,6 @@
 {
   "expo": {
+    "version": "1.0.1",
     "scheme": "sip-and-speak",
     "userInterfaceStyle": "light",
     "orientation": "default",
@@ -9,9 +10,16 @@
     "name": "sip-and-speak",
     "slug": "sip-and-speak",
     "plugins": [
+      "expo-updates",
       "expo-font",
       "@react-native-community/datetimepicker"
     ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/5ee3618a-905a-4824-91ab-90472bb0329f"
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

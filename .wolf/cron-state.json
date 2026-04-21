@@ -1,6 +1,6 @@
 {
-  "last_heartbeat": "2026-04-16T06:02:56.603Z",
-  "engine_status": "stopped",
+  "last_heartbeat": "2026-04-14T08:15:20.402Z",
+  "engine_status": "running",
   "execution_log": [
     {
       "task_id": "anatomy-rescan",
@@ -63,46 +63,16 @@
       "duration_ms": 279
     },
     {
-      "task_id": "anatomy-rescan",
-      "status": "success",
-      "timestamp": "2026-04-14T10:00:00.300Z",
-      "duration_ms": 133
-    },
-    {
-      "task_id": "anatomy-rescan",
-      "status": "success",
-      "timestamp": "2026-04-14T16:00:01.365Z",
-      "duration_ms": 443
-    },
-    {
-      "task_id": "anatomy-rescan",
-      "status": "success",
-      "timestamp": "2026-04-15T10:00:01.479Z",
-      "duration_ms": 1034
-    },
-    {
-      "task_id": "anatomy-rescan",
-      "status": "success",
-      "timestamp": "2026-04-15T16:00:01.319Z",
-      "duration_ms": 724
-    },
-    {
-      "task_id": "anatomy-rescan",
-      "status": "success",
-      "timestamp": "2026-04-15T22:00:01.846Z",
-      "duration_ms": 880
-    },
-    {
       "task_id": "memory-consolidation",
       "status": "success",
-      "timestamp": "2026-04-16T00:00:00.375Z",
-      "duration_ms": 11
+      "timestamp": "2026-04-14T00:00:00.496Z",
+      "duration_ms": 14
     },
     {
       "task_id": "anatomy-rescan",
       "status": "success",
-      "timestamp": "2026-04-16T04:00:01.695Z",
-      "duration_ms": 888
+      "timestamp": "2026-04-14T04:00:01.065Z",
+      "duration_ms": 821
     }
   ],
   "dead_letter_queue": [],

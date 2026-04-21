@@ -1,16 +1,36 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T20:58:53.851Z
-> Files: 346 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-21T06:17:27.252Z
+> Files: 342 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
-- `bug-body.md` — Related (~598 tok)
-- `bug-lang-validation.md` — 🐞 Bug: Language Profile validation errors missing when no languages declared (~911 tok)
-- `bug1-body.md` — 🐞 Bug: No in-app visual feedback when Match is formed (~473 tok)
-- `bug2-body.md` — 🐞 Bug: No in-app visual feedback when Meetup is confirmed (~488 tok)
-- `feature-body.md` — 🚀 Feature: Student can complete and update their Profile (~784 tok)
-- `task-body.md` — 🛠 Task: Display name, surname, and picture in the profile tab (~1191 tok)
+- `task-100-body.md` — 🛠 Task: Transition Student to Suspended state (block proposals, messages, match candidacy) (~1342 tok)
+- `task-102-body.md` — 🛠 Task: Cancel active meetup proposals on Student suspension (~1232 tok)
+- `task-103-body.md` — 🛠 Task: Record suspension in Student flag history and mark flag as resolved (~901 tok)
+- `task-104-body.md` — 🛠 Task: Notify suspended Student of the moderation decision (~904 tok)
+- `task-105-body.md` — 🛠 Task: Add lift suspension action for Moderator (~1077 tok)
+- `task-106-body.md` — 🛠 Task: Notify Student when suspension is lifted (~752 tok)
+- `task-107-body.md` — 🛠 Task: Add permanent remove action to flag detail view with confirmation step (~1188 tok)
+- `task-108-body.md` — 🛠 Task: Deactivate removed Student's account (block login) (~1201 tok)
+- `task-109-body.md` — 🛠 Task: Block removed Student's institutional email from future re-registration (~1155 tok)
+- `task-110-body.md` — 🛠 Task: Cancel active meetup proposals on removal and notify affected Students (~968 tok)
+- `task-111-body.md` — 🛠 Task: Close open conversations involving a removed Student (~1059 tok)
+- `task-112-body.md` — 🛠 Task: Mark flag as resolved and notify the removed Student (~1139 tok)
+- `task-78-body.md` — 🛠 Task: Build Moderator flag queue view (open flags sorted oldest first) (~1328 tok)
+- `task-80-body.md` — 🛠 Task: Build flag detail view (flagged Student, reason, prior flag history) (~1403 tok)
+- `task-82-body.md` — 🛠 Task: Exclude resolved flags from the open queue (~1020 tok)
+- `task-84-body.md` — 🛠 Task: Handle empty queue and removed-Student edge states in flag queue (~1112 tok)
+- `task-88-body.md` — 🛠 Task: Add warn action to flag detail view (~1128 tok)
+- `task-90-body.md` — 🛠 Task: Record warning in Student flag history and mark flag as resolved (~1361 tok)
+- `task-92-body.md` — 🛠 Task: Block warn action if Student is already suspended or removed (~1172 tok)
+- `task-94-body.md` — 🛠 Task: Notify warned Student of the moderation decision (~1250 tok)
+- `task-98-body.md` — 🛠 Task: Add suspend action to flag detail view (~1128 tok)
+
+## ../../.claude/projects/-Users-sander-personal-sip-and-speak/memory/
+
+- `MEMORY.md` — Memory Index (~143 tok)
+- `project_epic5_loop_progress.md` — Current state (2026-04-14) (~435 tok)
 
 ## ./
 
@@ -140,7 +160,7 @@
 ## .claude/
 
 - `settings.json` (~441 tok)
-- `settings.local.json` (~1923 tok)
+- `settings.local.json` (~1676 tok)
 
 ## .claude/projects/-Users-sander-personal-sip-and-speak/memory/
 
@@ -276,7 +296,7 @@
 ## apps/native/
 
 - `.gitignore` — Git ignore rules (~111 tok)
-- `app.json` (~149 tok)
+- `app.json` (~267 tok)
 - `expo-env.d.ts` — / <reference types="expo/types" /> (~32 tok)
 - `global.css` — Styles: 5 rules, 42 vars (~702 tok)
 - `jest-setup.ts` — Expo 55 "winter" installs lazy getters on many globals (structuredClone, etc.) that try to (~252 tok)
@@ -303,8 +323,6 @@
 - `conversation-history.test.tsx` — Tests for task #147 — Build conversation view with chronological message history (~1202 tok)
 - `conversation-inbox.test.tsx` — Tests for task #157 — Build conversation inbox listing all open conversations (~1003 tok)
 - `device-token-registration.test.tsx` — Tests for task #130 — Push notification when MatchRequestSent fires (~722 tok)
-- `edit-profile-identity.test.tsx` — Tests for task #279 — Add name, surname, and picture to profile screen (~1931 tok)
-- `email-name-extract.test.ts` — Tests for email-based name pre-fill utility (~258 tok)
 - `empty-conversation-state.test.tsx` — Tests for task #150 — Handle empty conversation state (~1025 tok)
 - `flag-submission-confirm.test.tsx` — Tests for task #74 — Confirm flag submission to the flagging Student (~1319 tok)
 - `flag-user.test.tsx` — Tests for task #65 — Build flag submission UI (peer selection + reason) (~1313 tok)
@@ -318,8 +336,6 @@
 - `notification-match-declined.test.tsx` — Tests for task #137 — Suggestion list deep-link in decline notification (~861 tok)
 - `notification-message-deep-link.test.tsx` — Tests for task #155 — Deep-link notification tap to the relevant conversation view (~841 tok)
 - `partner-profile.test.tsx` — Tests for tasks: (~3997 tok)
-- `profile-picture.test.ts` — Tests for task #278 — Base64 image encoding and validation for profile picture (~941 tok)
-- `profile-tab-display.test.tsx` — Tests for task #281 — Display name, surname, and picture in the profile tab (~1014 tok)
 - `push-suppression-presence.test.tsx` — Tests for task #153 — Suppress push notification when recipient is actively viewing (~1321 tok)
 - `read-unread-indicators.test.tsx` — Tests for task #148 — Render read/unread status indicators on messages (~1309 tok)
 - `reschedule-form.test.tsx` — Tests for task #86 — Add reschedule action to confirmed meetup view (new time/location form) (~1928 tok)
@@ -328,22 +344,22 @@
 
 ## apps/native/app/
 
-- `_layout.tsx` — useNotificationCategories (~1652 tok)
-- `edit-profile.tsx` — GOLD (~6919 tok)
-- `enrolment.tsx` — OTP_RESEND_COOLDOWN (~3879 tok)
-- `flag-user.tsx` — DETAIL_MAX — uses useRouter, useState, useMutation (~1486 tok)
-- `index.tsx` — GOLD (~8022 tok)
-- `propose-meetup.tsx` — ProposeMeetupScreen — uses useRouter, useState, useQuery, useMutation (~1912 tok)
+- `_layout.tsx` — unstable_settings — uses useEffect, useMutation, useRouter, useQuery (~1581 tok)
+- `edit-profile.tsx` — LANGUAGES — uses useRouter, useQuery, useMutation (~3810 tok)
+- `enrolment.tsx` — OTP_RESEND_COOLDOWN — uses useRouter, useState, useEffect, useForm (~2699 tok)
+- `flag-user.tsx` — DETAIL_MAX (~1486 tok)
+- `index.tsx` — LANGUAGES (~5398 tok)
+- `propose-meetup.tsx` — ProposeMeetupScreen — uses useRouter, useState, useQuery, useMutation (~1591 tok)
 - `respond-meetup.tsx` — RespondMeetupScreen — uses useRouter, useState, useQuery, useMutation (~3171 tok)
-- `review-profile.tsx` — INTERESTS_LABEL (~2397 tok)
+- `review-profile.tsx` — INTERESTS_LABEL — uses useRouter, useQuery, useMutation (~2394 tok)
 
 ## apps/native/app/(tabs)/
 
 - `_layout.tsx` — StyledIonicons (~401 tok)
 - `chats.tsx` — ChatsScreen — uses useRouter, useQuery (~575 tok)
-- `confirmed-meetups.tsx` — ConfirmedMeetupsScreen — uses useRouter, useQuery, useState, useMutation (~3798 tok)
-- `profile.tsx` — GOLD (~5804 tok)
-- `suggestions.tsx` — APP_SHARE_URL (~2981 tok)
+- `confirmed-meetups.tsx` — ConfirmedMeetupsScreen — uses useRouter, useQuery, useState, useMutation (~3300 tok)
+- `profile.tsx` — ProfileScreen (~308 tok)
+- `suggestions.tsx` — APP_SHARE_URL (~2196 tok)
 
 ## apps/native/app/chat/
 
@@ -351,7 +367,7 @@
 
 ## apps/native/app/partner/
 
-- `[id].tsx` — PartnerProfileScreen — uses useRouter, useQuery, useMutation, useEffect (~3403 tok)
+- `[id].tsx` — PartnerProfileScreen — uses useRouter, useQuery, useMutation, useEffect (~2944 tok)
 
 ## apps/native/components/
 
@@ -398,8 +414,8 @@
 
 ## apps/server/src/
 
-- `index.ts` — API routes: POST, GET (3 endpoints) (~1000 tok)
-- `notifications.ts` — Push notification service — Expo Push Notifications (~11029 tok)
+- `index.ts` — Wire domain event → push notification handlers on server start (~768 tok)
+- `notifications.ts` — Push notification service — Expo Push Notifications (~8634 tok)
 
 ## apps/server/src/__tests__/
 
@@ -437,7 +453,7 @@
 
 - `index.css` — Styles: 1 rules (~12 tok)
 - `main.tsx` — router (~283 tok)
-- `routeTree.gen.ts` — @ts-nocheck (~2141 tok)
+- `routeTree.gen.ts` — @ts-nocheck (~1574 tok)
 
 ## apps/web/src/__tests__/
 
@@ -500,7 +516,7 @@
 ## packages/api/src/
 
 - `context.ts` — Exports CreateContextOptions, createContext, Context (~126 tok)
-- `domain-events.ts` — The student who just counter-proposed (new proposer after role swap) (~1942 tok)
+- `domain-events.ts` — The student who just counter-proposed (new proposer after role swap) (~1653 tok)
 - `index.ts` — tRPC router (~156 tok)
 
 ## packages/api/src/__tests__/
@@ -518,34 +534,25 @@
 - `messaging-read-status.test.ts` — Tests for task #148 — Read/unread status indicators on messages (~437 tok)
 - `messaging-send-persistence.test.ts` — Tests for task #145 — Persist and deliver message to recipient (~742 tok)
 - `messaging-send-validation.test.ts` — Tests for task #144 — Validate message content before send (~417 tok)
-- `moderation-flag-detail.test.ts` — Tests for task #80 — Build flag detail view (flagged Student, reason, prior flag history) (~685 tok)
-- `moderation-guard.test.ts` — Tests for task #92 — Block warn action if Student is already suspended or removed (~256 tok)
 - `moderation-persist.test.ts` — Tests for task #72 — Persist flag and add to Moderator review queue (~558 tok)
-- `moderation-queue.test.ts` — Tests for task #78 — Build Moderator flag queue view (open flags sorted oldest first) (~1447 tok)
-- `moderation-remove-blocklist.test.ts` — Tests for task #109 — Block removed Student's institutional email from future re-registration (~356 tok)
-- `moderation-remove.test.ts` — Tests for tasks #108 and #112 — Deactivate removed Student's account and resolve flag (~1263 tok)
-- `moderation-suspend.test.ts` — Tests for task #100/#103 — Transition Student to Suspended state + record in flag history (~983 tok)
 - `moderation-validation.test.ts` — Tests for task #67 — Validate flag (no self-flagging, no duplicate open flag) (~723 tok)
-- `moderation-warn.test.ts` — Tests for task #90 — Record warning in Student flag history and mark flag as resolved (~680 tok)
-- `onboarding-status-identity.test.ts` — Tests for task #280 — Gate app routes until Student identity profile is complete (~300 tok)
 - `reschedule-validation.test.ts` — Tests for task #87 — Validate reschedule proposal (~531 tok)
 
 ## packages/api/src/routers/
 
-- `chat.ts` — tRPC router: 6 procedures (~3060 tok)
+- `chat.ts` — tRPC router: 6 procedures (~2894 tok)
 - `index.ts` — tRPC router: 2 procedures (~266 tok)
 - `matching-utils.ts` — Haversine distance in km between two lat/lng points (~1049 tok)
-- `matching.ts` — tRPC router: 5 procedures (~5341 tok)
+- `matching.ts` — tRPC router: 5 procedures (~4728 tok)
 - `meetup-utils.ts` — Pure utility functions for meetup business logic. (~240 tok)
-- `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~10242 tok)
+- `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~10102 tok)
 - `messaging-persist.ts` — #145 — Persistence helpers for the messaging send flow. (~216 tok)
-- `messaging-utils.ts` — Pure helpers for the messaging opt-in router. (~1383 tok)
+- `messaging-utils.ts` — Pure helpers for the messaging opt-in router. (~1377 tok)
 - `messaging.ts` — #139 — Record a Student's accept/decline response to the messaging opt-in prompt. (~2968 tok)
-- `moderation-persist.ts` — #72 — Persistence helpers for the flag submission flow. (~1053 tok)
-- `moderation-utils.ts` — Rejects a flag where the reporter and target are the same user. (~2641 tok)
-- `moderation.ts` — #78 — List all open flags sorted oldest-first for the Moderator queue. (~3160 tok)
-- `profile-utils.ts` — Exports determineIdentityProfileEvent (~66 tok)
-- `profile.ts` — Zod schemas: interestEnum, proficiencyEnum, spokenLanguageSchema, learningProficiencyEnum + 4 more (~5186 tok)
+- `moderation-persist.ts` — #72 — Persistence helpers for the flag submission flow. (~212 tok)
+- `moderation-utils.ts` — Rejects a flag where the reporter and target are the same user. (~624 tok)
+- `moderation.ts` — #65/#67 — Flag submission with validation. (~773 tok)
+- `profile.ts` — tRPC router: 6 procedures (~4644 tok)
 - `venue-admin.ts` — tRPC router: 7 procedures (~1166 tok)
 - `venue.ts` — tRPC router: 4 procedures (~1054 tok)
 
@@ -580,7 +587,7 @@
 - `.gitignore` — Git ignore rules (~109 tok)
 - `docker-compose.yml` — Docker Compose services (~147 tok)
 - `drizzle.config.ts` — Drizzle ORM configuration (~88 tok)
-- `package.json` — Node.js package manifest (~276 tok)
+- `package.json` — Node.js package manifest (~315 tok)
 - `tsconfig.json` — TypeScript configuration (~60 tok)
 
 ## packages/db/src/
@@ -606,14 +613,10 @@
 - `0009_narrow_orphan.sql` — SQL: 1 alter(s) (~20 tok)
 - `0010_kind_reaper.sql` — SQL: 2 alter(s) (~108 tok)
 - `0011_gigantic_prima.sql` — SQL: 1 alter(s) (~22 tok)
-- `0012_striped_victor_mancha.sql` — SQL: tables: conversation_presence, user_flag, 5 alter(s) (~592 tok)
-- `0013_slim_marvel_zombies.sql` — SQL: 1 alter(s) (~23 tok)
-- `0014_jazzy_skaar.sql` — SQL: tables: blocked_email (~88 tok)
-- `0015_flat_mercury.sql` — SQL: 2 alter(s) (~73 tok)
 
 ## packages/db/src/migrations/meta/
 
-- `_journal.json` (~673 tok)
+- `_journal.json` (~507 tok)
 - `0000_snapshot.json` (~7962 tok)
 - `0001_snapshot.json` (~9430 tok)
 - `0002_snapshot.json` (~10318 tok)
@@ -626,16 +629,12 @@
 - `0009_snapshot.json` (~13167 tok)
 - `0010_snapshot.json` (~13433 tok)
 - `0011_snapshot.json` (~13482 tok)
-- `0012_snapshot.json` (~15328 tok)
-- `0013_snapshot.json` (~15382 tok)
-- `0014_snapshot.json` (~15773 tok)
-- `0015_snapshot.json` (~15918 tok)
 
 ## packages/db/src/schema/
 
 - `auth.ts` — Exports user, session, account, verification + 3 more (~1089 tok)
 - `index.ts` (~17 tok)
-- `sip-and-speak.ts` — Exports languageProfile, userLanguage, userInterest, venue + 18 more (~4990 tok)
+- `sip-and-speak.ts` — Exports languageProfile, userLanguage, userInterest, venue + 19 more (~4619 tok)
 
 ## packages/db/src/seed/
 
