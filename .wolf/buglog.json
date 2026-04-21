@@ -2066,6 +2066,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-21T07:00:36.570Z"
+    },
+    {
+      "id": "bug-129",
+      "timestamp": "2026-04-21T07:07:19.976Z",
+      "error_message": "Incorrect value in code",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Had \"@/components/onboarding-modal\"",
+      "fix": "Changed to \"@/components/meetup-confirmed-modal\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-21T07:07:19.976Z"
+    },
+    {
+      "id": "bug-130",
+      "timestamp": "2026-04-21T07:07:26.140Z",
+      "error_message": "Null/undefined access in ",
+      "file": "apps/native/app/_layout.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-21T07:07:26.140Z"
     }
   ]
 }

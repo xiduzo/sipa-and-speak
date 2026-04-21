@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-10T10:02:44.507Z",
   "lifetime": {
-    "total_tokens_estimated": 1153936,
-    "total_reads": 607,
-    "total_writes": 816,
+    "total_tokens_estimated": 1173730,
+    "total_reads": 613,
+    "total_writes": 828,
     "total_sessions": 50,
-    "anatomy_hits": 504,
+    "anatomy_hits": 510,
     "anatomy_misses": 103,
-    "repeated_reads_blocked": 170,
-    "estimated_savings_vs_bare_cli": 679879
+    "repeated_reads_blocked": 171,
+    "estimated_savings_vs_bare_cli": 689713
   },
   "sessions": [
     {
@@ -8983,6 +8983,119 @@
         "writes_count": 0,
         "repeated_reads_blocked": 1,
         "anatomy_lookups": 5
+      }
+    },
+    {
+      "id": "session-2026-04-21-0855",
+      "started": "2026-04-21T06:55:45.833Z",
+      "ended": "2026-04-21T07:08:48.363Z",
+      "reads": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/__tests__/notification-match-accepted.test.tsx",
+          "tokens_estimated": 1085,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/hooks/use-notification-tap-handler.ts",
+          "tokens_estimated": 561,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/partner/[id].tsx",
+          "tokens_estimated": 2944,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 1581,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 8634,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/respond-meetup.tsx",
+          "tokens_estimated": 3171,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/components/meetup-confirmed-modal.tsx",
+          "tokens_estimated": 478,
+          "action": "create"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/respond-meetup.tsx",
+          "tokens_estimated": 137,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/respond-meetup.tsx",
+          "tokens_estimated": 110,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/respond-meetup.tsx",
+          "tokens_estimated": 197,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/respond-meetup.tsx",
+          "tokens_estimated": 181,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/respond-meetup.tsx",
+          "tokens_estimated": 127,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/respond-meetup.tsx",
+          "tokens_estimated": 20,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/server/src/notifications.ts",
+          "tokens_estimated": 21,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 74,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 261,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/sander/personal/sip-and-speak/apps/native/app/_layout.tsx",
+          "tokens_estimated": 172,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 17976,
+        "output_tokens_estimated": 1818,
+        "reads_count": 6,
+        "writes_count": 12,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 6
       }
     }
   ],
