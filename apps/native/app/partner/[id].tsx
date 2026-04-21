@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Image, ScrollView, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
+import { MatchCelebrationModal } from "@/components/match-celebration-modal";
 import { queryClient, trpc } from "@/utils/trpc";
 
 export default function PartnerProfileScreen() {
@@ -24,6 +25,7 @@ export default function PartnerProfileScreen() {
   );
 
   const [sendConflictError, setSendConflictError] = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const sendRequestMutation = useMutation({
     ...trpc.matching.sendMatchRequest.mutationOptions(),
@@ -39,6 +41,7 @@ export default function PartnerProfileScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries(trpc.matching.getIncomingRequests.queryOptions());
       queryClient.invalidateQueries(trpc.matching.getMyMatches.queryOptions());
+      setShowCelebration(true);
     },
   });
 
@@ -90,6 +93,15 @@ export default function PartnerProfileScreen() {
   const requestIsAccepted = statusQuery.data?.matchRequestStatus === "accepted";
 
   return (
+    <>
+      {profile && (
+        <MatchCelebrationModal
+          visible={showCelebration}
+          partnerName={profile.name}
+          partnerId={id}
+          onDismiss={() => setShowCelebration(false)}
+        />
+      )}
     <Container isScrollable={false}>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         {/* Header: photo + name */}
@@ -321,5 +333,6 @@ export default function PartnerProfileScreen() {
         </Button>
       </ScrollView>
     </Container>
+    </>
   );
 }
