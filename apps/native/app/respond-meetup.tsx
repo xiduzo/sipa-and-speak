@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { Container } from "@/components/container";
+import { MeetupConfirmedModal } from "@/components/meetup-confirmed-modal";
 import { trpc, queryClient } from "@/utils/trpc";
 
 export default function RespondMeetupScreen() {
@@ -17,6 +18,7 @@ export default function RespondMeetupScreen() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<{ venueName: string; date: string; time: string } | null>(null);
 
   const proposalQuery = useQuery(trpc.meetup.getPendingIncoming.queryOptions());
   const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
@@ -31,18 +33,21 @@ export default function RespondMeetupScreen() {
   // Prefer the deep-linked meetupId, fall back to incoming proposal from query
   const activeMeetupId = meetupIdParam ?? proposal?.meetupId;
 
-  function invalidateAndGoBack() {
+  function invalidateQueries() {
     void queryClient.invalidateQueries(trpc.meetup.getPendingIncoming.queryOptions());
     void queryClient.invalidateQueries(trpc.meetup.list.queryOptions({ status: "pending" }));
     void queryClient.invalidateQueries(trpc.meetup.pendingCount.queryOptions());
-    router.back();
   }
 
   const acceptMutation = useMutation(
     trpc.meetup.acceptProposal.mutationOptions({
       onSuccess: () => {
-        Alert.alert("Meetup confirmed!", "Your meetup has been confirmed.");
-        invalidateAndGoBack();
+        invalidateQueries();
+        if (proposal) {
+          setConfirmed({ venueName: proposal.venue.name, date: proposal.date, time: proposal.time });
+        } else {
+          router.back();
+        }
       },
       onError: (err) => setError(err.message),
     }),
@@ -52,7 +57,8 @@ export default function RespondMeetupScreen() {
     trpc.meetup.counterPropose.mutationOptions({
       onSuccess: () => {
         Alert.alert("Counter-proposal sent!", "Your counter-proposal has been sent.");
-        invalidateAndGoBack();
+        invalidateQueries();
+        router.back();
       },
       onError: (err) => setError(err.message),
     }),
@@ -62,7 +68,8 @@ export default function RespondMeetupScreen() {
     trpc.meetup.declineProposal.mutationOptions({
       onSuccess: () => {
         Alert.alert("Proposal declined", "The proposal has been declined.");
-        invalidateAndGoBack();
+        invalidateQueries();
+        router.back();
       },
       onError: (err) => setError(err.message),
     }),
@@ -221,6 +228,16 @@ export default function RespondMeetupScreen() {
   }
 
   return (
+    <>
+      {confirmed && (
+        <MeetupConfirmedModal
+          visible
+          venueName={confirmed.venueName}
+          date={confirmed.date}
+          time={confirmed.time}
+          onDismiss={() => { setConfirmed(null); router.back(); }}
+        />
+      )}
     <Container>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <Text className="text-foreground text-2xl font-bold mb-1">Meetup proposal</Text>
@@ -300,5 +317,6 @@ export default function RespondMeetupScreen() {
         </View>
       </ScrollView>
     </Container>
+    </>
   );
 }

@@ -275,7 +275,7 @@ async function handleMeetupConfirmed(event: MeetupConfirmedEvent): Promise<void>
     to: token,
     title: "Meetup confirmed! 🎉",
     body: `${venueName} · ${date} at ${time}`,
-    data: { meetupId, type: "meetup_confirmed" },
+    data: { meetupId, type: "meetup_confirmed", venueName, date, time },
   }));
 
   try {

@@ -30,6 +30,7 @@ import { AppThemeProvider } from "@/contexts/app-theme-context";
 import { queryClient, trpc } from "@/utils/trpc";
 import { useNotificationTapHandler } from "@/hooks/use-notification-tap-handler";
 import { MatchCelebrationModal } from "@/components/match-celebration-modal";
+import { MeetupConfirmedModal } from "@/components/meetup-confirmed-modal";
 import { OnboardingModal } from "@/components/onboarding-modal"; // edge-case: complete but no identity
 
 SplashScreen.preventAutoHideAsync();
@@ -85,6 +86,31 @@ function useForegroundMatchAlert(): [MatchAlert | null, () => void] {
       const body = notification.request.content.body ?? "";
       const partnerName = body.replace(" accepted your request", "") || "Your match";
       setAlert({ partnerName, partnerId });
+    });
+    return () => subscription.remove();
+  }, []);
+
+  return [alert, () => setAlert(null)];
+}
+
+interface MeetupAlert {
+  venueName: string;
+  date: string;
+  time: string;
+}
+
+function useForegroundMeetupAlert(): [MeetupAlert | null, () => void] {
+  const [alert, setAlert] = useState<MeetupAlert | null>(null);
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener((notification) => {
+      const data = notification.request.content.data as Record<string, unknown> | undefined;
+      if (data?.type !== "meetup_confirmed") return;
+      const venueName = typeof data.venueName === "string" ? data.venueName : null;
+      const date = typeof data.date === "string" ? data.date : null;
+      const time = typeof data.time === "string" ? data.time : null;
+      if (!venueName || !date || !time) return;
+      setAlert({ venueName, date, time });
     });
     return () => subscription.remove();
   }, []);
@@ -182,6 +208,7 @@ export default function Layout() {
   }, [fontsLoaded]);
 
   const [matchAlert, dismissMatchAlert] = useForegroundMatchAlert();
+  const [meetupAlert, dismissMeetupAlert] = useForegroundMeetupAlert();
 
   if (!fontsLoaded) {
     return null;
@@ -201,6 +228,15 @@ export default function Layout() {
                   partnerName={matchAlert.partnerName}
                   partnerId={matchAlert.partnerId}
                   onDismiss={dismissMatchAlert}
+                />
+              )}
+              {meetupAlert && (
+                <MeetupConfirmedModal
+                  visible
+                  venueName={meetupAlert.venueName}
+                  date={meetupAlert.date}
+                  time={meetupAlert.time}
+                  onDismiss={dismissMeetupAlert}
                 />
               )}
               <StackLayout />
