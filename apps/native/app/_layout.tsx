@@ -17,7 +17,7 @@ import { focusManager, QueryClientProvider, useMutation } from "@tanstack/react-
 import { useFonts } from "expo-font";
 import { Stack, useRootNavigationState, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { HeroUINativeProvider } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -29,6 +29,7 @@ import { authClient } from "@/lib/auth-client";
 import { AppThemeProvider } from "@/contexts/app-theme-context";
 import { queryClient, trpc } from "@/utils/trpc";
 import { useNotificationTapHandler } from "@/hooks/use-notification-tap-handler";
+import { MatchCelebrationModal } from "@/components/match-celebration-modal";
 import { OnboardingModal } from "@/components/onboarding-modal"; // edge-case: complete but no identity
 
 SplashScreen.preventAutoHideAsync();
@@ -64,6 +65,31 @@ function useDeviceTokenRegistration(isLoggedIn: boolean) {
     void register();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
+}
+
+interface MatchAlert {
+  partnerName: string;
+  partnerId: string;
+}
+
+function useForegroundMatchAlert(): [MatchAlert | null, () => void] {
+  const [alert, setAlert] = useState<MatchAlert | null>(null);
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener((notification) => {
+      const data = notification.request.content.data as Record<string, unknown> | undefined;
+      if (data?.type !== "match_accepted") return;
+      const partnerId = typeof data.matchedWithUserId === "string" ? data.matchedWithUserId : null;
+      if (!partnerId) return;
+      // Extract name from notification body ("X accepted your request")
+      const body = notification.request.content.body ?? "";
+      const partnerName = body.replace(" accepted your request", "") || "Your match";
+      setAlert({ partnerName, partnerId });
+    });
+    return () => subscription.remove();
+  }, []);
+
+  return [alert, () => setAlert(null)];
 }
 
 function AuthGuard() {
@@ -155,6 +181,8 @@ export default function Layout() {
     }
   }, [fontsLoaded]);
 
+  const [matchAlert, dismissMatchAlert] = useForegroundMatchAlert();
+
   if (!fontsLoaded) {
     return null;
   }
@@ -167,6 +195,14 @@ export default function Layout() {
             <HeroUINativeProvider>
               <AuthGuard />
               <OnboardingModal />
+              {matchAlert && (
+                <MatchCelebrationModal
+                  visible
+                  partnerName={matchAlert.partnerName}
+                  partnerId={matchAlert.partnerId}
+                  onDismiss={dismissMatchAlert}
+                />
+              )}
               <StackLayout />
             </HeroUINativeProvider>
           </AppThemeProvider>
