@@ -289,6 +289,14 @@ export default function ProfileScreen() {
           {/* Spoken languages */}
           <View>
             <SectionLabel>Languages I speak</SectionLabel>
+            {spokenLanguages.length === 0 && (
+              <Text
+                className="font-manrope text-[13px] mb-3"
+                style={{ color: "#C0876A" }}
+              >
+                Add at least one spoken language to activate matching
+              </Text>
+            )}
             <View className="gap-3">
               {spokenLanguages.map((sl) => (
                 <View
@@ -374,6 +382,14 @@ export default function ProfileScreen() {
           {/* Learning languages */}
           <View>
             <SectionLabel>Languages I'm learning</SectionLabel>
+            {learningLanguages.length === 0 && (
+              <Text
+                className="font-manrope text-[13px] mb-3"
+                style={{ color: "#C0876A" }}
+              >
+                Add at least one language you are learning to activate matching
+              </Text>
+            )}
             <View className="gap-3">
               {learningLanguages.map((ll) => (
                 <View
