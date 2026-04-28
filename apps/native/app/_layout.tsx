@@ -22,7 +22,7 @@ import { HeroUINativeProvider } from "heroui-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
-import * as Notifications from "expo-notifications";
+import * as Notifications from "@/lib/notifications";
 import { AppState, Platform } from "react-native";
 
 import { authClient } from "@/lib/auth-client";
