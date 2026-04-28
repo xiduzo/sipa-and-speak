@@ -2098,6 +2098,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-21T07:07:26.140Z"
+    },
+    {
+      "id": "bug-131",
+      "timestamp": "2026-04-28T16:47:32.800Z",
+      "error_message": "Missing guard clause",
+      "file": "packages/api/src/routers/messaging-utils.ts",
+      "root_cause": "No early return/throw for edge case: args.meetupStatus === \"not_attended\"",
+      "fix": "Added guard clause: if (args.meetupStatus === \"not_attended\")",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-28T16:47:32.800Z"
+    },
+    {
+      "id": "bug-132",
+      "timestamp": "2026-04-28T16:48:34.525Z",
+      "error_message": "Null/undefined access in ",
+      "file": "packages/api/src/routers/chat.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: // Locked entries float above open chats: pre-meet (soonest ; // then declined. Open chats below, ordered by most recent a",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-28T16:48:49.778Z"
     }
   ]
 }

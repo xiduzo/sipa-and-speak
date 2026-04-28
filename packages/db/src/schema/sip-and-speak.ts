@@ -444,6 +444,7 @@ export const attendanceReport = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     attended: boolean("attended").notNull(),
+    rating: integer("rating"),
     reportedAt: timestamp("reported_at").defaultNow().notNull(),
   },
   (table) => [

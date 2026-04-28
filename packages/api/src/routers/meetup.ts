@@ -2,7 +2,7 @@ import { and, eq, or, sql, count } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
-import { meetup, venue, studentMatch, attendanceReport } from "@sip-and-speak/db/schema/sip-and-speak";
+import { meetup, venue, studentMatch, attendanceReport, messagingOptIn, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../index";
 import { domainEvents } from "../domain-events";
@@ -643,7 +643,7 @@ export const meetupRouter = router({
   getConfirmed: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const [rows, myReports] = await Promise.all([
+    const [rows, myReports, optIns, conversations] = await Promise.all([
       db
         .select({
           meetup: meetup,
@@ -667,42 +667,82 @@ export const meetupRouter = router({
         )
         .where(
           and(
-            eq(meetup.status, "confirmed"),
+            or(eq(meetup.status, "confirmed"), eq(meetup.status, "completed")),
             or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
           ),
         )
         .orderBy(meetup.date, meetup.time),
       // #97 — Fetch this user's attendance reports
       db
-        .select({ meetupId: attendanceReport.meetupId, attended: attendanceReport.attended })
+        .select({
+          meetupId: attendanceReport.meetupId,
+          attended: attendanceReport.attended,
+          rating: attendanceReport.rating,
+        })
         .from(attendanceReport)
         .where(eq(attendanceReport.studentId, userId)),
+      // Opt-in responses (mine + partner) for completed/confirmed meetups
+      db
+        .select({
+          meetupId: messagingOptIn.meetupId,
+          studentId: messagingOptIn.studentId,
+          response: messagingOptIn.response,
+        })
+        .from(messagingOptIn)
+        .innerJoin(meetup, eq(meetup.id, messagingOptIn.meetupId))
+        .where(or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId))),
+      // Open conversations
+      db
+        .select({ meetupId: conversation.meetupId, id: conversation.id })
+        .from(conversation)
+        .where(or(eq(conversation.user1Id, userId), eq(conversation.user2Id, userId))),
     ]);
 
-    const myReportMap = new Map(myReports.map((r) => [r.meetupId, r.attended]));
+    const myReportMap = new Map(myReports.map((r) => [r.meetupId, r]));
+    const conversationMap = new Map(
+      conversations.filter((c) => c.meetupId !== null).map((c) => [c.meetupId as string, c.id]),
+    );
+    const optInByMeetup = new Map<string, { mine: "accept" | "decline" | null; partner: "accept" | "decline" | null }>();
+    for (const row of optIns) {
+      const entry = optInByMeetup.get(row.meetupId) ?? { mine: null, partner: null };
+      if (row.studentId === userId) entry.mine = row.response;
+      else entry.partner = row.response;
+      optInByMeetup.set(row.meetupId, entry);
+    }
 
-    return rows.map((row) => ({
-      meetupId: row.meetup.id,
-      date: row.meetup.date,
-      time: row.meetup.time,
-      status: row.meetup.status,
-      isPast: new Date(`${row.meetup.date}T${row.meetup.time}:00`) <= new Date(),
-      venue: row.venue,
-      partner: row.partner,
-      // #86 — Reschedule proposal state
-      reschedulePending: row.meetup.rescheduleProposerId !== null,
-      rescheduleIsFromMe: row.meetup.rescheduleProposerId === userId,
-      reschedule: row.meetup.rescheduleProposerId !== null
-        ? {
-            venueId: row.meetup.rescheduleVenueId!,
-            date: row.meetup.rescheduleDate!,
-            time: row.meetup.rescheduleTime!,
-          }
-        : null,
-      // #97 — Attendance report state
-      hasReported: myReportMap.has(row.meetup.id),
-      myAttendance: myReportMap.get(row.meetup.id) ?? null,
-    }));
+    return rows.map((row) => {
+      const myReport = myReportMap.get(row.meetup.id);
+      const optIn = optInByMeetup.get(row.meetup.id) ?? { mine: null, partner: null };
+      return {
+        meetupId: row.meetup.id,
+        date: row.meetup.date,
+        time: row.meetup.time,
+        status: row.meetup.status,
+        isPast: new Date(`${row.meetup.date}T${row.meetup.time}:00`) <= new Date(),
+        venue: row.venue,
+        partner: row.partner,
+        // #86 — Reschedule proposal state
+        reschedulePending: row.meetup.rescheduleProposerId !== null,
+        rescheduleIsFromMe: row.meetup.rescheduleProposerId === userId,
+        reschedule: row.meetup.rescheduleProposerId !== null
+          ? {
+              venueId: row.meetup.rescheduleVenueId!,
+              date: row.meetup.rescheduleDate!,
+              time: row.meetup.rescheduleTime!,
+            }
+          : null,
+        // #97 — Attendance report state
+        hasReported: myReport !== undefined,
+        myAttendance: myReport?.attended ?? null,
+        myRating: myReport?.rating ?? null,
+        // Messaging opt-in state for post-meetup hero
+        optIn: {
+          mine: optIn.mine,
+          partner: optIn.partner,
+          conversationId: conversationMap.get(row.meetup.id) ?? null,
+        },
+      };
+    });
   }),
 
   // #91 — Accept a reschedule proposal → update meetup details, emit MeetupRescheduled, notify both
@@ -938,7 +978,13 @@ export const meetupRouter = router({
 
   // #97 — Record each Student's attendance report independently
   reportAttendance: protectedProcedure
-    .input(z.object({ meetupId: z.string(), attended: z.boolean() }))
+    .input(
+      z.object({
+        meetupId: z.string(),
+        attended: z.boolean(),
+        rating: z.number().int().min(1).max(5).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
@@ -983,6 +1029,11 @@ export const meetupRouter = router({
         throw new TRPCError({ code: "CONFLICT", message: "You have already reported attendance for this meetup" });
       }
 
+      // Rating only allowed when attended=true
+      if (input.rating !== undefined && !input.attended) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Rating can only be provided when attended is true" });
+      }
+
       const partnerId =
         existing.proposerId === userId ? existing.receiverId : existing.proposerId;
 
@@ -992,6 +1043,7 @@ export const meetupRouter = router({
           meetupId: input.meetupId,
           studentId: userId,
           attended: input.attended,
+          rating: input.rating ?? null,
         })
         .returning();
 

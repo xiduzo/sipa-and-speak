@@ -154,7 +154,7 @@ function AuthGuard() {
     } else if (session && inEnrolment) {
       console.log("[AuthGuard] → /(tabs) (signed in)");
       queryClient.clear();
-      router.replace("/(tabs)/suggestions");
+      router.replace("/(tabs)/home");
     } else {
       console.log("[AuthGuard] no redirect needed");
     }
@@ -172,8 +172,10 @@ function StackLayout() {
 
       <Stack.Screen name="partner/[id]" options={{ title: "Partner Profile" }} />
       <Stack.Screen name="chat/[conversationId]" options={{ title: "Chat" }} />
+      <Stack.Screen name="chat/locked/[meetupId]" options={{ headerShown: false }} />
       <Stack.Screen name="respond-meetup" options={{ title: "Respond to Proposal" }} />
       <Stack.Screen name="flag-user" options={{ title: "Report Student", presentation: "modal" }} />
+      <Stack.Screen name="match" options={{ headerShown: false, presentation: "modal" }} />
     </Stack>
   );
 }

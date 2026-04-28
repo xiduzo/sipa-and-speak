@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-21T07:07:35.923Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-28T16:48:49.750Z
 > Files: 344 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
@@ -542,14 +542,14 @@
 
 ## packages/api/src/routers/
 
-- `chat.ts` — tRPC router: 6 procedures (~2894 tok)
+- `chat.ts` — Exports chatRouter (~4821 tok)
 - `index.ts` — tRPC router: 2 procedures (~266 tok)
 - `matching-utils.ts` — Haversine distance in km between two lat/lng points (~1049 tok)
 - `matching.ts` — tRPC router: 5 procedures (~4728 tok)
 - `meetup-utils.ts` — Pure utility functions for meetup business logic. (~240 tok)
 - `meetup.ts` — All bookable half-hour slots from 08:00 to 20:00 (~10102 tok)
 - `messaging-persist.ts` — #145 — Persistence helpers for the messaging send flow. (~216 tok)
-- `messaging-utils.ts` — Pure helpers for the messaging opt-in router. (~1377 tok)
+- `messaging-utils.ts` — Pure helpers for the messaging opt-in router. (~1858 tok)
 - `messaging.ts` — #139 — Record a Student's accept/decline response to the messaging opt-in prompt. (~2968 tok)
 - `moderation-persist.ts` — #72 — Persistence helpers for the flag submission flow. (~212 tok)
 - `moderation-utils.ts` — Rejects a flag where the reporter and target are the same user. (~624 tok)

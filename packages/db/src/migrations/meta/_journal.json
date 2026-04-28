@@ -120,6 +120,13 @@
       "when": 1776700591771,
       "tag": "0016_perpetual_wendell_vaughn",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1777394269625,
+      "tag": "0017_fuzzy_angel",
+      "breakpoints": true
     }
   ]
 }

@@ -2,15 +2,13 @@
  * Tests for task #160 — Handle empty inbox state
  *
  * Covers:
- *   - Empty state shown when no open conversations
- *   - Empty state mentions S&S moment (messaging unlock context)
- *   - Empty state disappears once conversations exist
+ *   - Empty state shown when no chat entries
+ *   - Empty state explains the meet-first-message-after gate
+ *   - Empty state disappears once an entry exists (open or locked)
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
-
-// ── FlatList mock ─────────────────────────────────────────────────────────────
 
 jest.mock("react-native", () => {
   const RN = jest.requireActual("react-native");
@@ -29,31 +27,26 @@ jest.mock("react-native", () => {
   return RN;
 });
 
-// ── Router mock ───────────────────────────────────────────────────────────────
-
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
-// ── tRPC mock ─────────────────────────────────────────────────────────────────
-
-const mockListConversations = jest.fn();
+const mockListEntries = jest.fn();
 
 jest.mock("@/utils/trpc", () => ({
   queryClient: new (require("@tanstack/react-query").QueryClient)(),
   trpc: {
     chat: {
-      listConversations: {
+      listEntries: {
         queryOptions: () => ({
-          queryKey: ["chat.listConversations"],
-          queryFn: mockListConversations,
+          queryKey: ["chat.listEntries"],
+          queryFn: mockListEntries,
         }),
       },
     },
   },
 }));
 
-// ── Import after mocks ─────────────────────────────────────────────────────────
 // eslint-disable-next-line import/first
 import ChatsScreen from "../app/(tabs)/chats";
 
@@ -63,14 +56,12 @@ function renderWithClient(ui: React.ReactElement) {
 }
 
 beforeEach(() => {
-  mockListConversations.mockReset();
+  mockListEntries.mockReset();
 });
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
 describe("#160 — Empty inbox state", () => {
-  it("shows empty state when Student has no open conversations", async () => {
-    mockListConversations.mockResolvedValue([]);
+  it("shows empty state when Student has no chat entries", async () => {
+    mockListEntries.mockResolvedValue([]);
 
     renderWithClient(<ChatsScreen />);
 
@@ -79,19 +70,27 @@ describe("#160 — Empty inbox state", () => {
     });
   });
 
-  it("empty state explains that messaging unlocks after a Sip & Speak moment", async () => {
-    mockListConversations.mockResolvedValue([]);
+  it("empty state explains the meet-first-message-after gate", async () => {
+    mockListEntries.mockResolvedValue([]);
 
     renderWithClient(<ChatsScreen />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Messaging unlocks after completing a Sip & Speak moment/i)).toBeTruthy();
+      expect(screen.getByText(/locked until you both meet and opt in/i)).toBeTruthy();
     });
   });
 
-  it("empty state is replaced once a conversation exists", async () => {
-    mockListConversations.mockResolvedValue([
-      { id: "conv-1", partner: { id: "u1", name: "Alice", image: null }, lastMessage: null, hasUnread: false, createdAt: new Date() },
+  it("empty state is replaced once an open conversation exists", async () => {
+    mockListEntries.mockResolvedValue([
+      {
+        kind: "open",
+        id: "conv-1",
+        conversationId: "conv-1",
+        meetupId: null,
+        partner: { id: "u1", name: "Alice", image: null },
+        lastMessage: null,
+        hasUnread: false,
+      },
     ]);
 
     renderWithClient(<ChatsScreen />);
@@ -99,6 +98,29 @@ describe("#160 — Empty inbox state", () => {
     await waitFor(() => {
       expect(screen.queryByTestId("empty-inbox")).toBeNull();
       expect(screen.getByText("Alice")).toBeTruthy();
+    });
+  });
+
+  it("empty state is replaced once a locked teaser exists", async () => {
+    const future = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    mockListEntries.mockResolvedValue([
+      {
+        kind: "locked",
+        id: "meet-1",
+        meetupId: "meet-1",
+        partner: { id: "u1", name: "Marta", image: null },
+        venue: { id: "v1", name: "Stationsplein", photoUrl: null },
+        meetupAt: future,
+        phase: "scheduled",
+      },
+    ]);
+
+    renderWithClient(<ChatsScreen />);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("empty-inbox")).toBeNull();
+      expect(screen.getByText("Marta")).toBeTruthy();
+      expect(screen.getByTestId("locked-entry-meet-1")).toBeTruthy();
     });
   });
 });

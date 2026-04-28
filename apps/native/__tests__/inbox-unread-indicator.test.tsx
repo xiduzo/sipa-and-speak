@@ -37,16 +37,16 @@ jest.mock("expo-router", () => ({
 
 // ── tRPC mock ─────────────────────────────────────────────────────────────────
 
-const mockListConversations = jest.fn();
+const mockListEntries = jest.fn();
 
 jest.mock("@/utils/trpc", () => ({
   queryClient: new (require("@tanstack/react-query").QueryClient)(),
   trpc: {
     chat: {
-      listConversations: {
+      listEntries: {
         queryOptions: () => ({
-          queryKey: ["chat.listConversations"],
-          queryFn: mockListConversations,
+          queryKey: ["chat.listEntries"],
+          queryFn: mockListEntries,
         }),
       },
     },
@@ -63,15 +63,15 @@ function renderWithClient(ui: React.ReactElement) {
 }
 
 beforeEach(() => {
-  mockListConversations.mockReset();
+  mockListEntries.mockReset();
 });
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("#158 — Unread indicator in inbox", () => {
   it("shows unread indicator when conversation has unread messages", async () => {
-    mockListConversations.mockResolvedValue([
-      { id: "conv-1", partner: { id: "u1", name: "Alice", image: null }, lastMessage: null, hasUnread: true, createdAt: new Date() },
+    mockListEntries.mockResolvedValue([
+      { kind: "open", id: "conv-1", conversationId: "conv-1", meetupId: null, partner: { id: "u1", name: "Alice", image: null }, lastMessage: null, hasUnread: true },
     ]);
 
     renderWithClient(<ChatsScreen />);
@@ -82,8 +82,8 @@ describe("#158 — Unread indicator in inbox", () => {
   });
 
   it("does not show unread indicator when all messages are read", async () => {
-    mockListConversations.mockResolvedValue([
-      { id: "conv-1", partner: { id: "u1", name: "Alice", image: null }, lastMessage: null, hasUnread: false, createdAt: new Date() },
+    mockListEntries.mockResolvedValue([
+      { kind: "open", id: "conv-1", conversationId: "conv-1", meetupId: null, partner: { id: "u1", name: "Alice", image: null }, lastMessage: null, hasUnread: false },
     ]);
 
     renderWithClient(<ChatsScreen />);
@@ -94,9 +94,8 @@ describe("#158 — Unread indicator in inbox", () => {
   });
 
   it("no indicator after Student reads conversation (hasUnread becomes false on refetch)", async () => {
-    // Simulate state after mark-read: API returns hasUnread=false
-    mockListConversations.mockResolvedValue([
-      { id: "conv-read", partner: { id: "u2", name: "Bob", image: null }, lastMessage: null, hasUnread: false, createdAt: new Date() },
+    mockListEntries.mockResolvedValue([
+      { kind: "open", id: "conv-read", conversationId: "conv-read", meetupId: null, partner: { id: "u2", name: "Bob", image: null }, lastMessage: null, hasUnread: false },
     ]);
 
     renderWithClient(<ChatsScreen />);

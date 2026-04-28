@@ -142,7 +142,7 @@ export default function OnboardingScreen() {
   useEffect(() => {
     if (!onboardingStatus.data || onboardingStatus.isFetching) return;
     if (onboardingStatus.data.complete) {
-      router.replace("/(tabs)/suggestions");
+      router.replace("/(tabs)/home");
       return;
     }
     if (!initialized && onboardingStatus.data.identityProfileComplete) {
@@ -268,7 +268,7 @@ export default function OnboardingScreen() {
         interests,
       });
       await queryClient.refetchQueries();
-      router.replace("/(tabs)/suggestions");
+      router.replace("/(tabs)/home");
     } catch {
       toast.show({ variant: "danger", label: "Failed to save profile." });
     }
@@ -296,7 +296,7 @@ export default function OnboardingScreen() {
       if (interests.length > 0) input.interests = interests;
       await partialMutation.mutateAsync(input as Parameters<typeof partialMutation.mutateAsync>[0]);
       await queryClient.refetchQueries();
-      router.replace("/(tabs)/suggestions");
+      router.replace("/(tabs)/home");
     } catch {
       toast.show({ variant: "danger", label: "Failed to save." });
     }

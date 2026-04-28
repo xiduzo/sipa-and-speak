@@ -2,15 +2,12 @@
  * Tests for task #159 — Sort conversations by most recent message activity
  *
  * Covers:
- *   - Conversation with most recent message appears first
- *   - Conversations with no messages appear below those with activity
- *   - Inbox renders in the order returned by listConversations (sort is API-side)
+ *   - Inbox renders entries in API-provided order (sort is API-side)
+ *   - Locked teasers appear above open conversations
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
-
-// ── FlatList mock (preserves order) ──────────────────────────────────────────
 
 jest.mock("react-native", () => {
   const RN = jest.requireActual("react-native");
@@ -29,31 +26,30 @@ jest.mock("react-native", () => {
   return RN;
 });
 
-// ── Router mock ───────────────────────────────────────────────────────────────
-
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: jest.fn() }),
 }));
 
-// ── tRPC mock ─────────────────────────────────────────────────────────────────
+jest.mock("@expo/vector-icons", () => ({
+  Ionicons: () => null,
+}));
 
-const mockListConversations = jest.fn();
+const mockListEntries = jest.fn();
 
 jest.mock("@/utils/trpc", () => ({
   queryClient: new (require("@tanstack/react-query").QueryClient)(),
   trpc: {
     chat: {
-      listConversations: {
+      listEntries: {
         queryOptions: () => ({
-          queryKey: ["chat.listConversations"],
-          queryFn: mockListConversations,
+          queryKey: ["chat.listEntries"],
+          queryFn: mockListEntries,
         }),
       },
     },
   },
 }));
 
-// ── Import after mocks ─────────────────────────────────────────────────────────
 // eslint-disable-next-line import/first
 import ChatsScreen from "../app/(tabs)/chats";
 
@@ -63,65 +59,72 @@ function renderWithClient(ui: React.ReactElement) {
 }
 
 beforeEach(() => {
-  mockListConversations.mockReset();
+  mockListEntries.mockReset();
 });
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
 describe("#159 — Inbox sort order", () => {
-  it("renders conversations in API-provided order (most recent first)", async () => {
-    // API already sorts by lastMessage.createdAt desc — screen renders in that order
-    mockListConversations.mockResolvedValue([
+  it("renders entries in API-provided order", async () => {
+    mockListEntries.mockResolvedValue([
       {
+        kind: "open",
         id: "conv-recent",
+        conversationId: "conv-recent",
+        meetupId: null,
         partner: { id: "u1", name: "Alice (recent)", image: null },
-        lastMessage: { id: "m1", createdAt: new Date("2024-01-10T10:00:00Z") },
+        lastMessage: { id: "m1", content: "hi", createdAt: new Date("2024-01-10T10:00:00Z") },
         hasUnread: false,
-        createdAt: new Date("2024-01-01"),
       },
       {
+        kind: "open",
         id: "conv-older",
+        conversationId: "conv-older",
+        meetupId: null,
         partner: { id: "u2", name: "Bob (older)", image: null },
-        lastMessage: { id: "m2", createdAt: new Date("2024-01-01T10:00:00Z") },
+        lastMessage: { id: "m2", content: "hi", createdAt: new Date("2024-01-01T10:00:00Z") },
         hasUnread: false,
-        createdAt: new Date("2024-01-01"),
       },
     ]);
 
     renderWithClient(<ChatsScreen />);
 
     await waitFor(() => {
-      const allText = screen.toJSON();
-      const json = JSON.stringify(allText);
-      const aliceIdx = json.indexOf("Alice (recent)");
-      const bobIdx = json.indexOf("Bob (older)");
-      expect(aliceIdx).toBeLessThan(bobIdx);
+      const texts = screen.getAllByText(/^(Alice|Bob)/).map((n) => String(n.props.children));
+      expect(texts.indexOf("Alice (recent)")).toBeLessThan(
+        texts.indexOf("Bob (older)"),
+      );
     });
   });
 
-  it("conversation with no messages appears after those with activity", async () => {
-    mockListConversations.mockResolvedValue([
+  it("locked teaser appears above open conversation when API returns locked first", async () => {
+    const future = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+    mockListEntries.mockResolvedValue([
       {
-        id: "conv-with-msg",
-        partner: { id: "u1", name: "Alice", image: null },
-        lastMessage: { id: "m1", createdAt: new Date("2024-01-10") },
-        hasUnread: false,
-        createdAt: new Date("2024-01-01"),
+        kind: "locked",
+        id: "meet-1",
+        meetupId: "meet-1",
+        partner: { id: "u1", name: "Marta (locked)", image: null },
+        venue: { id: "v1", name: "Stationsplein", photoUrl: null },
+        meetupAt: future,
+        phase: "scheduled",
       },
       {
-        id: "conv-silent",
-        partner: { id: "u2", name: "Bob (silent)", image: null },
+        kind: "open",
+        id: "conv-old",
+        conversationId: "conv-old",
+        meetupId: null,
+        partner: { id: "u2", name: "Bob (open)", image: null },
         lastMessage: null,
         hasUnread: false,
-        createdAt: new Date("2024-01-09"),
       },
     ]);
 
     renderWithClient(<ChatsScreen />);
 
     await waitFor(() => {
-      const json = JSON.stringify(screen.toJSON());
-      expect(json.indexOf("Alice")).toBeLessThan(json.indexOf("Bob (silent)"));
+      const texts = screen.getAllByText(/^(Marta|Bob)/).map((n) => String(n.props.children));
+      expect(texts.indexOf("Marta (locked)")).toBeLessThan(
+        texts.indexOf("Bob (open)"),
+      );
     });
   });
 });

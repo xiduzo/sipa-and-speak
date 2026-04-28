@@ -14,13 +14,17 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="suggestions"
+        name="home"
         options={{
-          title: "Match",
+          title: "Home",
           tabBarIcon: ({ color, size }) => (
-            <StyledIonicons name="people-outline" size={size} color={color} />
+            <StyledIonicons name="home-outline" size={size} color={color} />
           ),
         }}
+      />
+      <Tabs.Screen
+        name="suggestions"
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="confirmed-meetups"

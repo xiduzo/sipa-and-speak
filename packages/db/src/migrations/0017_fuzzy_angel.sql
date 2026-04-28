@@ -1,0 +1,1 @@
+ALTER TABLE "attendance_report" ADD COLUMN "rating" integer;

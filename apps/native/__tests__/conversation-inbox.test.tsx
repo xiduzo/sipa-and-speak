@@ -9,8 +9,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
 
-// ── FlatList mock ─────────────────────────────────────────────────────────────
-
 jest.mock("react-native", () => {
   const RN = jest.requireActual("react-native");
   RN.FlatList = (props) => {
@@ -28,32 +26,27 @@ jest.mock("react-native", () => {
   return RN;
 });
 
-// ── Router mock ───────────────────────────────────────────────────────────────
-
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-// ── tRPC mock ─────────────────────────────────────────────────────────────────
-
-const mockListConversations = jest.fn();
+const mockListEntries = jest.fn();
 
 jest.mock("@/utils/trpc", () => ({
   queryClient: new (require("@tanstack/react-query").QueryClient)(),
   trpc: {
     chat: {
-      listConversations: {
+      listEntries: {
         queryOptions: () => ({
-          queryKey: ["chat.listConversations"],
-          queryFn: mockListConversations,
+          queryKey: ["chat.listEntries"],
+          queryFn: mockListEntries,
         }),
       },
     },
   },
 }));
 
-// ── Import after mocks ─────────────────────────────────────────────────────────
 // eslint-disable-next-line import/first
 import ChatsScreen from "../app/(tabs)/chats";
 
@@ -66,16 +59,30 @@ function renderWithClient(ui: React.ReactElement) {
 
 beforeEach(() => {
   mockPush.mockClear();
-  mockListConversations.mockReset();
+  mockListEntries.mockReset();
 });
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe("#157 — Conversation inbox", () => {
   it("lists all open conversations with match display names", async () => {
-    mockListConversations.mockResolvedValue([
-      { id: "conv-1", partner: { id: "u1", name: "Alice", image: null }, lastMessage: null, hasUnread: false, createdAt: new Date() },
-      { id: "conv-2", partner: { id: "u2", name: "Bob", image: null }, lastMessage: null, hasUnread: false, createdAt: new Date() },
+    mockListEntries.mockResolvedValue([
+      {
+        kind: "open",
+        id: "conv-1",
+        conversationId: "conv-1",
+        meetupId: null,
+        partner: { id: "u1", name: "Alice", image: null },
+        lastMessage: null,
+        hasUnread: false,
+      },
+      {
+        kind: "open",
+        id: "conv-2",
+        conversationId: "conv-2",
+        meetupId: null,
+        partner: { id: "u2", name: "Bob", image: null },
+        lastMessage: null,
+        hasUnread: false,
+      },
     ]);
 
     renderWithClient(<ChatsScreen />);
@@ -86,11 +93,17 @@ describe("#157 — Conversation inbox", () => {
     });
   });
 
-  it("does not show suspended conversations (they are excluded by listConversations)", async () => {
-    // The API already filters — this test verifies the screen renders only what the API returns.
-    // A suspended conversation would never appear in this response.
-    mockListConversations.mockResolvedValue([
-      { id: "conv-open", partner: { id: "u1", name: "Alice", image: null }, lastMessage: null, hasUnread: false, createdAt: new Date() },
+  it("does not show suspended conversations (excluded by listEntries)", async () => {
+    mockListEntries.mockResolvedValue([
+      {
+        kind: "open",
+        id: "conv-open",
+        conversationId: "conv-open",
+        meetupId: null,
+        partner: { id: "u1", name: "Alice", image: null },
+        lastMessage: null,
+        hasUnread: false,
+      },
     ]);
 
     renderWithClient(<ChatsScreen />);

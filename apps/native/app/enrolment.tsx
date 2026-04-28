@@ -191,7 +191,7 @@ export default function EnrolmentScreen() {
         return;
       }
       await queryClient.refetchQueries();
-      router.replace("/(tabs)/suggestions");
+      router.replace("/(tabs)/home");
     },
   });
 

@@ -123,3 +123,40 @@ export function getPartnerId(
 ): string {
   return proposerId === studentId ? receiverId : proposerId;
 }
+
+/**
+ * Phase a locked chat teaser is in. Drives copy + CTA on the chat list and locked detail screen.
+ * - `scheduled`            — meetup confirmed, datetime in the future ("unlocks Friday at 10:30")
+ * - `awaiting_attendance`  — meetup datetime passed, current student hasn't filed an attendance report
+ * - `awaiting_my_optin`    — meetup completed, current student hasn't responded to messaging opt-in
+ * - `awaiting_partner_optin` — current student opted in, partner hasn't responded yet
+ * - `declined`             — outcome already decided against opening (one declined, or `not_attended`)
+ */
+export type LockedPhase =
+  | "scheduled"
+  | "awaiting_attendance"
+  | "awaiting_my_optin"
+  | "awaiting_partner_optin"
+  | "declined";
+
+export function deriveLockedPhase(args: {
+  meetupStatus: "confirmed" | "completed" | "not_attended";
+  meetupAt: Date;
+  now: Date;
+  hasMyAttendanceReport: boolean;
+  myOptIn: "accept" | "decline" | null;
+  partnerOptIn: "accept" | "decline" | null;
+}): LockedPhase {
+  if (args.meetupStatus === "not_attended") return "declined";
+  if (args.meetupStatus === "confirmed") {
+    if (args.meetupAt > args.now) return "scheduled";
+    if (!args.hasMyAttendanceReport) return "awaiting_attendance";
+    return "awaiting_attendance";
+  }
+  // completed
+  if (args.myOptIn === "decline" || args.partnerOptIn === "decline") return "declined";
+  if (args.myOptIn !== "accept") return "awaiting_my_optin";
+  if (args.partnerOptIn !== "accept") return "awaiting_partner_optin";
+  // edge: both accepted but conversation row not yet visible — surface as awaiting_partner so UI doesn't dead-end
+  return "awaiting_partner_optin";
+}
