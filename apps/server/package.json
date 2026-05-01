@@ -15,6 +15,7 @@
     "@sip-and-speak/auth": "workspace:*",
     "@sip-and-speak/db": "workspace:*",
     "@sip-and-speak/env": "workspace:*",
+    "@sip-and-speak/notifications": "workspace:*",
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
