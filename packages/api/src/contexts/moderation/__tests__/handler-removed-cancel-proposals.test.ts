@@ -41,8 +41,10 @@ mock.module("@sip-and-speak/db", () => ({
       return {
         from: (_table: unknown) => ({
           where: () => {
-            if (hasId) return Promise.resolve(mockMeetupRows);
-            return Promise.resolve(mockTokenRows);
+            const rows = hasId ? mockMeetupRows : mockTokenRows;
+            const p = Promise.resolve(rows) as Promise<unknown> & { limit: (n: number) => Promise<unknown> };
+            p.limit = () => Promise.resolve([]);
+            return p;
           },
           limit: () => Promise.resolve([]),
         }),
@@ -64,17 +66,17 @@ mock.module("@sip-and-speak/db", () => ({
   },
 }));
 
-import { registerNotificationHandlers } from "../dispatcher";
-import { domainEvents } from "@sip-and-speak/api/domain-events";
+import { registerModerationHandlers } from "../handlers";
+import { domainEvents } from "../../../domain-events";
 
-describe("handleStudentRemovedCancelProposals (#110)", () => {
+describe("handleStudentRemovedCancelProposals (#110) — DB cascade", () => {
   beforeEach(() => {
     fetchCalls.length = 0;
     dbUpdateCalls.length = 0;
     mockMeetupRows = [];
     mockTokenRows = [];
     domainEvents.removeAllListeners();
-    registerNotificationHandlers();
+    registerModerationHandlers();
   });
 
   it("cancels active proposals when a Student is removed", async () => {
@@ -82,25 +84,15 @@ describe("handleStudentRemovedCancelProposals (#110)", () => {
     mockTokenRows = [{ token: "ExponentPushToken[peer]" }];
     domainEvents.emit("StudentRemoved", { flagId: "flag-1", targetId: "student-1", moderatorId: "mod-1", removedAt: new Date() });
     await new Promise((r) => setTimeout(r, 30));
-    expect(dbUpdateCalls.length).toBeGreaterThan(0);
-    expect(dbUpdateCalls[0]!.status).toBe("cancelled");
-  });
-
-  it("notifies affected peer generically (no mention of removal)", async () => {
-    mockMeetupRows = [{ id: "m-1", proposerId: "student-1", receiverId: "student-2" }];
-    mockTokenRows = [{ token: "ExponentPushToken[peer]" }];
-    domainEvents.emit("StudentRemoved", { flagId: "flag-1", targetId: "student-1", moderatorId: "mod-1", removedAt: new Date() });
-    await new Promise((r) => setTimeout(r, 30));
-    const msg = fetchCalls.find((c) => c.messages[0]?.title === "Meetup proposal cancelled");
-    expect(msg).toBeDefined();
-    expect(msg!.messages[0]!.body).toBe("Your meetup proposal has been cancelled.");
-    expect(msg!.messages[0]!.body).not.toContain("remov");
+    const meetupCancel = dbUpdateCalls.find((c) => c.table === "meetup" && c.status === "cancelled");
+    expect(meetupCancel).toBeDefined();
   });
 
   it("completed proposals not affected (no active proposals → no update)", async () => {
     mockMeetupRows = [];
     domainEvents.emit("StudentRemoved", { flagId: "flag-2", targetId: "student-1", moderatorId: "mod-1", removedAt: new Date() });
     await new Promise((r) => setTimeout(r, 30));
-    expect(dbUpdateCalls.length).toBe(0);
+    const meetupCancel = dbUpdateCalls.find((c) => c.table === "meetup");
+    expect(meetupCancel).toBeUndefined();
   });
 });

@@ -30,7 +30,11 @@ mock.module("@sip-and-speak/db", () => ({
   db: {
     select: (_cols?: unknown) => ({
       from: (_table: unknown) => ({
-        where: () => Promise.resolve(mockConversationRows),
+        where: () => {
+          const p = Promise.resolve(mockConversationRows) as Promise<Array<{ id: string }>> & { limit: (n: number) => Promise<Array<{ id: string }>> };
+          p.limit = () => Promise.resolve([]);
+          return p;
+        },
         limit: () => Promise.resolve([]),
       }),
     }),
@@ -50,15 +54,15 @@ mock.module("@sip-and-speak/db", () => ({
   },
 }));
 
-import { registerNotificationHandlers } from "../dispatcher";
-import { domainEvents } from "@sip-and-speak/api/domain-events";
+import { registerModerationHandlers } from "../handlers";
+import { domainEvents } from "../../../domain-events";
 
 describe("handleStudentRemovedCloseConversations (#111)", () => {
   beforeEach(() => {
     dbUpdateCalls.length = 0;
     mockConversationRows = [];
     domainEvents.removeAllListeners();
-    registerNotificationHandlers();
+    registerModerationHandlers();
   });
 
   it("closes open conversations when a Student is removed", async () => {
