@@ -4,8 +4,7 @@
  */
 import { and, eq, inArray, or } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { userLanguage, conversationPresence, meetup, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
-import { user } from "@sip-and-speak/db/schema/auth";
+import { conversationPresence, meetup, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
 import {
   domainEvents,
   type MatchRequestSentEvent,
@@ -59,22 +58,11 @@ import {
 import { dispatch } from "./notification-recipe";
 
 async function handleMatchRequestSent(event: MatchRequestSentEvent): Promise<void> {
-  const [requesterResult, requesterLanguages] = await Promise.all([
-    db.select({ name: user.name }).from(user).where(eq(user.id, event.requesterId)).limit(1),
-    db.select({ language: userLanguage.language, type: userLanguage.type }).from(userLanguage).where(eq(userLanguage.userId, event.requesterId)),
-  ]);
-  const requesterName = requesterResult[0]?.name ?? "Someone";
-  const offeredLanguage = requesterLanguages.find((l) => l.type === "spoken")?.language ?? null;
-  const targetedLanguage = requesterLanguages.find((l) => l.type === "learning")?.language ?? null;
-  await dispatch(buildMatchRequestSentRecipes(event, { requesterName, offeredLanguage, targetedLanguage }));
+  await dispatch(buildMatchRequestSentRecipes(event));
 }
 
 export async function handleMatchRequestAccepted(event: MatchRequestAcceptedEvent): Promise<void> {
-  const [receiverResult] = await Promise.all([
-    db.select({ name: user.name }).from(user).where(eq(user.id, event.receiverId)).limit(1),
-  ]);
-  const receiverName = receiverResult[0]?.name ?? "Someone";
-  await dispatch(buildMatchRequestAcceptedRecipes(event, { receiverName }));
+  await dispatch(buildMatchRequestAcceptedRecipes(event));
 }
 
 export async function handleMatchRequestDeclined(event: MatchRequestDeclinedEvent): Promise<void> {
@@ -122,31 +110,15 @@ async function handleMeetupNotAttended(event: MeetupNotAttendedEvent): Promise<v
 }
 
 export async function handleMessagingOptInPrompted(event: MessagingOptInPromptedEvent): Promise<void> {
-  const [studentAResult, studentBResult] = await Promise.all([
-    db.select({ name: user.name }).from(user).where(eq(user.id, event.studentAId)).limit(1),
-    db.select({ name: user.name }).from(user).where(eq(user.id, event.studentBId)).limit(1),
-  ]);
-  const studentAName = studentAResult[0]?.name ?? "Your match";
-  const studentBName = studentBResult[0]?.name ?? "Your match";
-  await dispatch(buildMessagingOptInPromptedRecipes(event, { studentAName, studentBName }));
+  await dispatch(buildMessagingOptInPromptedRecipes(event));
 }
 
 export async function handleMessagingNudge(event: MessagingNudgeNeededEvent): Promise<void> {
-  const [acceptingResult] = await Promise.all([
-    db.select({ name: user.name }).from(user).where(eq(user.id, event.acceptingStudentId)).limit(1),
-  ]);
-  const acceptingStudentName = acceptingResult[0]?.name ?? "Your match";
-  await dispatch(buildMessagingNudgeRecipes(event, { acceptingStudentName }));
+  await dispatch(buildMessagingNudgeRecipes(event));
 }
 
 export async function handleConversationOpened(event: ConversationOpenedEvent): Promise<void> {
-  const [studentAResult, studentBResult] = await Promise.all([
-    db.select({ name: user.name }).from(user).where(eq(user.id, event.studentAId)).limit(1),
-    db.select({ name: user.name }).from(user).where(eq(user.id, event.studentBId)).limit(1),
-  ]);
-  const studentAName = studentAResult[0]?.name ?? "Your match";
-  const studentBName = studentBResult[0]?.name ?? "Your match";
-  await dispatch(buildConversationOpenedRecipes(event, { studentAName, studentBName }));
+  await dispatch(buildConversationOpenedRecipes(event));
 }
 
 export async function handleMessagingDeclineOutcome(event: MessagingDeclineOutcomeEvent): Promise<void> {

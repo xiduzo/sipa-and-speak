@@ -419,9 +419,20 @@ export const matchingRouter = router({
         receiverId: input.receiverId,
       });
 
+      const [requesterRow, requesterLanguages] = await Promise.all([
+        db.select({ name: user.name }).from(user).where(eq(user.id, requesterId)).limit(1),
+        db.select({ language: userLanguage.language, type: userLanguage.type }).from(userLanguage).where(eq(userLanguage.userId, requesterId)),
+      ]);
+      const requesterName = requesterRow[0]?.name ?? "Someone";
+      const offeredLanguage = requesterLanguages.find((l) => l.type === "spoken")?.language ?? null;
+      const targetedLanguage = requesterLanguages.find((l) => l.type === "learning")?.language ?? null;
+
       domainEvents.emit("MatchRequestSent", {
         matchRequestId: created.id,
         requesterId,
+        requesterName,
+        offeredLanguage,
+        targetedLanguage,
         receiverId: input.receiverId,
         sentAt: new Date(),
       });
@@ -467,10 +478,14 @@ export const matchingRouter = router({
         receiverId,
       });
 
+      const [receiverRow] = await db.select({ name: user.name }).from(user).where(eq(user.id, receiverId)).limit(1);
+      const receiverName = receiverRow?.name ?? "Someone";
+
       domainEvents.emit("MatchRequestAccepted", {
         matchRequestId: input.matchRequestId,
         requesterId: request.requesterId,
         receiverId,
+        receiverName,
         acceptedAt: new Date(),
       });
 

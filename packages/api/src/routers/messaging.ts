@@ -123,9 +123,11 @@ export const messagingRouter = router({
             .returning({ id: messagingOptIn.id });
 
           if (updated.length > 0) {
+            const [acceptingRow] = await db.select({ name: user.name }).from(user).where(eq(user.id, studentId)).limit(1);
             domainEvents.emit("MessagingNudgeNeeded", {
               meetupId: input.meetupId,
               acceptingStudentId: studentId,
+              acceptingStudentName: acceptingRow?.name ?? "Your match",
               pendingStudentId: partnerId,
             });
           }
@@ -153,11 +155,17 @@ export const messagingRouter = router({
             console.log(
               `[messaging] conversation opened conversationId=${newConversation.id} meetupId=${input.meetupId}`,
             );
+            const [studentARow, studentBRow] = await Promise.all([
+              db.select({ name: user.name }).from(user).where(eq(user.id, studentId)).limit(1),
+              db.select({ name: user.name }).from(user).where(eq(user.id, partnerId)).limit(1),
+            ]);
             domainEvents.emit("ConversationOpened", {
               conversationId: newConversation.id,
               meetupId: input.meetupId,
               studentAId: studentId,
+              studentAName: studentARow[0]?.name ?? "Your match",
               studentBId: partnerId,
+              studentBName: studentBRow[0]?.name ?? "Your match",
               openedAt: newConversation.createdAt,
             });
           }

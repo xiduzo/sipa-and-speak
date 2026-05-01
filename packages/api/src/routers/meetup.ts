@@ -1098,10 +1098,16 @@ export const meetupRouter = router({
             });
 
             // #138 — Prompt both Students to opt in to messaging after a completed meetup
+            const [studentARow, studentBRow] = await Promise.all([
+              db.select({ name: user.name }).from(user).where(eq(user.id, existing.proposerId)).limit(1),
+              db.select({ name: user.name }).from(user).where(eq(user.id, existing.receiverId)).limit(1),
+            ]);
             domainEvents.emit("MessagingOptInPrompted", {
               meetupId: input.meetupId,
               studentAId: existing.proposerId,
+              studentAName: studentARow[0]?.name ?? "Your match",
               studentBId: existing.receiverId,
+              studentBName: studentBRow[0]?.name ?? "Your match",
               promptedAt: new Date(),
             });
           }

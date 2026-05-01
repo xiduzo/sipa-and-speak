@@ -18,6 +18,9 @@ export interface ProfileCompletedEvent {
 export interface MatchRequestSentEvent {
   matchRequestId: string;
   requesterId: string;
+  requesterName: string;
+  offeredLanguage: string | null;
+  targetedLanguage: string | null;
   receiverId: string;
   sentAt: Date;
 }
@@ -26,6 +29,7 @@ export interface MatchRequestAcceptedEvent {
   matchRequestId: string;
   requesterId: string;
   receiverId: string;
+  receiverName: string;
   acceptedAt: Date;
 }
 
@@ -140,7 +144,9 @@ export interface MeetupNotAttendedEvent {
 export interface MessagingOptInPromptedEvent {
   meetupId: string;
   studentAId: string;
+  studentAName: string;
   studentBId: string;
+  studentBName: string;
   promptedAt: Date;
 }
 
@@ -162,7 +168,9 @@ export interface ConversationOpenedEvent {
   conversationId: string;
   meetupId: string;
   studentAId: string;
+  studentAName: string;
   studentBId: string;
+  studentBName: string;
   openedAt: Date;
 }
 
@@ -176,6 +184,7 @@ export interface MessagingNudgeNeededEvent {
   meetupId: string;
   /** The student who accepted and triggered the nudge */
   acceptingStudentId: string;
+  acceptingStudentName: string;
   /** The student who has not yet responded and should receive the nudge */
   pendingStudentId: string;
 }
