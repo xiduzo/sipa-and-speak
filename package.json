@@ -57,6 +57,7 @@
   "devDependencies": {
     "@sip-and-speak/config": "workspace:*",
     "@types/bun": "catalog:",
+    "babel-preset-expo": "^55.0.19",
     "turbo": "^2.8.12",
     "typescript": "^5"
   },

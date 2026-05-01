@@ -25,3 +25,7 @@ uniwind-types.d.ts
 
 expo-env.d.ts
 # @end expo-cli
+
+# Native specific
+ios/
+android/
