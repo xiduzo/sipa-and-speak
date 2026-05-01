@@ -5,6 +5,9 @@
     ".": {
       "default": "./src/index.ts"
     },
+    "./contexts/moderation": {
+      "default": "./src/contexts/moderation/index.ts"
+    },
     "./*": {
       "default": "./src/*.ts"
     }
