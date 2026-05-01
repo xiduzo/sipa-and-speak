@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { userDeviceToken } from "@sip-and-speak/db/schema/sip-and-speak";
-import { getDelivery, type DeliveryMessage } from "./notification-delivery";
+import { getDelivery, type DeliveryMessage } from "./delivery";
 
 export interface Recipe {
   recipientId: string;

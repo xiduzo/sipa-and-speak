@@ -1,9 +1,9 @@
 /**
- * Tests for task #138 — Send opt-in push notification to both Students after meetup is completed
+ * Tests for task #140 — Send second push to pending Student when their match accepts
  *
  * Covers:
- *   - Both Students receive an opt-in prompt when their meetup is completed
- *   - No notification sent when neither Student has a device token
+ *   - Pending Student receives a nudge push when their match accepts
+ *   - No nudge sent when pending Student has no device token
  */
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 
@@ -49,14 +49,13 @@ mock.module("drizzle-orm", () => ({
 
 // ── DB mock ───────────────────────────────────────────────────────────────────
 
-const STUDENT_A_ID = "student-a-id";
-const STUDENT_B_ID = "student-b-id";
+const ACCEPTING_STUDENT_ID = "student-a-id";
+const PENDING_STUDENT_ID = "student-b-id";
 
-let mockStudentATokens: Array<{ id: string; token: string }> = [];
-let mockStudentBTokens: Array<{ id: string; token: string }> = [];
+let mockAcceptingStudentTokens: Array<{ id: string; token: string }> = [];
+let mockPendingStudentTokens: Array<{ id: string; token: string }> = [];
 
-const STUDENT_A_NAME = [{ name: "Alice" }];
-const STUDENT_B_NAME = [{ name: "Bob" }];
+const ACCEPTING_STUDENT_NAME = [{ name: "Alice" }];
 
 mock.module("@sip-and-speak/db", () => ({
   db: {
@@ -66,10 +65,13 @@ mock.module("@sip-and-speak/db", () => ({
         from: (_table: unknown) => ({
           where: (clause: { _val: string }) => {
             if (isNameQuery) {
-              const rows = clause._val === STUDENT_A_ID ? STUDENT_A_NAME : STUDENT_B_NAME;
+              const rows = clause._val === ACCEPTING_STUDENT_ID ? ACCEPTING_STUDENT_NAME : [];
               return { limit: (_n: number) => Promise.resolve(rows) };
             }
-            const rows = clause._val === STUDENT_A_ID ? mockStudentATokens : mockStudentBTokens;
+            const rows =
+              clause._val === ACCEPTING_STUDENT_ID
+                ? mockAcceptingStudentTokens
+                : mockPendingStudentTokens;
             return Promise.resolve(rows);
           },
         }),
@@ -87,69 +89,60 @@ mock.module("@sip-and-speak/api/domain-events", () => ({
 // ── Import under test (after mocks) ──────────────────────────────────────────
 
 // eslint-disable-next-line import/first
-import { handleMessagingOptInPrompted } from "../notifications";
+import { handleMessagingNudge } from "../dispatcher";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeOptInEvent(
-  overrides: Partial<{ meetupId: string; studentAId: string; studentAName: string; studentBId: string; studentBName: string }> = {},
+function makeNudgeEvent(
+  overrides: Partial<{
+    meetupId: string;
+    acceptingStudentId: string;
+    acceptingStudentName: string;
+    pendingStudentId: string;
+  }> = {},
 ) {
   return {
     meetupId: overrides.meetupId ?? "meetup-1",
-    studentAId: overrides.studentAId ?? STUDENT_A_ID,
-    studentAName: overrides.studentAName ?? "Alice",
-    studentBId: overrides.studentBId ?? STUDENT_B_ID,
-    studentBName: overrides.studentBName ?? "Bob",
-    promptedAt: new Date(),
+    acceptingStudentId: overrides.acceptingStudentId ?? ACCEPTING_STUDENT_ID,
+    acceptingStudentName: overrides.acceptingStudentName ?? "Alice",
+    pendingStudentId: overrides.pendingStudentId ?? PENDING_STUDENT_ID,
   };
 }
 
 beforeEach(() => {
   fetchCalls.length = 0;
-  mockStudentATokens = [];
-  mockStudentBTokens = [];
+  mockAcceptingStudentTokens = [];
+  mockPendingStudentTokens = [];
 });
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("#138 — Send opt-in push notification to both Students after meetup is completed", () => {
-  it("sends an opt-in push to both Students when their meetup is completed", async () => {
-    mockStudentATokens = [{ id: "tok-a", token: "ExponentPushToken[alice]" }];
-    mockStudentBTokens = [{ id: "tok-b", token: "ExponentPushToken[bob]" }];
+describe("#140 — Send second push to pending Student when their match accepts", () => {
+  it("sends a nudge push to the pending Student with the accepting Student's name", async () => {
+    mockPendingStudentTokens = [{ id: "tok-b", token: "ExponentPushToken[bob]" }];
 
-    await handleMessagingOptInPrompted(makeOptInEvent());
+    await handleMessagingNudge(makeNudgeEvent());
 
     expect(fetchCalls).toHaveLength(1);
 
     const call = fetchCalls[0];
     if (!call) throw new Error("Expected a fetch call");
 
-    expect(call.messages).toHaveLength(2);
+    expect(call.messages).toHaveLength(1);
+    const msg = call.messages[0];
+    if (!msg) throw new Error("Expected a message");
 
-    const tokens = call.messages.map((m) => m.to);
-    expect(tokens).toContain("ExponentPushToken[alice]");
-    expect(tokens).toContain("ExponentPushToken[bob]");
-
-    // Student A (Alice) sees Bob's name
-    const aliceMsg = call.messages.find((m) => m.to === "ExponentPushToken[alice]");
-    expect(aliceMsg?.title).toBe("Want to keep in touch?");
-    expect(aliceMsg?.body).toContain("Bob");
-    expect(aliceMsg?.data?.type).toBe("messaging_opt_in");
-    expect(aliceMsg?.data?.meetupId).toBe("meetup-1");
-
-    // Student B (Bob) sees Alice's name
-    const bobMsg = call.messages.find((m) => m.to === "ExponentPushToken[bob]");
-    expect(bobMsg?.title).toBe("Want to keep in touch?");
-    expect(bobMsg?.body).toContain("Alice");
-    expect(bobMsg?.data?.type).toBe("messaging_opt_in");
-    expect(bobMsg?.data?.meetupId).toBe("meetup-1");
+    expect(msg.to).toBe("ExponentPushToken[bob]");
+    expect(msg.title).toBe("Your match wants to message you!");
+    expect(msg.body).toContain("Alice");
+    expect(msg.data?.type).toBe("messaging_nudge");
+    expect(msg.data?.meetupId).toBe("meetup-1");
   });
 
-  it("sends no notification when neither Student has a registered device token", async () => {
-    mockStudentATokens = [];
-    mockStudentBTokens = [];
+  it("sends no notification when pending Student has no registered device token", async () => {
+    mockPendingStudentTokens = [];
 
-    await handleMessagingOptInPrompted(makeOptInEvent());
+    await handleMessagingNudge(makeNudgeEvent());
 
     expect(fetchCalls).toHaveLength(0);
   });

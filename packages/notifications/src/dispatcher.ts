@@ -54,8 +54,8 @@ import {
   buildSuspensionLiftedRecipes,
   buildStudentRemovedNotifyRecipes,
   buildProposalCancelledRecipes,
-} from "./notification-builders";
-import { dispatch } from "./notification-recipe";
+} from "./builders";
+import { dispatch } from "./recipe";
 
 async function handleMatchRequestSent(event: MatchRequestSentEvent): Promise<void> {
   await dispatch(buildMatchRequestSentRecipes(event));

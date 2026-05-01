@@ -25,7 +25,7 @@ mock.module("@sip-and-speak/api/routers/matching-utils", () => ({
 }));
 
 import { domainEvents } from "@sip-and-speak/api/domain-events";
-import { registerNotificationHandlers } from "../notifications";
+import { registerNotificationHandlers } from "../dispatcher";
 
 describe("#89 — MeetupRescheduleProposed push notification", () => {
   beforeEach(() => {

@@ -1,9 +1,8 @@
 /**
- * Tests for task #135 — Push notification on MatchRequestDeclined
+ * Tests for task #134 — Push notification on MatchRequestAccepted
  *
  * Covers:
- *   - Notification sent to requester when their match request is declined
- *   - Notification body does not identify the declining receiver
+ *   - Notification sent to requester when their match request is accepted
  *   - No notification sent when requester has no registered device token
  */
 import { describe, it, expect, mock, beforeEach } from "bun:test";
@@ -29,6 +28,7 @@ const fetchCalls: CapturedFetchCall[] = [];
 
 // ── Schema mocks ──────────────────────────────────────────────────────────────
 
+const USER_TABLE = "user";
 const DEVICE_TOKEN_TABLE = "userDeviceToken";
 
 mock.module("@sip-and-speak/db/schema/sip-and-speak", () => ({
@@ -37,7 +37,7 @@ mock.module("@sip-and-speak/db/schema/sip-and-speak", () => ({
 }));
 
 mock.module("@sip-and-speak/db/schema/auth", () => ({
-  user: "user",
+  user: USER_TABLE,
 }));
 
 // ── drizzle-orm mock ──────────────────────────────────────────────────────────
@@ -48,21 +48,28 @@ mock.module("drizzle-orm", () => ({
 
 // ── DB mock ───────────────────────────────────────────────────────────────────
 
+let mockReceiverRows: Array<{ name: string }> = [{ name: "Alice" }];
 let mockTokenRows: Array<{ id: string; token: string }> = [];
 
 mock.module("@sip-and-speak/db", () => ({
   db: {
-    select: (_fields: Record<string, unknown>) => ({
-      from: (_table: unknown) => ({
-        where: (_cond: unknown) => ({
-          limit: (_n: number) => Promise.resolve(mockTokenRows),
-          then: (
-            resolve: (v: unknown) => unknown,
-            reject?: (e: unknown) => unknown,
-          ) => Promise.resolve(mockTokenRows).then(resolve, reject),
-        }),
-      }),
-    }),
+    select: (fields: Record<string, unknown>) => {
+      const isNameQuery = "name" in fields;
+      return {
+        from: (_table: unknown) => {
+          const rows = isNameQuery ? mockReceiverRows : mockTokenRows;
+          return {
+            where: (_cond: unknown) => ({
+              limit: (_n: number) => Promise.resolve(rows),
+              then: (
+                resolve: (v: unknown) => unknown,
+                reject?: (e: unknown) => unknown,
+              ) => Promise.resolve(rows).then(resolve, reject),
+            }),
+          };
+        },
+      };
+    },
     delete: (_table: unknown) => ({
       where: (_cond: unknown) => Promise.resolve(),
     }),
@@ -78,33 +85,35 @@ mock.module("@sip-and-speak/api/domain-events", () => ({
 // ── Import under test (after mocks) ──────────────────────────────────────────
 
 // eslint-disable-next-line import/first
-import { handleMatchRequestDeclined } from "../notifications";
+import { handleMatchRequestAccepted } from "../dispatcher";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeDeclinedEvent(
-  overrides: Partial<{ requesterId: string; receiverId: string; matchRequestId: string }> = {},
+function makeAcceptedEvent(
+  overrides: Partial<{ requesterId: string; receiverId: string; matchRequestId: string; receiverName: string }> = {},
 ) {
   return {
-    matchRequestId: overrides.matchRequestId ?? "req-456",
+    matchRequestId: overrides.matchRequestId ?? "req-123",
     requesterId: overrides.requesterId ?? "requester-id",
     receiverId: overrides.receiverId ?? "receiver-id",
-    declinedAt: new Date(),
+    receiverName: overrides.receiverName ?? "Alice",
+    acceptedAt: new Date(),
   };
 }
 
 beforeEach(() => {
   fetchCalls.length = 0;
+  mockReceiverRows = [{ name: "Alice" }];
   mockTokenRows = [];
 });
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("#135 — Push notification on MatchRequestDeclined", () => {
-  it("sends a push notification to the requester when their request is declined", async () => {
-    mockTokenRows = [{ id: "tok-2", token: "ExponentPushToken[def]" }];
+describe("#134 — Push notification on MatchRequestAccepted", () => {
+  it("sends a push notification to the requester when their request is accepted", async () => {
+    mockTokenRows = [{ id: "tok-1", token: "ExponentPushToken[abc]" }];
 
-    await handleMatchRequestDeclined(makeDeclinedEvent());
+    await handleMatchRequestAccepted(makeAcceptedEvent());
 
     expect(fetchCalls).toHaveLength(1);
 
@@ -117,29 +126,16 @@ describe("#135 — Push notification on MatchRequestDeclined", () => {
     const msg = call.messages[0];
     if (!msg) throw new Error("Expected a message");
 
-    expect(msg.to).toBe("ExponentPushToken[def]");
-    expect(msg.title).toBe("Your match request was not accepted");
-    expect(msg.data?.type).toBe("match_declined");
-    expect(msg.data?.matchRequestId).toBe("req-456");
-  });
-
-  it("does not include the receiver's name in the notification body", async () => {
-    mockTokenRows = [{ id: "tok-2", token: "ExponentPushToken[def]" }];
-
-    await handleMatchRequestDeclined(makeDeclinedEvent({ receiverId: "receiver-xyz" }));
-
-    const msg = fetchCalls[0]?.messages[0];
-    if (!msg) throw new Error("Expected a message");
-
-    // Body must not reference the receiver identity — privacy invariant
-    expect(msg.body).not.toContain("receiver-xyz");
-    expect(msg.body).toBeTruthy();
+    expect(msg.to).toBe("ExponentPushToken[abc]");
+    expect(msg.title).toBe("Your match request was accepted!");
+    expect(msg.data?.type).toBe("match_accepted");
+    expect(msg.data?.matchRequestId).toBe("req-123");
   });
 
   it("does not send a push notification when the requester has no registered device token", async () => {
     mockTokenRows = [];
 
-    await handleMatchRequestDeclined(makeDeclinedEvent());
+    await handleMatchRequestAccepted(makeAcceptedEvent());
 
     expect(fetchCalls).toHaveLength(0);
   });

@@ -64,7 +64,7 @@ mock.module("@sip-and-speak/db", () => ({
   },
 }));
 
-import { registerNotificationHandlers } from "../notifications";
+import { registerNotificationHandlers } from "../dispatcher";
 import { domainEvents } from "@sip-and-speak/api/domain-events";
 
 describe("handleStudentRemovedCancelProposals (#110)", () => {

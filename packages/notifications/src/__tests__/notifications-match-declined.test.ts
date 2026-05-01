@@ -1,10 +1,10 @@
 /**
- * Tests for task #153 — Suppress push notification when recipient is actively viewing
+ * Tests for task #135 — Push notification on MatchRequestDeclined
  *
  * Covers:
- *   - No push sent when recipient has an active (non-stale) presence record
- *   - Push sent when recipient is not viewing (no presence record)
- *   - Push sent when presence record is stale (activeUntil in the past)
+ *   - Notification sent to requester when their match request is declined
+ *   - Notification body does not identify the declining receiver
+ *   - No notification sent when requester has no registered device token
  */
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 
@@ -30,11 +30,9 @@ const fetchCalls: CapturedFetchCall[] = [];
 // ── Schema mocks ──────────────────────────────────────────────────────────────
 
 const DEVICE_TOKEN_TABLE = "userDeviceToken";
-const PRESENCE_TABLE = "conversationPresence";
 
 mock.module("@sip-and-speak/db/schema/sip-and-speak", () => ({
   userDeviceToken: DEVICE_TOKEN_TABLE,
-  conversationPresence: PRESENCE_TABLE,
   userLanguage: "userLanguage",
 }));
 
@@ -45,41 +43,28 @@ mock.module("@sip-and-speak/db/schema/auth", () => ({
 // ── drizzle-orm mock ──────────────────────────────────────────────────────────
 
 mock.module("drizzle-orm", () => ({
-  eq: (_col: unknown, val: unknown) => ({ _col: _col, _val: val }),
-  and: (...args: unknown[]) => ({ _and: args }),
+  eq: (_col: unknown, val: unknown) => ({ _val: val }),
 }));
 
 // ── DB mock ───────────────────────────────────────────────────────────────────
 
-const RECIPIENT_ID = "recipient-id";
-const SENDER_ID = "sender-id";
-const CONVERSATION_ID = "conv-1";
-
-const RECIPIENT_TOKEN = [{ id: "tok-1", token: "ExponentPushToken[recipient]" }];
-
-// Presence record control — null means no record
-let mockPresence: { activeUntil: Date } | null = null;
+let mockTokenRows: Array<{ id: string; token: string }> = [];
 
 mock.module("@sip-and-speak/db", () => ({
   db: {
-    select: (fields: Record<string, unknown>) => {
-      const isPresenceQuery = "activeUntil" in fields;
-      return {
-        from: (_table: unknown) => ({
-          where: (_clause: unknown) => {
-            if (isPresenceQuery) {
-              return {
-                limit: (_n: number) => Promise.resolve(mockPresence ? [mockPresence] : []),
-              };
-            }
-            // Token query — always return recipient token for simplicity
-            return Promise.resolve(RECIPIENT_TOKEN);
-          },
+    select: (_fields: Record<string, unknown>) => ({
+      from: (_table: unknown) => ({
+        where: (_cond: unknown) => ({
+          limit: (_n: number) => Promise.resolve(mockTokenRows),
+          then: (
+            resolve: (v: unknown) => unknown,
+            reject?: (e: unknown) => unknown,
+          ) => Promise.resolve(mockTokenRows).then(resolve, reject),
         }),
-      };
-    },
+      }),
+    }),
     delete: (_table: unknown) => ({
-      where: (_clause: unknown) => Promise.resolve([]),
+      where: (_cond: unknown) => Promise.resolve(),
     }),
   },
 }));
@@ -93,48 +78,69 @@ mock.module("@sip-and-speak/api/domain-events", () => ({
 // ── Import under test (after mocks) ──────────────────────────────────────────
 
 // eslint-disable-next-line import/first
-import { handleMessageSent } from "../notifications";
+import { handleMatchRequestDeclined } from "../dispatcher";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeEvent() {
+function makeDeclinedEvent(
+  overrides: Partial<{ requesterId: string; receiverId: string; matchRequestId: string }> = {},
+) {
   return {
-    conversationId: CONVERSATION_ID,
-    senderId: SENDER_ID,
-    recipientId: RECIPIENT_ID,
-    senderName: "Alice",
+    matchRequestId: overrides.matchRequestId ?? "req-456",
+    requesterId: overrides.requesterId ?? "requester-id",
+    receiverId: overrides.receiverId ?? "receiver-id",
+    declinedAt: new Date(),
   };
 }
 
 beforeEach(() => {
   fetchCalls.length = 0;
-  mockPresence = null;
+  mockTokenRows = [];
 });
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("#153 — Suppress push when recipient is actively viewing", () => {
-  it("suppresses push when recipient has an active presence record", async () => {
-    mockPresence = { activeUntil: new Date(Date.now() + 30_000) };
+describe("#135 — Push notification on MatchRequestDeclined", () => {
+  it("sends a push notification to the requester when their request is declined", async () => {
+    mockTokenRows = [{ id: "tok-2", token: "ExponentPushToken[def]" }];
 
-    await handleMessageSent(makeEvent());
+    await handleMatchRequestDeclined(makeDeclinedEvent());
+
+    expect(fetchCalls).toHaveLength(1);
+
+    const call = fetchCalls[0];
+    if (!call) throw new Error("Expected a fetch call");
+
+    expect(call.url).toBe("https://exp.host/--/api/v2/push/send");
+    expect(call.messages).toHaveLength(1);
+
+    const msg = call.messages[0];
+    if (!msg) throw new Error("Expected a message");
+
+    expect(msg.to).toBe("ExponentPushToken[def]");
+    expect(msg.title).toBe("Your match request was not accepted");
+    expect(msg.data?.type).toBe("match_declined");
+    expect(msg.data?.matchRequestId).toBe("req-456");
+  });
+
+  it("does not include the receiver's name in the notification body", async () => {
+    mockTokenRows = [{ id: "tok-2", token: "ExponentPushToken[def]" }];
+
+    await handleMatchRequestDeclined(makeDeclinedEvent({ receiverId: "receiver-xyz" }));
+
+    const msg = fetchCalls[0]?.messages[0];
+    if (!msg) throw new Error("Expected a message");
+
+    // Body must not reference the receiver identity — privacy invariant
+    expect(msg.body).not.toContain("receiver-xyz");
+    expect(msg.body).toBeTruthy();
+  });
+
+  it("does not send a push notification when the requester has no registered device token", async () => {
+    mockTokenRows = [];
+
+    await handleMatchRequestDeclined(makeDeclinedEvent());
 
     expect(fetchCalls).toHaveLength(0);
-  });
-
-  it("sends push when recipient is not viewing (no presence record)", async () => {
-    mockPresence = null;
-
-    await handleMessageSent(makeEvent());
-
-    expect(fetchCalls).toHaveLength(1);
-  });
-
-  it("sends push when recipient presence record is stale (activeUntil in past)", async () => {
-    mockPresence = { activeUntil: new Date(Date.now() - 1_000) };
-
-    await handleMessageSent(makeEvent());
-
-    expect(fetchCalls).toHaveLength(1);
   });
 });
