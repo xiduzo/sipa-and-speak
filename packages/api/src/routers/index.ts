@@ -1,12 +1,12 @@
 import { protectedProcedure, publicProcedure, router } from "../index";
-import { profileRouter } from "./profile";
-import { matchingRouter } from "./matching";
-import { venueRouter } from "./venue";
-import { adminVenueRouter } from "./venue-admin";
-import { meetupRouter } from "./meetup";
-import { chatRouter } from "./chat";
-import { messagingRouter } from "./messaging";
-import { moderationRouter } from "./moderation";
+import { profileRouter } from "../contexts/identity/profile";
+import { matchingRouter } from "../contexts/matching/matching";
+import { venueRouter } from "../contexts/scheduling/venue";
+import { adminVenueRouter } from "../contexts/scheduling/venue-admin";
+import { meetupRouter } from "../contexts/scheduling/meetup";
+import { chatRouter } from "../contexts/conversation/chat";
+import { messagingRouter } from "../contexts/conversation/messaging";
+import { moderationRouter } from "../contexts/moderation/moderation";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {

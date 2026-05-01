@@ -2,7 +2,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { domainEvents } from "@sip-and-speak/api/domain-events";
 import { createContext } from "@sip-and-speak/api/context";
 import { appRouter } from "@sip-and-speak/api/routers/index";
-import { addEmailToBlocklist, isEmailBlocklisted } from "@sip-and-speak/api/routers/moderation-persist";
+import { addEmailToBlocklist, isEmailBlocklisted } from "@sip-and-speak/api/contexts/moderation/moderation-persist";
 import { auth } from "@sip-and-speak/auth";
 import { isAlumniEmail, ALUMNI_REGISTRY_ERROR, ALUMNI_REGISTRY_UNAVAILABLE_ERROR } from "@sip-and-speak/auth/alumni-registry";
 import { validateTueDomain } from "@sip-and-speak/auth/domain-validation";
