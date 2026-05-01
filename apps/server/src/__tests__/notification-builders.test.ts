@@ -9,10 +9,15 @@ import {
 
 describe("buildMatchRequestSentRecipes", () => {
   it("returns one recipe targeting the receiver", () => {
-    const recipes = buildMatchRequestSentRecipes(
-      { matchRequestId: "mr-1", requesterId: "u1", receiverId: "u2", sentAt: new Date() },
-      { requesterName: "Alice", offeredLanguage: "Dutch", targetedLanguage: "English" },
-    );
+    const recipes = buildMatchRequestSentRecipes({
+      matchRequestId: "mr-1",
+      requesterId: "u1",
+      requesterName: "Alice",
+      offeredLanguage: "Dutch",
+      targetedLanguage: "English",
+      receiverId: "u2",
+      sentAt: new Date(),
+    });
     expect(recipes).toHaveLength(1);
     expect(recipes[0]?.recipientId).toBe("u2");
     expect(recipes[0]?.title).toBe("New match request");
@@ -22,10 +27,13 @@ describe("buildMatchRequestSentRecipes", () => {
 
 describe("buildMatchRequestAcceptedRecipes", () => {
   it("returns one recipe targeting the requester with category", () => {
-    const recipes = buildMatchRequestAcceptedRecipes(
-      { matchRequestId: "mr-1", requesterId: "u1", receiverId: "u2", acceptedAt: new Date() },
-      { receiverName: "Bob" },
-    );
+    const recipes = buildMatchRequestAcceptedRecipes({
+      matchRequestId: "mr-1",
+      requesterId: "u1",
+      receiverId: "u2",
+      receiverName: "Bob",
+      acceptedAt: new Date(),
+    });
     expect(recipes).toHaveLength(1);
     expect(recipes[0]?.recipientId).toBe("u1");
     expect(recipes[0]?.body).toBe("Bob accepted your request");

@@ -25,29 +25,23 @@ import type {
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
 import type { Recipe } from "./notification-recipe";
 
-export function buildMatchRequestSentRecipes(
-  event: MatchRequestSentEvent,
-  ctx: { requesterName: string; offeredLanguage: string | null; targetedLanguage: string | null },
-): Recipe[] {
+export function buildMatchRequestSentRecipes(event: MatchRequestSentEvent): Recipe[] {
   return [
     {
       recipientId: event.receiverId,
       title: "New match request",
-      body: buildMatchRequestNotificationBody(ctx.requesterName, ctx.offeredLanguage, ctx.targetedLanguage),
+      body: buildMatchRequestNotificationBody(event.requesterName, event.offeredLanguage, event.targetedLanguage),
       data: { matchRequestId: event.matchRequestId, requesterId: event.requesterId },
     },
   ];
 }
 
-export function buildMatchRequestAcceptedRecipes(
-  event: MatchRequestAcceptedEvent,
-  ctx: { receiverName: string },
-): Recipe[] {
+export function buildMatchRequestAcceptedRecipes(event: MatchRequestAcceptedEvent): Recipe[] {
   return [
     {
       recipientId: event.requesterId,
       title: "Your match request was accepted!",
-      body: `${ctx.receiverName} accepted your request`,
+      body: `${event.receiverName} accepted your request`,
       data: { matchRequestId: event.matchRequestId, matchedWithUserId: event.receiverId, type: "match_accepted" },
       category: "match_accepted",
     },
@@ -163,45 +157,36 @@ export function buildMeetupNotAttendedRecipes(event: MeetupNotAttendedEvent): Re
   ];
 }
 
-export function buildMessagingOptInPromptedRecipes(
-  event: MessagingOptInPromptedEvent,
-  ctx: { studentAName: string; studentBName: string },
-): Recipe[] {
+export function buildMessagingOptInPromptedRecipes(event: MessagingOptInPromptedEvent): Recipe[] {
   const data = { meetupId: event.meetupId, type: "messaging_opt_in", deepLink: `/messaging/opt-in/${event.meetupId}` };
   return [
     {
       recipientId: event.studentAId,
       title: "Want to keep in touch?",
-      body: `${ctx.studentBName} completed a S&S moment with you — would you like to message them?`,
+      body: `${event.studentBName} completed a S&S moment with you — would you like to message them?`,
       data,
     },
     {
       recipientId: event.studentBId,
       title: "Want to keep in touch?",
-      body: `${ctx.studentAName} completed a S&S moment with you — would you like to message them?`,
+      body: `${event.studentAName} completed a S&S moment with you — would you like to message them?`,
       data,
     },
   ];
 }
 
-export function buildMessagingNudgeRecipes(
-  event: MessagingNudgeNeededEvent,
-  ctx: { acceptingStudentName: string },
-): Recipe[] {
+export function buildMessagingNudgeRecipes(event: MessagingNudgeNeededEvent): Recipe[] {
   return [
     {
       recipientId: event.pendingStudentId,
       title: "Your match wants to message you!",
-      body: `${ctx.acceptingStudentName} accepted messaging — let them know if you're in!`,
+      body: `${event.acceptingStudentName} accepted messaging — let them know if you're in!`,
       data: { meetupId: event.meetupId, type: "messaging_nudge", deepLink: `/messaging/opt-in/${event.meetupId}` },
     },
   ];
 }
 
-export function buildConversationOpenedRecipes(
-  event: ConversationOpenedEvent,
-  ctx: { studentAName: string; studentBName: string },
-): Recipe[] {
+export function buildConversationOpenedRecipes(event: ConversationOpenedEvent): Recipe[] {
   const data = {
     conversationId: event.conversationId,
     meetupId: event.meetupId,
@@ -212,13 +197,13 @@ export function buildConversationOpenedRecipes(
     {
       recipientId: event.studentAId,
       title: "Your messaging channel is open!",
-      body: `${ctx.studentBName} also accepted — you can now message each other.`,
+      body: `${event.studentBName} also accepted — you can now message each other.`,
       data,
     },
     {
       recipientId: event.studentBId,
       title: "Your messaging channel is open!",
-      body: `${ctx.studentAName} also accepted — you can now message each other.`,
+      body: `${event.studentAName} also accepted — you can now message each other.`,
       data,
     },
   ];

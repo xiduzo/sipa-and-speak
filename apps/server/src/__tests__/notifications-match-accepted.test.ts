@@ -90,12 +90,13 @@ import { handleMatchRequestAccepted } from "../notifications";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function makeAcceptedEvent(
-  overrides: Partial<{ requesterId: string; receiverId: string; matchRequestId: string }> = {},
+  overrides: Partial<{ requesterId: string; receiverId: string; matchRequestId: string; receiverName: string }> = {},
 ) {
   return {
     matchRequestId: overrides.matchRequestId ?? "req-123",
     requesterId: overrides.requesterId ?? "requester-id",
     receiverId: overrides.receiverId ?? "receiver-id",
+    receiverName: overrides.receiverName ?? "Alice",
     acceptedAt: new Date(),
   };
 }

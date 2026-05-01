@@ -97,12 +97,14 @@ function makeNudgeEvent(
   overrides: Partial<{
     meetupId: string;
     acceptingStudentId: string;
+    acceptingStudentName: string;
     pendingStudentId: string;
   }> = {},
 ) {
   return {
     meetupId: overrides.meetupId ?? "meetup-1",
     acceptingStudentId: overrides.acceptingStudentId ?? ACCEPTING_STUDENT_ID,
+    acceptingStudentName: overrides.acceptingStudentName ?? "Alice",
     pendingStudentId: overrides.pendingStudentId ?? PENDING_STUDENT_ID,
   };
 }
