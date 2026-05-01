@@ -4,8 +4,15 @@
     "scheme": "sip-and-speak",
     "userInterfaceStyle": "light",
     "orientation": "default",
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/images/favicon.png"
     },
     "name": "sip-and-speak",
     "slug": "sip-and-speak",
@@ -18,7 +25,8 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/5ee3618a-905a-4824-91ab-90472bb0329f"
+      "url": "https://u.expo.dev/5ee3618a-905a-4824-91ab-90472bb0329f",
+      "fallbackToCacheTimeout": 0
     },
     "experiments": {
       "typedRoutes": true,
@@ -31,10 +39,17 @@
     },
     "owner": "xiduzo",
     "android": {
-      "package": "com.xiduzo.sipandspeak"
+      "package": "com.xiduzo.sipandspeak",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "ios": {
       "bundleIdentifier": "com.xiduzo.sipandspeak",
+      "icon": "./assets/images/icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

@@ -26,6 +26,12 @@
     }
   },
   "type": "module",
+  "overrides": {
+    "expo-constants": "55.0.13"
+  },
+  "resolutions": {
+    "expo-constants": "55.0.13"
+  },
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
