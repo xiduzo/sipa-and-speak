@@ -4,9 +4,8 @@ import { matchingRouter } from "../contexts/matching/matching";
 import { venueRouter } from "../contexts/scheduling/venue";
 import { adminVenueRouter } from "../contexts/scheduling/venue-admin";
 import { meetupRouter } from "../contexts/scheduling/meetup";
-import { chatRouter } from "../contexts/conversation/chat";
-import { messagingRouter } from "../contexts/conversation/messaging";
-import { moderationRouter } from "../contexts/moderation/moderation";
+import { chatRouter, messagingRouter } from "../contexts/conversation";
+import { moderationRouter } from "../contexts/moderation";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
