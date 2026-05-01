@@ -179,8 +179,63 @@ async function handleStudentSuspendedNotify(event: StudentSuspendedEvent): Promi
   await dispatch(buildStudentSuspendedNotifyRecipes(event));
 }
 
+async function handleStudentSuspendedSuspendConversations(event: StudentSuspendedEvent): Promise<void> {
+  const openConversations = await db
+    .select({ id: conversation.id })
+    .from(conversation)
+    .where(
+      and(
+        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
+        eq(conversation.status, "open"),
+      ),
+    );
+
+  if (openConversations.length === 0) return;
+
+  await db
+    .update(conversation)
+    .set({ status: "suspended" })
+    .where(
+      and(
+        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
+        eq(conversation.status, "open"),
+      ),
+    );
+
+  console.info("[moderation] Suspended conversations on student suspension", { targetId: event.targetId, count: openConversations.length });
+}
+
 async function handleSuspensionLifted(event: SuspensionLiftedEvent): Promise<void> {
   await dispatch(buildSuspensionLiftedRecipes(event));
+}
+
+// If both Students in a shared conversation were suspended and only one is lifted,
+// the conversation re-opens here even though the other party is still suspended.
+// The per-send guard on user.studentStatus catches that case at message time.
+async function handleSuspensionLiftedReopenConversations(event: SuspensionLiftedEvent): Promise<void> {
+  const suspendedConversations = await db
+    .select({ id: conversation.id })
+    .from(conversation)
+    .where(
+      and(
+        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
+        eq(conversation.status, "suspended"),
+      ),
+    );
+
+  if (suspendedConversations.length === 0) return;
+
+  await db
+    .update(conversation)
+    .set({ status: "open" })
+    .where(
+      and(
+        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
+        eq(conversation.status, "suspended"),
+      ),
+    );
+
+  console.info("[moderation] Re-opened conversations on suspension lift", { targetId: event.targetId, count: suspendedConversations.length });
 }
 
 async function handleStudentRemovedCancelProposals(event: StudentRemovedEvent): Promise<void> {
@@ -266,8 +321,12 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("StudentSuspended", (event) => {
     void handleStudentSuspended(event);
     void handleStudentSuspendedNotify(event);
+    void handleStudentSuspendedSuspendConversations(event);
   });
-  domainEvents.on("SuspensionLifted", (event) => { void handleSuspensionLifted(event); });
+  domainEvents.on("SuspensionLifted", (event) => {
+    void handleSuspensionLifted(event);
+    void handleSuspensionLiftedReopenConversations(event);
+  });
   domainEvents.on("StudentRemoved", (event) => {
     void handleStudentRemovedCancelProposals(event);
     void handleStudentRemovedCloseConversations(event);

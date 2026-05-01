@@ -13,7 +13,6 @@ import {
 } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
 import {
-  checkConversationAccess,
   checkReadAccess,
   computeIsUnread,
   computeMarkReadAt,
@@ -160,59 +159,6 @@ export const chatRouter = router({
         })),
         nextCursor: hasMore ? chronological[chronological.length - 1]?.id : undefined,
       };
-    }),
-
-  sendMessage: protectedProcedure
-    .input(
-      z.object({
-        conversationId: z.string(),
-        content: z.string().min(1).max(2000),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
-
-      // #100 — Guard: suspended Students cannot send messages
-      const [sender] = await db
-        .select({ studentStatus: user.studentStatus })
-        .from(user)
-        .where(eq(user.id, userId))
-        .limit(1);
-      if (sender?.studentStatus === "suspended") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Suspended Students cannot send messages." });
-      }
-
-      // Verify user is part of this conversation
-      const conv = await db
-        .select()
-        .from(conversation)
-        .where(
-          and(
-            eq(conversation.id, input.conversationId),
-            or(
-              eq(conversation.user1Id, userId),
-              eq(conversation.user2Id, userId),
-            ),
-          ),
-        )
-        .limit(1);
-
-      // #111 — Guard: reject sends on non-open conversations (suspended or closed)
-      const access = checkConversationAccess(conv[0], userId);
-      if (!access.allowed) {
-        throw new TRPCError({ code: "FORBIDDEN", message: access.error });
-      }
-
-      const [newMessage] = await db
-        .insert(message)
-        .values({
-          conversationId: input.conversationId,
-          senderId: userId,
-          content: input.content,
-        })
-        .returning();
-
-      return newMessage;
     }),
 
   startConversation: protectedProcedure

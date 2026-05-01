@@ -214,6 +214,18 @@ export const messagingRouter = router({
     .mutation(async ({ ctx, input }) => {
       const senderId = ctx.session.user.id;
 
+      // Suspended/removed Students cannot send. Belt-and-braces with the
+      // conversation.status cascade in handleStudentSuspendedSuspendConversations
+      // — this guard catches edge cases where conversation status is stale.
+      const [sender] = await db
+        .select({ studentStatus: user.studentStatus })
+        .from(user)
+        .where(eq(user.id, senderId))
+        .limit(1);
+      if (sender?.studentStatus === "suspended" || sender?.studentStatus === "removed") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Suspended or removed Students cannot send messages." });
+      }
+
       // #146 — Access gate: fail fast before any validation or DB write
       const [conv] = await db
         .select({
