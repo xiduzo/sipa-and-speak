@@ -10,40 +10,7 @@ import { userDeviceToken, userLanguage, conversationPresence, meetup, conversati
 import { user } from "@sip-and-speak/db/schema/auth";
 import { domainEvents, type MatchRequestSentEvent, type MatchRequestAcceptedEvent, type MatchRequestDeclinedEvent, type MeetupProposedEvent, type MeetupConfirmedEvent, type MeetupCounterProposedEvent, type MeetupDeclinedEvent, type MeetupCancelledEvent, type MeetupRescheduleProposedEvent, type MeetupRescheduledEvent, type MeetupRescheduleDeclinedEvent, type SipAndSpeakMomentCompletedEvent, type MeetupNotAttendedEvent, type MessagingOptInPromptedEvent, type MessagingNudgeNeededEvent, type ConversationOpenedEvent, type MessagingDeclineOutcomeEvent, type MessageSentEvent, type StudentWarnedEvent, type StudentSuspendedEvent, type SuspensionLiftedEvent, type StudentRemovedEvent } from "@sip-and-speak/api/domain-events";
 import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
-
-const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
-
-interface ExpoPushMessage {
-  to: string;
-  title?: string;
-  body?: string;
-  data?: Record<string, unknown>;
-  categoryIdentifier?: string;
-}
-
-interface ExpoPushTicket {
-  status: "ok" | "error";
-  id?: string;
-  message?: string;
-  details?: { error?: string };
-}
-
-async function sendExpoPushNotification(
-  messages: ExpoPushMessage[],
-): Promise<ExpoPushTicket[]> {
-  const response = await fetch(EXPO_PUSH_URL, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Accept-Encoding": "gzip, deflate",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(messages),
-  });
-
-  const json = await response.json() as { data: ExpoPushTicket[] };
-  return json.data ?? [];
-}
+import { getDelivery, type DeliveryMessage } from "./notification-delivery";
 
 async function handleMatchRequestSent(event: MatchRequestSentEvent): Promise<void> {
   const { matchRequestId, requesterId, receiverId } = event;
@@ -75,7 +42,7 @@ async function handleMatchRequestSent(event: MatchRequestSentEvent): Promise<voi
   const targetedLanguage = requesterLanguages.find((l) => l.type === "learning")?.language ?? null;
   const notificationBody = buildMatchRequestNotificationBody(requesterName, offeredLanguage, targetedLanguage);
 
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "New match request",
     body: notificationBody,
@@ -89,7 +56,7 @@ async function handleMatchRequestSent(event: MatchRequestSentEvent): Promise<voi
   });
 
   try {
-    const tickets = await sendExpoPushNotification(messages);
+    const tickets = await getDelivery().send(messages);
 
     // Handle DeviceNotRegistered errors — remove stale tokens
     const staleTokenIds: string[] = [];
@@ -137,7 +104,7 @@ export async function handleMatchRequestAccepted(event: MatchRequestAcceptedEven
 
   const receiverName = receiverResult[0]?.name ?? "Someone";
 
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "Your match request was accepted!",
     body: `${receiverName} accepted your request`,
@@ -152,7 +119,7 @@ export async function handleMatchRequestAccepted(event: MatchRequestAcceptedEven
   });
 
   try {
-    const tickets = await sendExpoPushNotification(messages);
+    const tickets = await getDelivery().send(messages);
 
     const staleTokenIds: string[] = [];
     for (let i = 0; i < tickets.length; i++) {
@@ -194,7 +161,7 @@ export async function handleMatchRequestDeclined(event: MatchRequestDeclinedEven
     return;
   }
 
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "Your match request was not accepted",
     body: "Keep exploring — there are more compatible Students waiting",
@@ -208,7 +175,7 @@ export async function handleMatchRequestDeclined(event: MatchRequestDeclinedEven
   });
 
   try {
-    const tickets = await sendExpoPushNotification(messages);
+    const tickets = await getDelivery().send(messages);
 
     const staleTokenIds: string[] = [];
     for (let i = 0; i < tickets.length; i++) {
@@ -245,7 +212,7 @@ async function handleMeetupProposed(event: MeetupProposedEvent): Promise<void> {
     .where(eq(userDeviceToken.userId, receiverId));
   if (tokens.length === 0) return;
 
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "New meetup proposal",
     body: `${venueName} · ${date} at ${time}`,
@@ -253,7 +220,7 @@ async function handleMeetupProposed(event: MeetupProposedEvent): Promise<void> {
   }));
 
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupProposed notification", { meetupId, err });
   }
@@ -271,7 +238,7 @@ async function handleMeetupConfirmed(event: MeetupConfirmedEvent): Promise<void>
   const allTokens = [...proposerTokens, ...receiverTokens];
   if (allTokens.length === 0) return;
 
-  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = allTokens.map(({ token }) => ({
     to: token,
     title: "Meetup confirmed! 🎉",
     body: `${venueName} · ${date} at ${time}`,
@@ -279,7 +246,7 @@ async function handleMeetupConfirmed(event: MeetupConfirmedEvent): Promise<void>
   }));
 
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupConfirmed notification", { meetupId, err });
   }
@@ -295,7 +262,7 @@ async function handleMeetupCounterProposed(event: MeetupCounterProposedEvent): P
     .where(eq(userDeviceToken.userId, newReceiverId));
   if (tokens.length === 0) return;
 
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: `Counter-proposal received (round ${round})`,
     body: `${venueName} · ${date} at ${time}`,
@@ -303,7 +270,7 @@ async function handleMeetupCounterProposed(event: MeetupCounterProposedEvent): P
   }));
 
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupCounterProposed notification", { meetupId, err });
   }
@@ -321,7 +288,7 @@ async function handleMeetupDeclined(event: MeetupDeclinedEvent): Promise<void> {
   const allTokens = [...proposerTokens, ...receiverTokens];
   if (allTokens.length === 0) return;
 
-  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = allTokens.map(({ token }) => ({
     to: token,
     title: "Meetup proposal declined",
     body: "The proposal was declined — you can start a fresh proposal",
@@ -329,7 +296,7 @@ async function handleMeetupDeclined(event: MeetupDeclinedEvent): Promise<void> {
   }));
 
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupDeclined notification", { meetupId, err });
   }
@@ -420,7 +387,7 @@ async function handleMeetupRescheduled(event: MeetupRescheduledEvent): Promise<v
   const allTokens = [...proposerTokens, ...receiverTokens];
   if (allTokens.length === 0) return;
 
-  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = allTokens.map(({ token }) => ({
     to: token,
     title: "Meetup rescheduled",
     body: `New details: ${venueName} · ${newDate} at ${newTime}`,
@@ -428,7 +395,7 @@ async function handleMeetupRescheduled(event: MeetupRescheduledEvent): Promise<v
   }));
 
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupRescheduled notification", { meetupId, err });
   }
@@ -446,7 +413,7 @@ async function handleMeetupRescheduleDeclined(event: MeetupRescheduleDeclinedEve
   const allTokens = [...proposerTokens, ...receiverTokens];
   if (allTokens.length === 0) return;
 
-  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = allTokens.map(({ token }) => ({
     to: token,
     title: "Reschedule declined",
     body: `Original meetup stands: ${venueName} · ${originalDate} at ${originalTime}`,
@@ -454,7 +421,7 @@ async function handleMeetupRescheduleDeclined(event: MeetupRescheduleDeclinedEve
   }));
 
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupRescheduleDeclined notification", { meetupId, err });
   }
@@ -471,14 +438,14 @@ async function handleMeetupRescheduleProposed(event: MeetupRescheduleProposedEve
     console.info("[push] No device token for receiver — skipping reschedule notification", { meetupId, receiverId });
     return;
   }
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "Reschedule request",
     body: `Your partner wants to move your meetup to ${venueName} · ${date} at ${time}`,
     data: { meetupId, type: "meetup_reschedule_proposed" },
   }));
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupRescheduleProposed notification", { meetupId, err });
   }
@@ -493,14 +460,14 @@ async function handleMeetupNotAttended(event: MeetupNotAttendedEvent): Promise<v
   ]);
   const allTokens = [...tokensA, ...tokensB];
   if (allTokens.length === 0) return;
-  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = allTokens.map(({ token }) => ({
     to: token,
     title: "Meetup not attended",
     body: "The meetup was marked as not attended — you can schedule a new one",
     data: { meetupId, type: "meetup_not_attended" },
   }));
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupNotAttended notification", { meetupId, err });
   }
@@ -515,14 +482,14 @@ async function handleSipAndSpeakMomentCompleted(event: SipAndSpeakMomentComplete
   ]);
   const allTokens = [...tokensA, ...tokensB];
   if (allTokens.length === 0) return;
-  const messages: ExpoPushMessage[] = allTokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = allTokens.map(({ token }) => ({
     to: token,
     title: "Your S&S moment is complete! 🎉",
     body: "You both attended — congratulations on your connection!",
     data: { meetupId, type: "sip_and_speak_moment_completed" },
   }));
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send SipAndSpeakMomentCompleted notification", { meetupId, err });
   }
@@ -548,7 +515,7 @@ export async function handleMessagingOptInPrompted(event: MessagingOptInPrompted
   const studentAName = studentAResult[0]?.name ?? "Your match";
   const studentBName = studentBResult[0]?.name ?? "Your match";
 
-  const messages: ExpoPushMessage[] = [];
+  const messages: DeliveryMessage[] = [];
 
   for (const { token } of tokensA) {
     messages.push({
@@ -576,7 +543,7 @@ export async function handleMessagingOptInPrompted(event: MessagingOptInPrompted
   console.info("[push] Sending MessagingOptInPrompted notification", { meetupId, tokenCount: messages.length });
 
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MessagingOptInPrompted notification", { meetupId, err });
   }
@@ -604,7 +571,7 @@ export async function handleMessagingNudge(event: MessagingNudgeNeededEvent): Pr
 
   const acceptingStudentName = acceptingStudentResult[0]?.name ?? "Your match";
 
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "Your match wants to message you!",
     body: `${acceptingStudentName} accepted messaging — let them know if you're in!`,
@@ -614,7 +581,7 @@ export async function handleMessagingNudge(event: MessagingNudgeNeededEvent): Pr
   console.info("[push] Sending MessagingNudge notification", { meetupId, pendingStudentId, tokenCount: messages.length });
 
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MessagingNudge notification", { meetupId, pendingStudentId, err });
   }
@@ -640,7 +607,7 @@ export async function handleConversationOpened(event: ConversationOpenedEvent): 
   const studentAName = studentAResult[0]?.name ?? "Your match";
   const studentBName = studentBResult[0]?.name ?? "Your match";
 
-  const messages: ExpoPushMessage[] = [];
+  const messages: DeliveryMessage[] = [];
 
   for (const { token } of tokensA) {
     messages.push({
@@ -671,7 +638,7 @@ export async function handleConversationOpened(event: ConversationOpenedEvent): 
   console.info("[push] Sending ConversationOpened notification", { conversationId, meetupId, tokenCount: messages.length });
 
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send ConversationOpened notification", { conversationId, meetupId, err });
   }
@@ -686,7 +653,7 @@ export async function handleMessagingDeclineOutcome(event: MessagingDeclineOutco
     db.select({ id: userDeviceToken.id, token: userDeviceToken.token }).from(userDeviceToken).where(eq(userDeviceToken.userId, studentBId)),
   ]);
 
-  const messages: ExpoPushMessage[] = [
+  const messages: DeliveryMessage[] = [
     ...tokensA.map(({ token }) => ({ to: token, title: "Messaging not available", body: "One of you decided not to connect via messages — that's OK!", data: { meetupId, type: "messaging_decline_outcome" } })),
     ...tokensB.map(({ token }) => ({ to: token, title: "Messaging not available", body: "One of you decided not to connect via messages — that's OK!", data: { meetupId, type: "messaging_decline_outcome" } })),
   ];
@@ -698,7 +665,7 @@ export async function handleMessagingDeclineOutcome(event: MessagingDeclineOutco
 
   console.info("[push] Sending MessagingDeclineOutcome notification", { meetupId, tokenCount: messages.length });
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MessagingDeclineOutcome notification", { meetupId, err });
   }
@@ -741,7 +708,7 @@ export async function handleMessageSent(event: MessageSentEvent): Promise<void> 
     return;
   }
 
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: senderName,
     body: "sent you a message",
@@ -755,7 +722,7 @@ export async function handleMessageSent(event: MessageSentEvent): Promise<void> 
   });
 
   try {
-    const tickets = await sendExpoPushNotification(messages);
+    const tickets = await getDelivery().send(messages);
 
     const staleTokenIds: string[] = [];
     for (let i = 0; i < tickets.length; i++) {
@@ -790,14 +757,14 @@ async function handleMeetupCancelled(event: MeetupCancelledEvent): Promise<void>
     .from(userDeviceToken)
     .where(eq(userDeviceToken.userId, otherStudentId));
   if (tokens.length === 0) return;
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "Meetup cancelled",
     body: "Your partner cancelled the meetup — you can start a fresh proposal",
     data: { meetupId, type: "meetup_cancelled" },
   }));
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send MeetupCancelled notification", { meetupId, err });
   }
@@ -811,14 +778,14 @@ async function handleStudentWarned(event: StudentWarnedEvent): Promise<void> {
     .from(userDeviceToken)
     .where(eq(userDeviceToken.userId, targetId));
   if (tokens.length === 0) return;
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "Moderation notice",
     body: "A formal warning has been recorded on your account. Please review the community guidelines.",
     data: { flagId, type: "student_warned" },
   }));
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send StudentWarned notification", { flagId, err });
   }
@@ -859,14 +826,14 @@ async function handleStudentSuspended(event: StudentSuspendedEvent): Promise<voi
       .where(inArray(userDeviceToken.userId, peerIds));
 
     if (tokens.length > 0) {
-      const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+      const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
         to: token,
         title: "Meetup proposal cancelled",
         body: "Your meetup proposal has been cancelled.",
         data: { type: "proposal_cancelled" },
       }));
       try {
-        await sendExpoPushNotification(messages);
+        await getDelivery().send(messages);
       } catch (err) {
         console.error("[push] Failed to send proposal cancellation notification", { flagId, err });
       }
@@ -882,14 +849,14 @@ async function handleStudentSuspendedNotify(event: StudentSuspendedEvent): Promi
     .from(userDeviceToken)
     .where(eq(userDeviceToken.userId, targetId));
   if (tokens.length === 0) return;
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "Account suspended",
     body: "Your account has been temporarily suspended. You will not be able to participate until the suspension is lifted.",
     data: { flagId, type: "student_suspended" },
   }));
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send StudentSuspended notification", { flagId, err });
   }
@@ -931,14 +898,14 @@ async function handleStudentRemovedCancelProposals(event: StudentRemovedEvent): 
     .where(inArray(userDeviceToken.userId, peerIds));
 
   if (tokens.length > 0) {
-    const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+    const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
       to: token,
       title: "Meetup proposal cancelled",
       body: "Your meetup proposal has been cancelled.",
       data: { type: "proposal_cancelled" },
     }));
     try {
-      await sendExpoPushNotification(messages);
+      await getDelivery().send(messages);
     } catch (err) {
       console.error("[push] Failed to send removal proposal cancellation notification", { targetId, err });
     }
@@ -982,14 +949,14 @@ async function handleSuspensionLifted(event: SuspensionLiftedEvent): Promise<voi
     .from(userDeviceToken)
     .where(eq(userDeviceToken.userId, targetId));
   if (tokens.length === 0) return;
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "Suspension lifted",
     body: "Your suspension has been lifted. You can now participate in Sip & Speak again.",
     data: { type: "suspension_lifted" },
   }));
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
   } catch (err) {
     console.error("[push] Failed to send SuspensionLifted notification", { targetId, err });
   }
@@ -1009,7 +976,7 @@ async function handleStudentRemovedNotify(event: StudentRemovedEvent): Promise<v
     return;
   }
 
-  const messages: ExpoPushMessage[] = tokens.map(({ token }) => ({
+  const messages: DeliveryMessage[] = tokens.map(({ token }) => ({
     to: token,
     title: "Your account has been removed",
     body: "Your Sip & Speak account has been permanently removed. You can no longer access the platform.",
@@ -1017,7 +984,7 @@ async function handleStudentRemovedNotify(event: StudentRemovedEvent): Promise<v
   }));
 
   try {
-    await sendExpoPushNotification(messages);
+    await getDelivery().send(messages);
     console.info("[push] Sent StudentRemoved notification", { targetId });
   } catch (err) {
     console.error("[push] Failed to send StudentRemoved notification — removal stands", { targetId, err });
