@@ -42,7 +42,7 @@ mock.module("@sip-and-speak/api/domain-events", () => ({
 }));
 
 // eslint-disable-next-line import/first
-import { handleMessagingDeclineOutcome } from "../notifications";
+import { handleMessagingDeclineOutcome } from "../dispatcher";
 
 beforeEach(() => {
   fetchCalls.length = 0;

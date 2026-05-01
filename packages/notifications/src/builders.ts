@@ -22,8 +22,18 @@ import type {
   SuspensionLiftedEvent,
   StudentRemovedEvent,
 } from "@sip-and-speak/api/domain-events";
-import { buildMatchRequestNotificationBody } from "@sip-and-speak/api/routers/matching-utils";
-import type { Recipe } from "./notification-recipe";
+import type { Recipe } from "./recipe";
+
+function buildMatchRequestNotificationBody(
+  requesterName: string,
+  offeredLanguage: string | null,
+  targetedLanguage: string | null,
+): string {
+  if (offeredLanguage && targetedLanguage) {
+    return `${requesterName} wants to meet you — speaks ${offeredLanguage}, learning ${targetedLanguage}`;
+  }
+  return `${requesterName} wants to meet you`;
+}
 
 export function buildMatchRequestSentRecipes(event: MatchRequestSentEvent): Recipe[] {
   return [

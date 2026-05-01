@@ -88,7 +88,7 @@ mock.module("@sip-and-speak/api/domain-events", () => ({
 // ── Import under test (after mocks) ──────────────────────────────────────────
 
 // eslint-disable-next-line import/first
-import { handleConversationOpened } from "../notifications";
+import { handleConversationOpened } from "../dispatcher";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

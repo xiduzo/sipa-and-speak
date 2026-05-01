@@ -1,9 +1,9 @@
 /**
- * Tests for task #134 — Push notification on MatchRequestAccepted
+ * Tests for task #138 — Send opt-in push notification to both Students after meetup is completed
  *
  * Covers:
- *   - Notification sent to requester when their match request is accepted
- *   - No notification sent when requester has no registered device token
+ *   - Both Students receive an opt-in prompt when their meetup is completed
+ *   - No notification sent when neither Student has a device token
  */
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 
@@ -44,35 +44,37 @@ mock.module("@sip-and-speak/db/schema/auth", () => ({
 
 mock.module("drizzle-orm", () => ({
   eq: (_col: unknown, val: unknown) => ({ _val: val }),
+  or: (...args: unknown[]) => args,
 }));
 
 // ── DB mock ───────────────────────────────────────────────────────────────────
 
-let mockReceiverRows: Array<{ name: string }> = [{ name: "Alice" }];
-let mockTokenRows: Array<{ id: string; token: string }> = [];
+const STUDENT_A_ID = "student-a-id";
+const STUDENT_B_ID = "student-b-id";
+
+let mockStudentATokens: Array<{ id: string; token: string }> = [];
+let mockStudentBTokens: Array<{ id: string; token: string }> = [];
+
+const STUDENT_A_NAME = [{ name: "Alice" }];
+const STUDENT_B_NAME = [{ name: "Bob" }];
 
 mock.module("@sip-and-speak/db", () => ({
   db: {
     select: (fields: Record<string, unknown>) => {
       const isNameQuery = "name" in fields;
       return {
-        from: (_table: unknown) => {
-          const rows = isNameQuery ? mockReceiverRows : mockTokenRows;
-          return {
-            where: (_cond: unknown) => ({
-              limit: (_n: number) => Promise.resolve(rows),
-              then: (
-                resolve: (v: unknown) => unknown,
-                reject?: (e: unknown) => unknown,
-              ) => Promise.resolve(rows).then(resolve, reject),
-            }),
-          };
-        },
+        from: (_table: unknown) => ({
+          where: (clause: { _val: string }) => {
+            if (isNameQuery) {
+              const rows = clause._val === STUDENT_A_ID ? STUDENT_A_NAME : STUDENT_B_NAME;
+              return { limit: (_n: number) => Promise.resolve(rows) };
+            }
+            const rows = clause._val === STUDENT_A_ID ? mockStudentATokens : mockStudentBTokens;
+            return Promise.resolve(rows);
+          },
+        }),
       };
     },
-    delete: (_table: unknown) => ({
-      where: (_cond: unknown) => Promise.resolve(),
-    }),
   },
 }));
 
@@ -85,57 +87,69 @@ mock.module("@sip-and-speak/api/domain-events", () => ({
 // ── Import under test (after mocks) ──────────────────────────────────────────
 
 // eslint-disable-next-line import/first
-import { handleMatchRequestAccepted } from "../notifications";
+import { handleMessagingOptInPrompted } from "../dispatcher";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeAcceptedEvent(
-  overrides: Partial<{ requesterId: string; receiverId: string; matchRequestId: string; receiverName: string }> = {},
+function makeOptInEvent(
+  overrides: Partial<{ meetupId: string; studentAId: string; studentAName: string; studentBId: string; studentBName: string }> = {},
 ) {
   return {
-    matchRequestId: overrides.matchRequestId ?? "req-123",
-    requesterId: overrides.requesterId ?? "requester-id",
-    receiverId: overrides.receiverId ?? "receiver-id",
-    receiverName: overrides.receiverName ?? "Alice",
-    acceptedAt: new Date(),
+    meetupId: overrides.meetupId ?? "meetup-1",
+    studentAId: overrides.studentAId ?? STUDENT_A_ID,
+    studentAName: overrides.studentAName ?? "Alice",
+    studentBId: overrides.studentBId ?? STUDENT_B_ID,
+    studentBName: overrides.studentBName ?? "Bob",
+    promptedAt: new Date(),
   };
 }
 
 beforeEach(() => {
   fetchCalls.length = 0;
-  mockReceiverRows = [{ name: "Alice" }];
-  mockTokenRows = [];
+  mockStudentATokens = [];
+  mockStudentBTokens = [];
 });
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe("#134 — Push notification on MatchRequestAccepted", () => {
-  it("sends a push notification to the requester when their request is accepted", async () => {
-    mockTokenRows = [{ id: "tok-1", token: "ExponentPushToken[abc]" }];
+describe("#138 — Send opt-in push notification to both Students after meetup is completed", () => {
+  it("sends an opt-in push to both Students when their meetup is completed", async () => {
+    mockStudentATokens = [{ id: "tok-a", token: "ExponentPushToken[alice]" }];
+    mockStudentBTokens = [{ id: "tok-b", token: "ExponentPushToken[bob]" }];
 
-    await handleMatchRequestAccepted(makeAcceptedEvent());
+    await handleMessagingOptInPrompted(makeOptInEvent());
 
     expect(fetchCalls).toHaveLength(1);
 
     const call = fetchCalls[0];
     if (!call) throw new Error("Expected a fetch call");
 
-    expect(call.url).toBe("https://exp.host/--/api/v2/push/send");
-    expect(call.messages).toHaveLength(1);
+    expect(call.messages).toHaveLength(2);
 
-    const msg = call.messages[0];
-    if (!msg) throw new Error("Expected a message");
+    const tokens = call.messages.map((m) => m.to);
+    expect(tokens).toContain("ExponentPushToken[alice]");
+    expect(tokens).toContain("ExponentPushToken[bob]");
 
-    expect(msg.to).toBe("ExponentPushToken[abc]");
-    expect(msg.title).toBe("Your match request was accepted!");
-    expect(msg.data?.type).toBe("match_accepted");
-    expect(msg.data?.matchRequestId).toBe("req-123");
+    // Student A (Alice) sees Bob's name
+    const aliceMsg = call.messages.find((m) => m.to === "ExponentPushToken[alice]");
+    expect(aliceMsg?.title).toBe("Want to keep in touch?");
+    expect(aliceMsg?.body).toContain("Bob");
+    expect(aliceMsg?.data?.type).toBe("messaging_opt_in");
+    expect(aliceMsg?.data?.meetupId).toBe("meetup-1");
+
+    // Student B (Bob) sees Alice's name
+    const bobMsg = call.messages.find((m) => m.to === "ExponentPushToken[bob]");
+    expect(bobMsg?.title).toBe("Want to keep in touch?");
+    expect(bobMsg?.body).toContain("Alice");
+    expect(bobMsg?.data?.type).toBe("messaging_opt_in");
+    expect(bobMsg?.data?.meetupId).toBe("meetup-1");
   });
 
-  it("does not send a push notification when the requester has no registered device token", async () => {
-    mockTokenRows = [];
+  it("sends no notification when neither Student has a registered device token", async () => {
+    mockStudentATokens = [];
+    mockStudentBTokens = [];
 
-    await handleMatchRequestAccepted(makeAcceptedEvent());
+    await handleMessagingOptInPrompted(makeOptInEvent());
 
     expect(fetchCalls).toHaveLength(0);
   });

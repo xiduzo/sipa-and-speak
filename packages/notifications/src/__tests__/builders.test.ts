@@ -5,23 +5,47 @@ import {
   buildMeetupConfirmedRecipes,
   buildMessageSentRecipes,
   buildProposalCancelledRecipes,
-} from "../notification-builders";
+} from "../builders";
 
 describe("buildMatchRequestSentRecipes", () => {
-  it("returns one recipe targeting the receiver", () => {
-    const recipes = buildMatchRequestSentRecipes({
+  function makeEvent(overrides: { offered: string | null; targeted: string | null }) {
+    return {
       matchRequestId: "mr-1",
       requesterId: "u1",
-      requesterName: "Alice",
-      offeredLanguage: "Dutch",
-      targetedLanguage: "English",
+      requesterName: "Ana",
+      offeredLanguage: overrides.offered,
+      targetedLanguage: overrides.targeted,
       receiverId: "u2",
       sentAt: new Date(),
-    });
+    };
+  }
+
+  it("returns one recipe targeting the receiver", () => {
+    const recipes = buildMatchRequestSentRecipes(makeEvent({ offered: "Dutch", targeted: "English" }));
     expect(recipes).toHaveLength(1);
     expect(recipes[0]?.recipientId).toBe("u2");
     expect(recipes[0]?.title).toBe("New match request");
     expect(recipes[0]?.data).toEqual({ matchRequestId: "mr-1", requesterId: "u1" });
+  });
+
+  it("body includes language summary when both offered and targeted are known", () => {
+    const recipes = buildMatchRequestSentRecipes(makeEvent({ offered: "Portuguese", targeted: "Dutch" }));
+    expect(recipes[0]?.body).toBe("Ana wants to meet you — speaks Portuguese, learning Dutch");
+  });
+
+  it("body omits language summary when both languages are missing", () => {
+    const recipes = buildMatchRequestSentRecipes(makeEvent({ offered: null, targeted: null }));
+    expect(recipes[0]?.body).toBe("Ana wants to meet you");
+  });
+
+  it("body omits language summary when only offered is known", () => {
+    const recipes = buildMatchRequestSentRecipes(makeEvent({ offered: "Portuguese", targeted: null }));
+    expect(recipes[0]?.body).toBe("Ana wants to meet you");
+  });
+
+  it("body omits language summary when only targeted is known", () => {
+    const recipes = buildMatchRequestSentRecipes(makeEvent({ offered: null, targeted: "Dutch" }));
+    expect(recipes[0]?.body).toBe("Ana wants to meet you");
   });
 });
 
