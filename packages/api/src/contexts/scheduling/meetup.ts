@@ -7,7 +7,7 @@ import { getMessagingStateForUserMeetups } from "../conversation";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";
-import { isMeetupInThePast, isRescheduleNoOp } from "./meetup-utils";
+import { isMeetupInThePast, isRescheduleNoOp, canCounterPropose, computeAttendanceOutcome } from "./meetup-utils";
 
 /** All bookable half-hour slots from 08:00 to 20:00 */
 const ALL_SLOTS = Array.from({ length: 25 }, (_, i) => {
@@ -269,7 +269,7 @@ export const meetupRouter = router({
       }
 
       // #73 — Reject counter-propose when round is already at 3
-      if (existing.meetup.round >= 3) {
+      if (!canCounterPropose(existing.meetup.round)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Maximum counter-proposal rounds reached. You can only accept or decline.",
@@ -1040,66 +1040,64 @@ export const meetupRouter = router({
         .from(attendanceReport)
         .where(eq(attendanceReport.meetupId, input.meetupId));
 
-      if (allReports.length === 2) {
-        const bothAttended = allReports.every((r) => r.attended);
+      const outcome = computeAttendanceOutcome(allReports);
 
-        if (bothAttended) {
-          // Both attended → transition to Connected state
-          const [matchRecord] = await db
-            .select({ id: studentMatch.id })
-            .from(studentMatch)
-            .where(
-              or(
-                and(
-                  eq(studentMatch.studentAId, existing.proposerId),
-                  eq(studentMatch.studentBId, existing.receiverId),
-                ),
-                and(
-                  eq(studentMatch.studentAId, existing.receiverId),
-                  eq(studentMatch.studentBId, existing.proposerId),
-                ),
+      if (outcome === "completed") {
+        // Both attended → transition to Connected state
+        const [matchRecord] = await db
+          .select({ id: studentMatch.id })
+          .from(studentMatch)
+          .where(
+            or(
+              and(
+                eq(studentMatch.studentAId, existing.proposerId),
+                eq(studentMatch.studentBId, existing.receiverId),
               ),
-            )
-            .limit(1);
+              and(
+                eq(studentMatch.studentAId, existing.receiverId),
+                eq(studentMatch.studentBId, existing.proposerId),
+              ),
+            ),
+          )
+          .limit(1);
 
-          if (matchRecord) {
-            await Promise.all([
-              db.update(meetup).set({ status: "completed" }).where(eq(meetup.id, input.meetupId)),
-              db.update(studentMatch).set({ status: "connected" }).where(eq(studentMatch.id, matchRecord.id)),
-            ]);
+        if (matchRecord) {
+          await Promise.all([
+            db.update(meetup).set({ status: "completed" }).where(eq(meetup.id, input.meetupId)),
+            db.update(studentMatch).set({ status: "connected" }).where(eq(studentMatch.id, matchRecord.id)),
+          ]);
 
-            domainEvents.emit("SipAndSpeakMomentCompleted", {
-              meetupId: input.meetupId,
-              studentAId: existing.proposerId,
-              studentBId: existing.receiverId,
-              completedAt: new Date(),
-            });
-
-            // #138 — Prompt both Students to opt in to messaging after a completed meetup
-            const [studentARow, studentBRow] = await Promise.all([
-              db.select({ name: user.name }).from(user).where(eq(user.id, existing.proposerId)).limit(1),
-              db.select({ name: user.name }).from(user).where(eq(user.id, existing.receiverId)).limit(1),
-            ]);
-            domainEvents.emit("MessagingOptInPrompted", {
-              meetupId: input.meetupId,
-              studentAId: existing.proposerId,
-              studentAName: studentARow[0]?.name ?? "Your match",
-              studentBId: existing.receiverId,
-              studentBName: studentBRow[0]?.name ?? "Your match",
-              promptedAt: new Date(),
-            });
-          }
-        } else {
-          // #101 — At least one non-attendance → return pair to Matched (meetup closed)
-          await db.update(meetup).set({ status: "not_attended" }).where(eq(meetup.id, input.meetupId));
-
-          domainEvents.emit("MeetupNotAttended", {
+          domainEvents.emit("SipAndSpeakMomentCompleted", {
             meetupId: input.meetupId,
             studentAId: existing.proposerId,
             studentBId: existing.receiverId,
-            recordedAt: new Date(),
+            completedAt: new Date(),
+          });
+
+          // #138 — Prompt both Students to opt in to messaging after a completed meetup
+          const [studentARow, studentBRow] = await Promise.all([
+            db.select({ name: user.name }).from(user).where(eq(user.id, existing.proposerId)).limit(1),
+            db.select({ name: user.name }).from(user).where(eq(user.id, existing.receiverId)).limit(1),
+          ]);
+          domainEvents.emit("MessagingOptInPrompted", {
+            meetupId: input.meetupId,
+            studentAId: existing.proposerId,
+            studentAName: studentARow[0]?.name ?? "Your match",
+            studentBId: existing.receiverId,
+            studentBName: studentBRow[0]?.name ?? "Your match",
+            promptedAt: new Date(),
           });
         }
+      } else if (outcome === "not_attended") {
+        // #101 — At least one non-attendance → return pair to Matched (meetup closed)
+        await db.update(meetup).set({ status: "not_attended" }).where(eq(meetup.id, input.meetupId));
+
+        domainEvents.emit("MeetupNotAttended", {
+          meetupId: input.meetupId,
+          studentAId: existing.proposerId,
+          studentBId: existing.receiverId,
+          recordedAt: new Date(),
+        });
       }
 
       return created;

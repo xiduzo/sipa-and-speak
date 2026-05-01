@@ -13,14 +13,7 @@ import {
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";
-import { haversineDistance } from "../../lib/geo";
-import {
-  computeLanguageScore,
-  computeInterestScore,
-  computeProximityScore,
-  computeCompositeScore,
-  buildExcludedUserIds,
-} from "./matching-utils";
+import { buildExcludedUserIds, scoreCandidates } from "./matching-utils";
 
 // --- Router ---
 
@@ -133,92 +126,43 @@ export const matchingRouter = router({
         interestByUser.set(i.userId, arr);
       }
 
-      // Score each candidate
-      type ScoredPartner = {
-        userId: string;
-        name: string;
-        image: string | null;
-        bio: string | null;
-        university: string | null;
-        age: number | null;
-        distance: number | null;
-        spokenLanguages: { language: string; proficiency: string | null }[];
-        learningLanguages: string[];
-        interests: string[];
-        score: number;
-      };
-
-      const scored: ScoredPartner[] = [];
-
-      for (const profile of otherProfiles) {
-        const langs = langByUser.get(profile.userId) ?? [];
-        const interests = interestByUser.get(profile.userId) ?? [];
-        const userInfo = userMap.get(profile.userId);
-
-        const partnerSpoken = langs
-          .filter((l) => l.type === "spoken")
-          .map((l) => l.language);
-        const partnerLearning = langs
-          .filter((l) => l.type === "learning")
-          .map((l) => l.language);
-        const partnerInterests = interests.map((i) => i.interest);
-
-        // Language filter: skip if partner doesn't speak the requested language
-        if (input.filter === "language" && input.filterLanguage) {
-          if (!partnerSpoken.includes(input.filterLanguage)) continue;
-        }
-
-        const langScore = computeLanguageScore(
-          mySpoken,
-          myLearning,
-          partnerSpoken,
-          partnerLearning,
-        );
-        const intScore = computeInterestScore(myInterestNames, partnerInterests);
-
-        let distanceKm: number | null = null;
-        let proxScore = 0;
-        if (
-          myProfile?.latitude != null &&
-          myProfile?.longitude != null &&
-          profile.latitude != null &&
-          profile.longitude != null
-        ) {
-          distanceKm = haversineDistance(
-            myProfile.latitude,
-            myProfile.longitude,
-            profile.latitude,
-            profile.longitude,
-          );
-          proxScore = computeProximityScore(distanceKm);
-        }
-
-        const score = computeCompositeScore(
-          langScore,
-          intScore,
-          proxScore,
-          input.filter,
-        );
-
-        scored.push({
-          userId: profile.userId,
-          name: userInfo?.name ?? "Unknown",
-          image: userInfo?.image ?? null,
-          bio: profile.bio,
-          university: profile.university,
-          age: profile.age,
-          distance: distanceKm != null ? Math.round(distanceKm * 10) / 10 : null,
-          spokenLanguages: langs
-            .filter((l) => l.type === "spoken")
-            .map((l) => ({ language: l.language, proficiency: l.proficiency })),
-          learningLanguages: partnerLearning,
-          interests: partnerInterests,
-          score,
+      // Build candidate list (suspended users absent from userMap are excluded)
+      const candidates = otherProfiles
+        .filter((profile) => userMap.has(profile.userId))
+        .map((profile) => {
+          const langs = langByUser.get(profile.userId) ?? [];
+          const interests = interestByUser.get(profile.userId) ?? [];
+          const userInfo = userMap.get(profile.userId)!;
+          return {
+            userId: profile.userId,
+            name: userInfo.name ?? "Unknown",
+            image: userInfo.image ?? null,
+            bio: profile.bio,
+            university: profile.university,
+            age: profile.age,
+            latitude: profile.latitude,
+            longitude: profile.longitude,
+            spokenLanguages: langs
+              .filter((l) => l.type === "spoken")
+              .map((l) => ({ language: l.language, proficiency: l.proficiency })),
+            learningLanguages: langs
+              .filter((l) => l.type === "learning")
+              .map((l) => l.language),
+            interests: interests.map((i) => i.interest),
+          };
         });
-      }
 
-      // Sort by score descending
-      scored.sort((a, b) => b.score - a.score);
+      const scored = scoreCandidates(
+        {
+          spoken: mySpoken,
+          learning: myLearning,
+          interests: myInterestNames,
+          latitude: myProfile?.latitude ?? null,
+          longitude: myProfile?.longitude ?? null,
+        },
+        candidates,
+        input.filter ? { mode: input.filter, language: input.filterLanguage } : undefined,
+      );
 
       // Cursor-based pagination (cursor = index offset as string)
       const startIndex = input.cursor ? parseInt(input.cursor, 10) : 0;

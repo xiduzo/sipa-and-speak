@@ -7,10 +7,7 @@
  */
 import { describe, it, expect } from "bun:test";
 
-/** Pure helper — mirrors the canCounterPropose logic in meetup.getPendingIncoming */
-function canCounterPropose(round: number): boolean {
-  return round < 3;
-}
+import { canCounterPropose } from "../meetup-utils";
 
 describe("#73 — round enforcement", () => {
   it("allows counter-propose at round 1", () => {

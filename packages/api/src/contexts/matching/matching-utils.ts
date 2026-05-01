@@ -1,6 +1,8 @@
 // Pure, side-effect-free helpers for the matching router.
 // Exported separately so they can be unit-tested without importing the DB or env.
 
+import { haversineDistance } from "../../lib/geo";
+
 const MAX_RADIUS_KM = 50;
 
 /**
@@ -80,4 +82,79 @@ export function buildExcludedUserIds(
   return activeRequests.map((r) =>
     r.requesterId === userId ? r.receiverId : r.requesterId,
   );
+}
+
+export type CandidateProfile = {
+  userId: string;
+  name: string;
+  image: string | null;
+  bio: string | null;
+  university: string | null;
+  age: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  spokenLanguages: { language: string; proficiency: string | null }[];
+  learningLanguages: string[];
+  interests: string[];
+};
+
+export type ScoredCandidate = CandidateProfile & {
+  distance: number | null;
+  score: number;
+};
+
+type UserForScoring = {
+  spoken: string[];
+  learning: string[];
+  interests: string[];
+  latitude: number | null;
+  longitude: number | null;
+};
+
+/**
+ * Score and rank candidates against the requesting user.
+ * Applies the language filter (when mode === "language"), computes per-dimension
+ * scores, and returns candidates sorted by composite score descending.
+ * Pure: no DB access, no side effects.
+ */
+export function scoreCandidates(
+  me: UserForScoring,
+  candidates: CandidateProfile[],
+  filter?: { mode: "near_you" | "language"; language?: string },
+): ScoredCandidate[] {
+  const scored: ScoredCandidate[] = [];
+
+  for (const candidate of candidates) {
+    if (filter?.mode === "language" && filter.language) {
+      if (!candidate.spokenLanguages.some((l) => l.language === filter.language)) continue;
+    }
+
+    const langScore = computeLanguageScore(
+      me.spoken,
+      me.learning,
+      candidate.spokenLanguages.map((l) => l.language),
+      candidate.learningLanguages,
+    );
+    const intScore = computeInterestScore(me.interests, candidate.interests);
+
+    let distanceKm: number | null = null;
+    let proxScore = 0;
+    if (
+      me.latitude != null &&
+      me.longitude != null &&
+      candidate.latitude != null &&
+      candidate.longitude != null
+    ) {
+      distanceKm = haversineDistance(me.latitude, me.longitude, candidate.latitude, candidate.longitude);
+      proxScore = computeProximityScore(distanceKm);
+    }
+
+    scored.push({
+      ...candidate,
+      distance: distanceKm != null ? Math.round(distanceKm * 10) / 10 : null,
+      score: computeCompositeScore(langScore, intScore, proxScore, filter?.mode),
+    });
+  }
+
+  return scored.sort((a, b) => b.score - a.score);
 }

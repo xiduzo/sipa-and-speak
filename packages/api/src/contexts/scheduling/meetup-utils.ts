@@ -25,3 +25,23 @@ export function isRescheduleNoOp(
     current.time === proposed.time
   );
 }
+
+/** Counter-proposals are capped at round 3. */
+export function canCounterPropose(round: number): boolean {
+  return round < 3;
+}
+
+export type AttendanceOutcome = "completed" | "not_attended" | "pending";
+
+/**
+ * Derives the S&S Moment outcome from all attendance reports submitted so far.
+ * "pending"      — fewer than 2 reports; no conclusion yet.
+ * "completed"    — both Students attended; pair transitions to Connected.
+ * "not_attended" — at least one Student did not attend; pair returns to Matched.
+ */
+export function computeAttendanceOutcome(
+  reports: { attended: boolean }[],
+): AttendanceOutcome {
+  if (reports.length < 2) return "pending";
+  return reports.every((r) => r.attended) ? "completed" : "not_attended";
+}
