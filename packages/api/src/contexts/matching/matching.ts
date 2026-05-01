@@ -13,23 +13,14 @@ import {
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";
+import { haversineDistance } from "../../lib/geo";
 import {
-  haversineDistance,
   computeLanguageScore,
   computeInterestScore,
   computeProximityScore,
   computeCompositeScore,
   buildExcludedUserIds,
 } from "./matching-utils";
-
-export {
-  haversineDistance,
-  computeLanguageScore,
-  computeInterestScore,
-  computeProximityScore,
-  computeCompositeScore,
-  buildExcludedUserIds,
-};
 
 // --- Router ---
 
