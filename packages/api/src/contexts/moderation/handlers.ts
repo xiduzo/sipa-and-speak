@@ -27,7 +27,7 @@ import {
   type SuspensionLiftedEvent,
   type StudentRemovedEvent,
 } from "../../domain-events";
-import { addEmailToBlocklist } from "./moderation-persist";
+import { addEmailToBlocklist } from "./blocklist";
 
 async function handleStudentSuspendedCancelProposals(event: StudentSuspendedEvent): Promise<void> {
   const activeProposals = await db

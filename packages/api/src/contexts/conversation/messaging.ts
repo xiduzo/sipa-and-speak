@@ -5,10 +5,9 @@ import { and, eq, isNull } from "drizzle-orm";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";
 import { db } from "@sip-and-speak/db";
-import { meetup, messagingOptIn, conversation, conversationPresence } from "@sip-and-speak/db/schema/sip-and-speak";
+import { meetup, messagingOptIn, conversation, conversationPresence, message } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { hasAlreadyResponded, getPartnerId, shouldSendNudge, bothAccepted, isDeclineOutcome, validateMessageContent, checkConversationAccess } from "./messaging-utils";
-import { persistMessage } from "./messaging-persist";
+import { validateMessageContent, checkConversationAccess } from "./messaging-utils";
 
 export const messagingRouter = router({
   /**
@@ -70,7 +69,7 @@ export const messagingRouter = router({
         )
         .limit(1);
 
-      if (hasAlreadyResponded(existingResponse)) {
+      if (existingResponse !== undefined) {
         throw new TRPCError({
           code: "CONFLICT",
           message: "You have already responded to the messaging opt-in for this meetup",
@@ -86,7 +85,7 @@ export const messagingRouter = router({
         })
         .returning();
 
-      const partnerId = getPartnerId(existing.proposerId, existing.receiverId, studentId);
+      const partnerId = existing.proposerId === studentId ? existing.receiverId : existing.proposerId;
 
       if (input.response === "accept") {
         domainEvents.emit("MessagingAccepted", {
@@ -108,7 +107,7 @@ export const messagingRouter = router({
           )
           .limit(1);
 
-        if (shouldSendNudge("accept", partnerResponse)) {
+        if (partnerResponse === undefined) {
           // Atomically mark nudge as sent to prevent duplicates on concurrent accepts
           const updated = await db
             .update(messagingOptIn)
@@ -139,7 +138,7 @@ export const messagingRouter = router({
           .from(messagingOptIn)
           .where(eq(messagingOptIn.meetupId, input.meetupId));
 
-        if (bothAccepted(allResponses)) {
+        if (allResponses.length === 2 && allResponses.every((r) => r.response === "accept")) {
           // Use INSERT ... ON CONFLICT DO NOTHING to guard against race conditions
           const [newConversation] = await db
             .insert(conversation)
@@ -184,7 +183,7 @@ export const messagingRouter = router({
           .from(messagingOptIn)
           .where(eq(messagingOptIn.meetupId, input.meetupId));
 
-        if (isDeclineOutcome(declineResponses)) {
+        if (declineResponses.length === 2 && !declineResponses.every((r) => r.response === "accept")) {
           domainEvents.emit("MessagingDeclineOutcome", {
             meetupId: input.meetupId,
             studentAId: studentId,
@@ -254,14 +253,18 @@ export const messagingRouter = router({
       }
 
       // #145 — Persist and return the created message
-      const [created, senderResult] = await Promise.all([
-        persistMessage({
-          conversationId: input.conversationId,
-          senderId,
-          content: validation.trimmed,
-        }),
+      const [createdRows, senderResult] = await Promise.all([
+        db
+          .insert(message)
+          .values({
+            conversationId: input.conversationId,
+            senderId,
+            content: validation.trimmed,
+          })
+          .returning(),
         db.select({ name: user.name }).from(user).where(eq(user.id, senderId)).limit(1),
       ]);
+      const created = createdRows[0]!;
 
       // #152 — Notify recipient about new message
       const recipientId = conv!.user1Id === senderId ? conv!.user2Id : conv!.user1Id;

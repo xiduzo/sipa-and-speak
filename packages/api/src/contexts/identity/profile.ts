@@ -12,7 +12,6 @@ import {
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";
-import { determineIdentityProfileEvent } from "./profile-utils";
 
 const interestEnum = z.enum([
   "modern_art",
@@ -141,8 +140,7 @@ export const profileRouter = router({
         .set({ name: input.name, surname: input.surname, image: input.imageUrl ?? null })
         .where(eq(user.id, userId));
 
-      const event = determineIdentityProfileEvent(previousSurname);
-      if (event === "StudentProfileCompleted") {
+      if (previousSurname === null) {
         domainEvents.emit("StudentProfileCompleted", { userId, completedAt: new Date() });
       } else {
         domainEvents.emit("StudentProfileUpdated", { userId, updatedAt: new Date() });

@@ -7,21 +7,11 @@ import { db } from "@sip-and-speak/db";
 import { userFlag } from "@sip-and-speak/db/schema/sip-and-speak";
 import { user } from "@sip-and-speak/db/schema/auth";
 import {
-  checkSelfFlag,
-  checkDuplicateOpenFlag,
   FLAG_VALIDATION_MESSAGES,
-  buildStudentFlaggedEvent,
-  buildStudentWarnedEvent,
-  buildStudentSuspendedEvent,
-  buildStudentRemovedEvent,
-  buildSuspensionLiftedEvent,
   buildFlagQueueEntry,
   buildFlagDetail,
-  checkStudentActive,
-  checkStudentRemoved,
   STUDENT_INACTIVE_MESSAGE,
 } from "./moderation-utils";
-import { persistFlag, persistWarnFlag, persistSuspendStudent, persistRemoveStudent, persistLiftSuspension } from "./moderation-persist";
 import { domainEvents } from "../../domain-events";
 
 export const flagReasonSchema = z.enum([
@@ -144,16 +134,25 @@ export const moderationRouter = router({
         .where(eq(user.id, flagRows[0].targetId))
         .limit(1);
 
-      if (!checkStudentActive(!!studentRows[0], studentRows[0]?.studentStatus === "suspended")) {
+      const studentExists = !!studentRows[0];
+      const studentSuspended = studentRows[0]?.studentStatus === "suspended";
+      if (!studentExists || studentSuspended) {
         throw new TRPCError({ code: "BAD_REQUEST", message: STUDENT_INACTIVE_MESSAGE });
       }
 
-      const { warnedAt } = await persistWarnFlag(input.flagId, moderatorId);
+      const warnedAt = new Date();
+      const [warnUpdated] = await db
+        .update(userFlag)
+        .set({ status: "resolved", outcome: "warned", moderatorId, resolvedAt: warnedAt })
+        .where(eq(userFlag.id, input.flagId))
+        .returning({ targetId: userFlag.targetId });
 
-      domainEvents.emit(
-        "StudentWarned",
-        buildStudentWarnedEvent(input.flagId, flagRows[0].targetId, moderatorId, warnedAt),
-      );
+      domainEvents.emit("StudentWarned", {
+        flagId: input.flagId,
+        targetId: warnUpdated!.targetId,
+        moderatorId,
+        warnedAt,
+      });
 
       return { success: true as const };
     }),
@@ -162,6 +161,10 @@ export const moderationRouter = router({
    * #100/#103 — Suspend a flagged Student.
    * Sets studentStatus to 'suspended', resolves flag with outcome 'suspended',
    * and emits the StudentSuspended domain event.
+   *
+   * TODO: integration test should verify the db.transaction() atomicity —
+   * partial failure between the user.studentStatus write and the userFlag
+   * resolution write must roll both back. No integration harness exists yet.
    */
   suspendStudent: protectedProcedure
     .input(z.object({ flagId: z.string() }))
@@ -187,20 +190,36 @@ export const moderationRouter = router({
         .where(eq(user.id, flagRows[0].targetId))
         .limit(1);
 
-      if (!checkStudentActive(!!studentRows[0], studentRows[0]?.studentStatus === "suspended")) {
+      const studentExists = !!studentRows[0];
+      const studentSuspended = studentRows[0]?.studentStatus === "suspended";
+      if (!studentExists || studentSuspended) {
         throw new TRPCError({ code: "BAD_REQUEST", message: STUDENT_INACTIVE_MESSAGE });
       }
 
-      const { targetId, suspendedAt } = await persistSuspendStudent(
-        input.flagId,
-        flagRows[0].targetId,
-        moderatorId,
-      );
+      const targetId = flagRows[0].targetId;
+      const suspendedAt = new Date();
 
-      domainEvents.emit(
-        "StudentSuspended",
-        buildStudentSuspendedEvent(input.flagId, targetId, moderatorId, suspendedAt),
-      );
+      const { resolvedTargetId } = await db.transaction(async (tx) => {
+        await tx
+          .update(user)
+          .set({ studentStatus: "suspended" })
+          .where(eq(user.id, targetId));
+
+        const [updated] = await tx
+          .update(userFlag)
+          .set({ status: "resolved", outcome: "suspended", moderatorId, resolvedAt: suspendedAt })
+          .where(eq(userFlag.id, input.flagId))
+          .returning({ targetId: userFlag.targetId });
+
+        return { resolvedTargetId: updated!.targetId };
+      });
+
+      domainEvents.emit("StudentSuspended", {
+        flagId: input.flagId,
+        targetId: resolvedTargetId,
+        moderatorId,
+        suspendedAt,
+      });
 
       return { success: true as const };
     }),
@@ -227,12 +246,17 @@ export const moderationRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Student is not suspended." });
       }
 
-      const { liftedAt } = await persistLiftSuspension(input.targetId);
+      const liftedAt = new Date();
+      await db
+        .update(user)
+        .set({ studentStatus: "active" })
+        .where(eq(user.id, input.targetId));
 
-      domainEvents.emit(
-        "SuspensionLifted",
-        buildSuspensionLiftedEvent(input.targetId, moderatorId, liftedAt),
-      );
+      domainEvents.emit("SuspensionLifted", {
+        targetId: input.targetId,
+        moderatorId,
+        liftedAt,
+      });
 
       return { success: true as const };
     }),
@@ -241,6 +265,10 @@ export const moderationRouter = router({
    * #107/#108 — Permanently remove a flagged Student.
    * Sets studentStatus to 'removed', resolves flag with outcome 'removed',
    * and emits the StudentRemoved domain event.
+   *
+   * TODO: integration test should verify the db.transaction() atomicity —
+   * partial failure between the user.studentStatus write and the userFlag
+   * resolution write must roll both back. No integration harness exists yet.
    */
   removeStudent: protectedProcedure
     .input(z.object({ flagId: z.string() }))
@@ -266,28 +294,41 @@ export const moderationRouter = router({
         .where(eq(user.id, flagRows[0].targetId))
         .limit(1);
 
-      if (checkStudentRemoved(studentRows[0]?.studentStatus)) {
+      if (studentRows[0]?.studentStatus === "removed") {
         // Idempotent — already removed, return success without side effects
         return { success: true as const };
       }
 
-      const { targetId, removedAt } = await persistRemoveStudent(
-        input.flagId,
-        flagRows[0].targetId,
-        moderatorId,
-      );
+      const targetId = flagRows[0].targetId;
+      const removedAt = new Date();
 
-      domainEvents.emit(
-        "StudentRemoved",
-        buildStudentRemovedEvent(input.flagId, targetId, moderatorId, removedAt),
-      );
+      const { resolvedTargetId } = await db.transaction(async (tx) => {
+        await tx
+          .update(user)
+          .set({ studentStatus: "removed" })
+          .where(eq(user.id, targetId));
+
+        const [updated] = await tx
+          .update(userFlag)
+          .set({ status: "resolved", outcome: "removed", moderatorId, resolvedAt: removedAt })
+          .where(eq(userFlag.id, input.flagId))
+          .returning({ targetId: userFlag.targetId });
+
+        return { resolvedTargetId: updated!.targetId };
+      });
+
+      domainEvents.emit("StudentRemoved", {
+        flagId: input.flagId,
+        targetId: resolvedTargetId,
+        moderatorId,
+        removedAt,
+      });
 
       return { success: true as const };
     }),
 
   /**
    * #65/#67 — Flag submission with validation.
-   * Persistence (#72) is implemented in a subsequent task.
    */
   flagStudent: protectedProcedure
     .input(
@@ -301,11 +342,10 @@ export const moderationRouter = router({
       const reporterId = ctx.session.user.id;
 
       // #67 — Self-flag check
-      const selfCheck = checkSelfFlag(reporterId, input.targetId);
-      if (!selfCheck.valid) {
+      if (reporterId === input.targetId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: FLAG_VALIDATION_MESSAGES[selfCheck.error],
+          message: FLAG_VALIDATION_MESSAGES.SELF_FLAG,
         });
       }
 
@@ -321,27 +361,33 @@ export const moderationRouter = router({
           ),
         );
 
-      const openCount = rows[0]?.count ?? 0;
-      const dupCheck = checkDuplicateOpenFlag(Number(openCount));
-      if (!dupCheck.valid) {
+      const openCount = Number(rows[0]?.count ?? 0);
+      if (openCount > 0) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: FLAG_VALIDATION_MESSAGES[dupCheck.error],
+          message: FLAG_VALIDATION_MESSAGES.DUPLICATE_OPEN_FLAG,
         });
       }
 
       // #72 — Persist the flag and emit domain event
-      const flag = await persistFlag({
+      const [flag] = await db
+        .insert(userFlag)
+        .values({
+          reporterId,
+          targetId: input.targetId,
+          reason: input.reason,
+          detail: input.detail,
+          status: "open",
+        })
+        .returning();
+
+      domainEvents.emit("StudentFlagged", {
+        flagId: flag!.id,
         reporterId,
         targetId: input.targetId,
         reason: input.reason,
-        detail: input.detail,
+        flaggedAt: flag!.createdAt,
       });
-
-      domainEvents.emit(
-        "StudentFlagged",
-        buildStudentFlaggedEvent(flag.id, { reporterId, targetId: input.targetId, reason: input.reason }, flag.createdAt),
-      );
 
       return { ok: true as const };
     }),
