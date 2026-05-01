@@ -93,6 +93,7 @@
         "@sip-and-speak/auth": "workspace:*",
         "@sip-and-speak/db": "workspace:*",
         "@sip-and-speak/env": "workspace:*",
+        "@sip-and-speak/notifications": "workspace:*",
         "@trpc/server": "catalog:",
         "better-auth": "catalog:",
         "dotenv": "catalog:",
@@ -217,6 +218,20 @@
         "@t3-oss/env-core": "^0.13.1",
         "dotenv": "catalog:",
         "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@sip-and-speak/config": "workspace:*",
+        "@types/bun": "catalog:",
+        "typescript": "^5",
+      },
+    },
+    "packages/notifications": {
+      "name": "@sip-and-speak/notifications",
+      "version": "0.0.0",
+      "dependencies": {
+        "@sip-and-speak/api": "workspace:*",
+        "@sip-and-speak/db": "workspace:*",
+        "drizzle-orm": "^0.45.2",
       },
       "devDependencies": {
         "@sip-and-speak/config": "workspace:*",
@@ -1007,6 +1022,8 @@
     "@sip-and-speak/db": ["@sip-and-speak/db@workspace:packages/db"],
 
     "@sip-and-speak/env": ["@sip-and-speak/env@workspace:packages/env"],
+
+    "@sip-and-speak/notifications": ["@sip-and-speak/notifications@workspace:packages/notifications"],
 
     "@sip-and-speak/ui": ["@sip-and-speak/ui@workspace:packages/ui"],
 
