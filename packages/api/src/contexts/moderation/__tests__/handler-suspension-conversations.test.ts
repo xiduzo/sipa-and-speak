@@ -31,7 +31,11 @@ mock.module("@sip-and-speak/db", () => ({
   db: {
     select: (_cols?: unknown) => ({
       from: (_table: unknown) => ({
-        where: () => Promise.resolve(mockSelectRows),
+        where: () => {
+          const p = Promise.resolve(mockSelectRows) as Promise<Array<{ id: string }>> & { limit: (n: number) => Promise<Array<{ id: string }>> };
+          p.limit = () => Promise.resolve([]);
+          return p;
+        },
         limit: () => Promise.resolve([]),
       }),
     }),
@@ -51,15 +55,15 @@ mock.module("@sip-and-speak/db", () => ({
   },
 }));
 
-import { registerNotificationHandlers } from "../dispatcher";
-import { domainEvents } from "@sip-and-speak/api/domain-events";
+import { registerModerationHandlers } from "../handlers";
+import { domainEvents } from "../../../domain-events";
 
 describe("handleStudentSuspendedSuspendConversations", () => {
   beforeEach(() => {
     dbUpdateCalls.length = 0;
     mockSelectRows = [];
     try { domainEvents.removeAllListeners(); } catch { /* suite-mode mock leak */ }
-    registerNotificationHandlers();
+    registerModerationHandlers();
   });
 
   it("sets conversation.status to 'suspended' when a Student is suspended", async () => {
@@ -94,7 +98,7 @@ describe("handleSuspensionLiftedReopenConversations", () => {
     dbUpdateCalls.length = 0;
     mockSelectRows = [];
     try { domainEvents.removeAllListeners(); } catch { /* suite-mode mock leak */ }
-    registerNotificationHandlers();
+    registerModerationHandlers();
   });
 
   it("sets conversation.status back to 'open' when suspension is lifted", async () => {

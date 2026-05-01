@@ -84,14 +84,9 @@ describe("handleStudentSuspended — proposal cancellation (#102)", () => {
     registerNotificationHandlers();
   });
 
-  it("cancels active proposals when a Student is suspended", async () => {
-    mockMeetupRows = [{ id: "m-1", proposerId: "student-1", receiverId: "student-2" }];
-    mockTokenRows = [{ token: "ExponentPushToken[peer]" }];
-    domainEvents.emit("StudentSuspended", { flagId: "flag-1", targetId: "student-1", moderatorId: "mod-1", suspendedAt: new Date() });
-    await new Promise((r) => setTimeout(r, 30));
-    expect(dbUpdateCalls.length).toBeGreaterThan(0);
-    expect(dbUpdateCalls[0]!.status).toBe("cancelled");
-  });
+  // DB-cascade assertions for #102 live in @sip-and-speak/api
+  // (packages/api/src/contexts/moderation/__tests__/handler-suspension-cancel-proposals.test.ts).
+  // The notifications package only owns the push side now.
 
   it("notifies affected peer when proposal is cancelled", async () => {
     mockMeetupRows = [{ id: "m-1", proposerId: "student-1", receiverId: "student-2" }];
@@ -113,11 +108,12 @@ describe("handleStudentSuspended — proposal cancellation (#102)", () => {
     expect(proposalCancelMsg!.messages[0]!.body).not.toContain("moderation");
   });
 
-  it("does nothing when Student has no active proposals", async () => {
+  it("does not push proposal-cancelled when Student has no active proposals", async () => {
     mockMeetupRows = [];
     domainEvents.emit("StudentSuspended", { flagId: "flag-2", targetId: "student-1", moderatorId: "mod-1", suspendedAt: new Date() });
     await new Promise((r) => setTimeout(r, 30));
-    expect(dbUpdateCalls.length).toBe(0);
+    const proposalCancelMsg = fetchCalls.find((c) => c.messages[0]?.title === "Meetup proposal cancelled");
+    expect(proposalCancelMsg).toBeUndefined();
   });
 });
 

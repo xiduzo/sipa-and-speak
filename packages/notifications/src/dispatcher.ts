@@ -1,10 +1,16 @@
 /**
  * Wires domain events to push notifications.
  * Fire-and-forget: errors are logged in the dispatcher, never thrown to callers.
+ *
+ * NOTE: moderation cascades (cancelling proposals, transitioning conversation
+ * state, blocklisting removed Students' emails) live in
+ * @sip-and-speak/api/contexts/moderation/handlers.ts. This package only owns
+ * push-notification handlers. Where the same event has both a cascade and a
+ * push, the two subscribe independently — see e.g. handleProposalCancelledOnSuspended.
  */
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { conversationPresence, meetup, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
+import { conversationPresence, meetup } from "@sip-and-speak/db/schema/sip-and-speak";
 import {
   domainEvents,
   type MatchRequestSentEvent,
@@ -145,121 +151,32 @@ async function handleStudentWarned(event: StudentWarnedEvent): Promise<void> {
   await dispatch(buildStudentWarnedRecipes(event));
 }
 
-async function handleStudentSuspended(event: StudentSuspendedEvent): Promise<void> {
-  const activeProposals = await db
-    .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
-    .from(meetup)
-    .where(
-      and(
-        or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
-        inArray(meetup.status, ["pending", "confirmed"]),
-      ),
-    );
-
-  if (activeProposals.length === 0) return;
-
-  await db
-    .update(meetup)
-    .set({ status: "cancelled" })
-    .where(
-      and(
-        or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
-        inArray(meetup.status, ["pending", "confirmed"]),
-      ),
-    );
-
-  const peerIds = [...new Set(
-    activeProposals.map((p) => (p.proposerId === event.targetId ? p.receiverId : p.proposerId)),
-  )];
-
-  await dispatch(buildProposalCancelledRecipes(peerIds));
-}
-
 async function handleStudentSuspendedNotify(event: StudentSuspendedEvent): Promise<void> {
   await dispatch(buildStudentSuspendedNotifyRecipes(event));
-}
-
-async function handleStudentSuspendedSuspendConversations(event: StudentSuspendedEvent): Promise<void> {
-  const openConversations = await db
-    .select({ id: conversation.id })
-    .from(conversation)
-    .where(
-      and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "open"),
-      ),
-    );
-
-  if (openConversations.length === 0) return;
-
-  await db
-    .update(conversation)
-    .set({ status: "suspended" })
-    .where(
-      and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "open"),
-      ),
-    );
-
-  console.info("[moderation] Suspended conversations on student suspension", { targetId: event.targetId, count: openConversations.length });
 }
 
 async function handleSuspensionLifted(event: SuspensionLiftedEvent): Promise<void> {
   await dispatch(buildSuspensionLiftedRecipes(event));
 }
 
-// If both Students in a shared conversation were suspended and only one is lifted,
-// the conversation re-opens here even though the other party is still suspended.
-// The per-send guard on user.studentStatus catches that case at message time.
-async function handleSuspensionLiftedReopenConversations(event: SuspensionLiftedEvent): Promise<void> {
-  const suspendedConversations = await db
-    .select({ id: conversation.id })
-    .from(conversation)
-    .where(
-      and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "suspended"),
-      ),
-    );
-
-  if (suspendedConversations.length === 0) return;
-
-  await db
-    .update(conversation)
-    .set({ status: "open" })
-    .where(
-      and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "suspended"),
-      ),
-    );
-
-  console.info("[moderation] Re-opened conversations on suspension lift", { targetId: event.targetId, count: suspendedConversations.length });
+async function handleStudentRemovedNotify(event: StudentRemovedEvent): Promise<void> {
+  await dispatch(buildStudentRemovedNotifyRecipes(event));
 }
 
-async function handleStudentRemovedCancelProposals(event: StudentRemovedEvent): Promise<void> {
+// Push side of the suspension cascade. The DB cancellation lives in the
+// moderation context; this handler runs independently against the same
+// event and re-queries the affected peers so it can dispatch the
+// "proposal cancelled" push. Duplicated query is intentional — see
+// header comment.
+async function handleProposalCancelledOnSuspended(event: StudentSuspendedEvent): Promise<void> {
   const activeProposals = await db
     .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
     .from(meetup)
     .where(
-      and(
-        or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
-        inArray(meetup.status, ["pending", "confirmed"]),
-      ),
+      or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
     );
 
   if (activeProposals.length === 0) return;
-
-  await db
-    .update(meetup)
-    .set({ status: "cancelled" })
-    .where(
-      and(
-        or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
-        inArray(meetup.status, ["pending", "confirmed"]),
-      ),
-    );
 
   const peerIds = [...new Set(
     activeProposals.map((p) => (p.proposerId === event.targetId ? p.receiverId : p.proposerId)),
@@ -268,34 +185,22 @@ async function handleStudentRemovedCancelProposals(event: StudentRemovedEvent): 
   await dispatch(buildProposalCancelledRecipes(peerIds));
 }
 
-async function handleStudentRemovedCloseConversations(event: StudentRemovedEvent): Promise<void> {
-  const openConversations = await db
-    .select({ id: conversation.id })
-    .from(conversation)
+// Push side of the removal cascade. See handleProposalCancelledOnSuspended.
+async function handleProposalCancelledOnRemoved(event: StudentRemovedEvent): Promise<void> {
+  const activeProposals = await db
+    .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
+    .from(meetup)
     .where(
-      and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "open"),
-      ),
+      or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
     );
 
-  if (openConversations.length === 0) return;
+  if (activeProposals.length === 0) return;
 
-  await db
-    .update(conversation)
-    .set({ status: "closed" })
-    .where(
-      and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "open"),
-      ),
-    );
+  const peerIds = [...new Set(
+    activeProposals.map((p) => (p.proposerId === event.targetId ? p.receiverId : p.proposerId)),
+  )];
 
-  console.info("[moderation] Closed conversations on removal", { targetId: event.targetId, count: openConversations.length });
-}
-
-async function handleStudentRemovedNotify(event: StudentRemovedEvent): Promise<void> {
-  await dispatch(buildStudentRemovedNotifyRecipes(event));
+  await dispatch(buildProposalCancelledRecipes(peerIds));
 }
 
 export function registerNotificationHandlers(): void {
@@ -319,17 +224,14 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("MessageSent", (event) => { void handleMessageSent(event); });
   domainEvents.on("StudentWarned", (event) => { void handleStudentWarned(event); });
   domainEvents.on("StudentSuspended", (event) => {
-    void handleStudentSuspended(event);
     void handleStudentSuspendedNotify(event);
-    void handleStudentSuspendedSuspendConversations(event);
+    void handleProposalCancelledOnSuspended(event);
   });
   domainEvents.on("SuspensionLifted", (event) => {
     void handleSuspensionLifted(event);
-    void handleSuspensionLiftedReopenConversations(event);
   });
   domainEvents.on("StudentRemoved", (event) => {
-    void handleStudentRemovedCancelProposals(event);
-    void handleStudentRemovedCloseConversations(event);
     void handleStudentRemovedNotify(event);
+    void handleProposalCancelledOnRemoved(event);
   });
 }
