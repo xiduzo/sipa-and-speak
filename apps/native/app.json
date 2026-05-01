@@ -19,7 +19,14 @@
     "plugins": [
       "expo-updates",
       "expo-font",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "sip-and-speak",
+          "project": "react-native"
+        }
+      ]
     ],
     "runtimeVersion": {
       "policy": "appVersion"

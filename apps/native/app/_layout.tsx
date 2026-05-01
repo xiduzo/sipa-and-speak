@@ -1,3 +1,4 @@
+import "@/lib/sentry";
 import "@/global.css";
 import Constants from "expo-constants";
 import { Caveat_700Bold } from "@expo-google-fonts/caveat";
@@ -30,6 +31,7 @@ import { AppThemeProvider } from "@/contexts/app-theme-context";
 import { queryClient, trpc } from "@/utils/trpc";
 import { useNotificationTapHandler } from "@/hooks/use-notification-tap-handler";
 import { MatchCelebrationModal } from "@/components/match-celebration-modal";
+import { Sentry } from "@/lib/sentry";
 import { MeetupConfirmedModal } from "@/components/meetup-confirmed-modal";
 import { OnboardingModal } from "@/components/onboarding-modal"; // edge-case: complete but no identity
 
@@ -180,7 +182,7 @@ function StackLayout() {
   );
 }
 
-export default function Layout() {
+function Layout() {
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (status) => {
       if (Platform.OS !== "web") {
@@ -249,3 +251,5 @@ export default function Layout() {
     </QueryClientProvider>
   );
 }
+
+export default Sentry.wrap(Layout);
