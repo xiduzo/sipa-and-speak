@@ -2,7 +2,8 @@ import { and, eq, or, sql, count } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
-import { meetup, venue, studentMatch, attendanceReport, messagingOptIn, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
+import { meetup, venue, studentMatch, attendanceReport } from "@sip-and-speak/db/schema/sip-and-speak";
+import { getMessagingStateForUserMeetups } from "../conversation";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";
@@ -643,7 +644,7 @@ export const meetupRouter = router({
   getConfirmed: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const [rows, myReports, optIns, conversations] = await Promise.all([
+    const [rows, myReports, messagingState] = await Promise.all([
       db
         .select({
           meetup: meetup,
@@ -681,38 +682,15 @@ export const meetupRouter = router({
         })
         .from(attendanceReport)
         .where(eq(attendanceReport.studentId, userId)),
-      // Opt-in responses (mine + partner) for completed/confirmed meetups
-      db
-        .select({
-          meetupId: messagingOptIn.meetupId,
-          studentId: messagingOptIn.studentId,
-          response: messagingOptIn.response,
-        })
-        .from(messagingOptIn)
-        .innerJoin(meetup, eq(meetup.id, messagingOptIn.meetupId))
-        .where(or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId))),
-      // Open conversations
-      db
-        .select({ meetupId: conversation.meetupId, id: conversation.id })
-        .from(conversation)
-        .where(or(eq(conversation.user1Id, userId), eq(conversation.user2Id, userId))),
+      // Conversation context owns its own data — Scheduling consumes the surface
+      getMessagingStateForUserMeetups(userId),
     ]);
 
     const myReportMap = new Map(myReports.map((r) => [r.meetupId, r]));
-    const conversationMap = new Map(
-      conversations.filter((c) => c.meetupId !== null).map((c) => [c.meetupId as string, c.id]),
-    );
-    const optInByMeetup = new Map<string, { mine: "accept" | "decline" | null; partner: "accept" | "decline" | null }>();
-    for (const row of optIns) {
-      const entry = optInByMeetup.get(row.meetupId) ?? { mine: null, partner: null };
-      if (row.studentId === userId) entry.mine = row.response;
-      else entry.partner = row.response;
-      optInByMeetup.set(row.meetupId, entry);
-    }
 
     return rows.map((row) => {
       const myReport = myReportMap.get(row.meetup.id);
-      const optIn = optInByMeetup.get(row.meetup.id) ?? { mine: null, partner: null };
+      const messaging = messagingState.get(row.meetup.id) ?? { mine: null, partner: null, conversationId: null };
       return {
         meetupId: row.meetup.id,
         date: row.meetup.date,
@@ -737,9 +715,9 @@ export const meetupRouter = router({
         myRating: myReport?.rating ?? null,
         // Messaging opt-in state for post-meetup hero
         optIn: {
-          mine: optIn.mine,
-          partner: optIn.partner,
-          conversationId: conversationMap.get(row.meetup.id) ?? null,
+          mine: messaging.mine,
+          partner: messaging.partner,
+          conversationId: messaging.conversationId,
         },
       };
     });

@@ -1,0 +1,52 @@
+import { eq, or } from "drizzle-orm";
+import { db } from "@sip-and-speak/db";
+import { conversation, messagingOptIn, meetup } from "@sip-and-speak/db/schema/sip-and-speak";
+
+export interface MeetupMessagingState {
+  mine: "accept" | "decline" | null;
+  partner: "accept" | "decline" | null;
+  conversationId: string | null;
+}
+
+/**
+ * Returns per-meetup messaging state for every meetup the given Student is part of.
+ * Owned by the Conversation context so other contexts (Scheduling) don't query
+ * conversation/messagingOptIn tables directly.
+ */
+export async function getMessagingStateForUserMeetups(
+  userId: string,
+): Promise<Map<string, MeetupMessagingState>> {
+  const [optIns, conversations] = await Promise.all([
+    db
+      .select({
+        meetupId: messagingOptIn.meetupId,
+        studentId: messagingOptIn.studentId,
+        response: messagingOptIn.response,
+      })
+      .from(messagingOptIn)
+      .innerJoin(meetup, eq(meetup.id, messagingOptIn.meetupId))
+      .where(or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId))),
+    db
+      .select({ meetupId: conversation.meetupId, id: conversation.id })
+      .from(conversation)
+      .where(or(eq(conversation.user1Id, userId), eq(conversation.user2Id, userId))),
+  ]);
+
+  const result = new Map<string, MeetupMessagingState>();
+
+  for (const row of optIns) {
+    const entry = result.get(row.meetupId) ?? { mine: null, partner: null, conversationId: null };
+    if (row.studentId === userId) entry.mine = row.response;
+    else entry.partner = row.response;
+    result.set(row.meetupId, entry);
+  }
+
+  for (const c of conversations) {
+    if (c.meetupId === null) continue;
+    const entry = result.get(c.meetupId) ?? { mine: null, partner: null, conversationId: null };
+    entry.conversationId = c.id;
+    result.set(c.meetupId, entry);
+  }
+
+  return result;
+}
