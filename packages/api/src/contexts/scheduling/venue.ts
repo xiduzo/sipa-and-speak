@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { venue } from "@sip-and-speak/db/schema/sip-and-speak";
 import { protectedProcedure, router } from "../../index";
-import { haversineDistance } from "../matching/matching";
+import { haversineDistance } from "../../lib/geo";
 
 const venueTagEnum = z.enum(["wifi", "quiet_zone", "campus", "outdoor", "vibrant"]);
 
