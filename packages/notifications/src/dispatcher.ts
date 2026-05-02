@@ -59,7 +59,7 @@ import {
 } from "./builders";
 import { dispatch } from "./recipe";
 
-async function handleMatchRequestSent(event: MatchRequestSentEvent): Promise<void> {
+export async function handleMatchRequestSent(event: MatchRequestSentEvent): Promise<void> {
   await dispatch(buildMatchRequestSentRecipes(event));
 }
 
