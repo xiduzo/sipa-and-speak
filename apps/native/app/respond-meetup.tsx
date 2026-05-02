@@ -69,9 +69,17 @@ export default function RespondMeetupScreen() {
   const declineMutation = useMutation(
     trpc.meetup.declineProposal.mutationOptions({
       onSuccess: () => {
-        Alert.alert("Proposal declined", "The proposal has been declined.");
         invalidateQueries();
-        router.back();
+        if (!proposal?.canCounterPropose) {
+          Alert.alert(
+            "No match found",
+            "Oops, you couldn't find a suitable timeslot to meet. You can try to propose a meeting again.",
+            [{ text: "OK", onPress: () => router.back() }],
+          );
+        } else {
+          Alert.alert("Proposal declined", "The proposal has been declined.");
+          router.back();
+        }
       },
       onError: (err) => setError(err.message),
     }),
