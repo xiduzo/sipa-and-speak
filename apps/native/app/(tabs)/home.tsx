@@ -201,6 +201,55 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {(matchesQuery.data ?? []).length > 0 && (
+          <View className="mt-8">
+            <Text
+              className="font-manrope-semi tracking-widest text-brand-muted-foreground"
+              style={{ fontSize: 12 }}
+            >
+              MY MATCHES
+            </Text>
+            <View className="flex-row flex-wrap gap-4 mt-3">
+              {(matchesQuery.data ?? []).map((match) => (
+                <Pressable
+                  key={match.matchId}
+                  testID="matched-partner-card"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/partner/[id]",
+                      params: { id: match.partnerId },
+                    })
+                  }
+                  className="items-center active:opacity-70"
+                >
+                  {match.partnerPhotoUrl ? (
+                    <Image
+                      source={{ uri: match.partnerPhotoUrl }}
+                      style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: "#D9C9BC" }}
+                    />
+                  ) : (
+                    <View
+                      className="items-center justify-center rounded-full"
+                      style={{ width: 56, height: 56, backgroundColor: GOLD, borderWidth: 2, borderColor: "#D9C9BC" }}
+                    >
+                      <Text className="font-manrope-bold" style={{ fontSize: 20 }}>
+                        {(match.partnerName || "?").charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                  <Text
+                    className="text-brand-foreground font-manrope-semi mt-1"
+                    style={{ fontSize: 11 }}
+                    numberOfLines={1}
+                  >
+                    {match.partnerName}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
+
         {(incomingRequestsQuery.data ?? []).length > 0 && (
           <View className="mt-8">
             <Text
