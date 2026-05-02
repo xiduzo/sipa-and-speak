@@ -7,6 +7,7 @@ import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import pg from "pg";
+import { seedVenues } from "./seed/venues";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
@@ -23,6 +24,7 @@ try {
   const migrationsFolder = new URL("./migrations", import.meta.url).pathname;
   await migrate(db, { migrationsFolder });
   console.log("Migrations completed successfully");
+  await seedVenues();
 } catch (err) {
   console.error("Migration failed:", err);
   process.exit(1);
