@@ -1,9 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Image, Pressable, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
-import { trpc } from "@/utils/trpc";
+import { trpc, queryClient } from "@/utils/trpc";
 import { HeroNoMeetup } from "@/components/home/hero-nomeetup";
 import { HeroMatchFound } from "@/components/home/hero-matchfound";
 import { HeroWaiting } from "@/components/home/hero-waiting";
@@ -32,6 +32,12 @@ export default function HomeScreen() {
   const initial = (name || "?").charAt(0).toUpperCase();
 
   const incomingRequestsQuery = useQuery(trpc.matching.getIncomingRequests.queryOptions());
+
+  const acceptRescheduleMutation = useMutation(trpc.meetup.acceptReschedule.mutationOptions({
+    onSuccess: () => {
+      void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
+    },
+  }));
 
   const { hero, secondaries } = resolveHomeState({
     confirmed: confirmedQuery.data ?? [],
@@ -87,6 +93,9 @@ export default function HomeScreen() {
           <HeroConfirmed
             meetup={hero.meetup}
             onReschedule={() => router.push("/(tabs)/confirmed-meetups")}
+            onAcceptReschedule={() =>
+              acceptRescheduleMutation.mutate({ meetupId: hero.meetup.meetupId })
+            }
           />
         );
       case "waiting":
