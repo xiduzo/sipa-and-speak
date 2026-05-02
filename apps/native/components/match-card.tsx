@@ -3,6 +3,7 @@ import { Image, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { trpc } from "@/utils/trpc";
+import { interestLabel } from "@/utils/interest-labels";
 import {
   getLanguageCode,
   getLanguageFlag,
@@ -242,7 +243,7 @@ export function MatchCard({
                   className="font-manrope-semi text-brand-foreground"
                   style={{ fontSize: 13 }}
                 >
-                  {topic.replace(/_/g, " ")}
+                  {interestLabel(topic)}
                 </Text>
               </View>
             ))}

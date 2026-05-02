@@ -16,6 +16,7 @@ import { LanguagePickerModal } from "@/components/language-picker-modal";
 import { authClient } from "@/lib/auth-client";
 import { queryClient, trpc } from "@/utils/trpc";
 import { pickAndEncodeProfilePicture } from "@/utils/profile-picture";
+import { INTERESTS, interestLabel } from "@/utils/interest-labels";
 
 const GOLD = "#F2C94C";
 const BORDER = "#D9C9BC";
@@ -42,27 +43,6 @@ const LEVEL_BLOCKS = [
   { value: "advanced" as const, label: "C1–C2", sub: "Advanced" },
 ];
 
-const INTERESTS = [
-  { value: "modern_art", label: "Art" },
-  { value: "tech_coding", label: "Tech" },
-  { value: "jazz_music", label: "Music" },
-  { value: "culinary_arts", label: "Cooking" },
-  { value: "sustainability", label: "Sustainability" },
-  { value: "cinephile", label: "Film" },
-  { value: "cosmology", label: "Science" },
-  { value: "photography", label: "Photography" },
-  { value: "board_games", label: "Board games" },
-  { value: "hiking_outdoors", label: "Hiking" },
-  { value: "yoga_wellness", label: "Yoga" },
-  { value: "literature", label: "Books" },
-  { value: "entrepreneurship", label: "Startups" },
-  { value: "design_architecture", label: "Design" },
-  { value: "travel", label: "Travel" },
-  { value: "gaming", label: "Gaming" },
-  { value: "fitness_sports", label: "Fitness" },
-  { value: "philosophy", label: "Philosophy" },
-  { value: "theatre", label: "Theatre" },
-] as const;
 
 function SectionLabel({ children }: { children: string }) {
   return (
