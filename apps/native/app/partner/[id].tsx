@@ -7,6 +7,7 @@ import { Image, ScrollView, Text, View } from "react-native";
 import { Container } from "@/components/container";
 import { MatchCelebrationModal } from "@/components/match-celebration-modal";
 import { queryClient, trpc } from "@/utils/trpc";
+import { interestLabel } from "@/utils/interest-labels";
 
 export default function PartnerProfileScreen() {
   const { id, matchRequestId } = useLocalSearchParams<{ id: string; matchRequestId?: string }>();
@@ -179,7 +180,7 @@ export default function PartnerProfileScreen() {
             <View className="flex-row flex-wrap gap-2" testID="profile-topics">
               {profile.interests.map((topic) => (
                 <View key={topic} className="bg-muted px-3 py-1 rounded-full">
-                  <Text className="text-muted-foreground text-sm">{topic}</Text>
+                  <Text className="text-muted-foreground text-sm">{interestLabel(topic)}</Text>
                 </View>
               ))}
             </View>

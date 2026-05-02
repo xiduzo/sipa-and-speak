@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 
 import { trpc } from "@/utils/trpc";
+import { interestLabel } from "@/utils/interest-labels";
 
 interface CandidateCardProps {
   userId: string;
@@ -104,7 +105,7 @@ export function CandidateCard({
           <View className="flex-row flex-wrap gap-1" testID="candidate-conversation-topics">
             {interests.map((topic) => (
               <View key={topic} className="bg-muted px-2 py-0.5 rounded-full">
-                <Text className="text-muted-foreground text-xs">{topic}</Text>
+                <Text className="text-muted-foreground text-xs">{interestLabel(topic)}</Text>
               </View>
             ))}
           </View>
