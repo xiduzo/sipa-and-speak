@@ -17,25 +17,13 @@ import { authClient } from "@/lib/auth-client";
 import { queryClient, trpc } from "@/utils/trpc";
 import { pickAndEncodeProfilePicture } from "@/utils/profile-picture";
 import { INTERESTS, interestLabel } from "@/utils/interest-labels";
+import { getLanguageFlag } from "@/utils/language-flags";
 
 const GOLD = "#F2C94C";
 const BORDER = "#D9C9BC";
 const MIN_INTERESTS = 3;
 const MAX_INTERESTS = 7;
 
-const LANGUAGE_FLAGS: Record<string, string> = {
-  Afrikaans: "🇿🇦", Arabic: "🇸🇦", Bengali: "🇧🇩", Bulgarian: "🇧🇬",
-  Catalan: "🏳️", Chinese: "🇨🇳", Croatian: "🇭🇷", Czech: "🇨🇿",
-  Danish: "🇩🇰", Dutch: "🇳🇱", English: "🇬🇧", Estonian: "🇪🇪",
-  Finnish: "🇫🇮", French: "🇫🇷", German: "🇩🇪", Greek: "🇬🇷",
-  Hebrew: "🇮🇱", Hindi: "🇮🇳", Hungarian: "🇭🇺", Indonesian: "🇮🇩",
-  Italian: "🇮🇹", Japanese: "🇯🇵", Korean: "🇰🇷", Latvian: "🇱🇻",
-  Lithuanian: "🇱🇹", Malay: "🇲🇾", Norwegian: "🇳🇴", Persian: "🇮🇷",
-  Polish: "🇵🇱", Portuguese: "🇵🇹", Romanian: "🇷🇴", Russian: "🇷🇺",
-  Serbian: "🇷🇸", Slovak: "🇸🇰", Slovenian: "🇸🇮", Spanish: "🇪🇸",
-  Swedish: "🇸🇪", Thai: "🇹🇭", Turkish: "🇹🇷", Ukrainian: "🇺🇦",
-  Vietnamese: "🇻🇳",
-};
 
 const LEVEL_BLOCKS = [
   { value: "beginner" as const, label: "A1–A2", sub: "Beginner" },
@@ -282,7 +270,7 @@ export default function ProfileScreen() {
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-2.5">
                       <Text style={{ fontSize: 24 }}>
-                        {LANGUAGE_FLAGS[sl.language] ?? "🌐"}
+                        {getLanguageFlag(sl.language)}
                       </Text>
                       <Text className="font-manrope-bold text-[15px] text-foreground">
                         {sl.language}
@@ -375,7 +363,7 @@ export default function ProfileScreen() {
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-2.5">
                       <Text style={{ fontSize: 24 }}>
-                        {LANGUAGE_FLAGS[ll.language] ?? "🌐"}
+                        {getLanguageFlag(ll.language)}
                       </Text>
                       <Text className="font-manrope-bold text-[15px] text-foreground">
                         {ll.language}

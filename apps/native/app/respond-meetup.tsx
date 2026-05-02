@@ -178,9 +178,14 @@ export default function RespondMeetupScreen() {
                   key={v.id}
                   testID="venue-option"
                   onPress={() => setSelectedVenueId(v.id)}
-                  className={`border rounded-xl p-3 ${selectedVenueId === v.id ? "border-primary bg-primary/10" : "border-border bg-card"}`}
+                  className="rounded-xl p-3"
+                  style={{
+                    borderWidth: 1.5,
+                    borderColor: selectedVenueId === v.id ? "#F2C94C" : "#D9C9BC",
+                    backgroundColor: selectedVenueId === v.id ? "#FFF9EC" : "#F5EFE8",
+                  }}
                 >
-                  <Text className={`font-manrope-semi ${selectedVenueId === v.id ? "text-primary" : "text-foreground"}`}>
+                  <Text className="font-manrope-semi" style={{ color: selectedVenueId === v.id ? "#2C1810" : "#8A7570" }}>
                     {v.name}
                   </Text>
                 </TouchableOpacity>
@@ -226,9 +231,14 @@ export default function RespondMeetupScreen() {
                   key={slot}
                   testID="time-slot"
                   onPress={() => setTime(slot)}
-                  className={`border rounded-lg px-3 py-1.5 ${time === slot ? "border-primary bg-primary/10" : "border-border bg-card"}`}
+                  className="rounded-lg px-3 py-1.5"
+                  style={{
+                    borderWidth: 1.5,
+                    borderColor: time === slot ? "#F2C94C" : "#D9C9BC",
+                    backgroundColor: time === slot ? "#FFF9EC" : "transparent",
+                  }}
                 >
-                  <Text className={`font-manrope ${time === slot ? "text-primary font-manrope-semi" : "text-foreground"}`}>{slot}</Text>
+                  <Text className={`font-manrope${time === slot ? "-semi" : ""}`} style={{ color: time === slot ? "#2C1810" : "#8A7570" }}>{slot}</Text>
                 </TouchableOpacity>
               ))}
             </View>
