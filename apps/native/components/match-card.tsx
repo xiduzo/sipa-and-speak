@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Image, Pressable, Text, View } from "react-native";
+import { Alert, Image, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { trpc } from "@/utils/trpc";
@@ -74,7 +74,14 @@ export function MatchCard({
     sendRequestMutation.mutate(
       { receiverId: candidate.userId },
       {
-        onSettled: () => onAccept(),
+        onSuccess: () => {
+          Alert.alert(
+            "Invitation sent!",
+            "Your match request is on its way. Sit tight — we'll let you know when they respond.",
+            [{ text: "Got it", onPress: onAccept }],
+          );
+        },
+        onError: () => onAccept(),
       },
     );
   }
