@@ -8,23 +8,10 @@ import { Container } from "@/components/container";
 import { MatchCelebrationModal } from "@/components/match-celebration-modal";
 import { queryClient, trpc } from "@/utils/trpc";
 import { interestLabel } from "@/utils/interest-labels";
+import { getLanguageFlag } from "@/utils/language-flags";
 
 const GOLD = "#F2C94C";
 const BORDER = "#D9C9BC";
-
-const LANGUAGE_FLAGS: Record<string, string> = {
-  Afrikaans: "🇿🇦", Arabic: "🇸🇦", Bengali: "🇧🇩", Bulgarian: "🇧🇬",
-  Catalan: "🏳️", Chinese: "🇨🇳", Croatian: "🇭🇷", Czech: "🇨🇿",
-  Danish: "🇩🇰", Dutch: "🇳🇱", English: "🇬🇧", Estonian: "🇪🇪",
-  Finnish: "🇫🇮", French: "🇫🇷", German: "🇩🇪", Greek: "🇬🇷",
-  Hebrew: "🇮🇱", Hindi: "🇮🇳", Hungarian: "🇭🇺", Indonesian: "🇮🇩",
-  Italian: "🇮🇹", Japanese: "🇯🇵", Korean: "🇰🇷", Latvian: "🇱🇻",
-  Lithuanian: "🇱🇹", Malay: "🇲🇾", Norwegian: "🇳🇴", Persian: "🇮🇷",
-  Polish: "🇵🇱", Portuguese: "🇵🇹", Romanian: "🇷🇴", Russian: "🇷🇺",
-  Serbian: "🇷🇸", Slovak: "🇸🇰", Slovenian: "🇸🇮", Spanish: "🇪🇸",
-  Swedish: "🇸🇪", Thai: "🇹🇭", Turkish: "🇹🇷", Ukrainian: "🇺🇦",
-  Vietnamese: "🇻🇳",
-};
 
 function SectionLabel({ children }: { children: string }) {
   return (
@@ -183,7 +170,7 @@ export default function PartnerProfileScreen() {
               {profile.spokenLanguages.map((l) => (
                 <View key={l.language} className="px-3 py-1 rounded-full" style={{ borderWidth: 1, borderColor: GOLD, backgroundColor: "#FFF9EC" }}>
                   <Text className="text-xs font-manrope-semi" style={{ color: "#2C1810" }}>
-                    {LANGUAGE_FLAGS[l.language] ?? ""} {l.language}{l.proficiency ? ` · ${l.proficiency}` : ""}
+                    {getLanguageFlag(l.language)} {l.language}{l.proficiency ? ` · ${l.proficiency}` : ""}
                   </Text>
                 </View>
               ))}
@@ -199,7 +186,7 @@ export default function PartnerProfileScreen() {
               {profile.learningLanguages.map((lang) => (
                 <View key={lang} className="px-3 py-1 rounded-full" style={{ borderWidth: 1, borderColor: BORDER }}>
                   <Text className="text-xs font-manrope-semi" style={{ color: "#8A7570" }}>
-                    {LANGUAGE_FLAGS[lang] ?? ""} {lang}
+                    {getLanguageFlag(lang)} {lang}
                   </Text>
                 </View>
               ))}
