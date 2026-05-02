@@ -26,9 +26,9 @@ export function isRescheduleNoOp(
   );
 }
 
-/** Counter-proposals are capped at round 3. */
+/** Counter-proposals are capped at round 5. */
 export function canCounterPropose(round: number): boolean {
-  return round < 3;
+  return round < 5;
 }
 
 export type AttendanceOutcome = "completed" | "not_attended" | "pending";

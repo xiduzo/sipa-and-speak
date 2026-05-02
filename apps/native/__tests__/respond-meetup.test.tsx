@@ -1,6 +1,6 @@
 /**
  * Tests for task #71 — Build proposal response UI (accept / counter-propose / decline)
- * Tests for task #73 — Enforce max 3 counter-proposal rounds — remove counter option at round 3
+ * Tests for task #73 — Enforce max 5 counter-proposal rounds — remove counter option at round 5
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
@@ -137,11 +137,11 @@ describe("#71 — Proposal response UI", () => {
   });
 });
 
-// ─── Task #73: round 3 hides counter-propose ──────────────────────────────────
+// ─── Task #73: round 5 hides counter-propose ──────────────────────────────────
 
 describe("#73 — Round enforcement in UI", () => {
-  it("hides Counter-propose action at round 3", async () => {
-    mockProposalData = { ...baseProposal, round: 3, canCounterPropose: false };
+  it("hides Counter-propose action at round 5", async () => {
+    mockProposalData = { ...baseProposal, round: 5, canCounterPropose: false };
 
     renderWithQuery(<RespondMeetupScreen />);
 
@@ -153,8 +153,8 @@ describe("#73 — Round enforcement in UI", () => {
     expect(screen.getByTestId("decline-btn")).toBeTruthy();
   });
 
-  it("shows Counter-propose action at round 2", async () => {
-    mockProposalData = { ...baseProposal, round: 2, canCounterPropose: true };
+  it("shows Counter-propose action at round 4", async () => {
+    mockProposalData = { ...baseProposal, round: 4, canCounterPropose: true };
 
     renderWithQuery(<RespondMeetupScreen />);
 
