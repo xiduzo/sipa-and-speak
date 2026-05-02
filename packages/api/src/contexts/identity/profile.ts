@@ -33,6 +33,9 @@ const interestEnum = z.enum([
   "fitness_sports",
   "philosophy",
   "theatre",
+  "grocery_shopping",
+  "family_conversations",
+  "pronunciation_practice",
 ]);
 
 const proficiencyEnum = z.enum([

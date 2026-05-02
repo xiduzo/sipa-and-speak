@@ -30,7 +30,8 @@ type InterestValue =
   | "sustainability" | "cinephile" | "cosmology" | "photography"
   | "board_games" | "hiking_outdoors" | "yoga_wellness" | "literature"
   | "entrepreneurship" | "design_architecture" | "travel" | "gaming"
-  | "fitness_sports" | "philosophy" | "theatre";
+  | "fitness_sports" | "philosophy" | "theatre"
+  | "grocery_shopping" | "family_conversations" | "pronunciation_practice";
 
 interface SpokenLanguage { language: string; proficiency: LearningProficiency }
 interface LearningLang { language: string; proficiency: LearningProficiency }
@@ -61,6 +62,9 @@ const INTERESTS: { value: InterestValue; label: string }[] = [
   { value: "fitness_sports", label: "Football" },
   { value: "philosophy", label: "Philosophy" },
   { value: "theatre", label: "Theatre" },
+  { value: "grocery_shopping", label: "Grocery shopping" },
+  { value: "family_conversations", label: "Family" },
+  { value: "pronunciation_practice", label: "Pronunciation" },
 ];
 
 const LANGUAGE_FLAGS: Record<string, string> = {

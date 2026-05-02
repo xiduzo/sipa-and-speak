@@ -18,6 +18,9 @@ const INTERESTS = [
   { value: "fitness_sports", label: "Fitness" },
   { value: "philosophy", label: "Philosophy" },
   { value: "theatre", label: "Theatre" },
+  { value: "grocery_shopping", label: "Grocery shopping" },
+  { value: "family_conversations", label: "Family" },
+  { value: "pronunciation_practice", label: "Pronunciation" },
 ] as const;
 
 export function interestLabel(value: string): string {
