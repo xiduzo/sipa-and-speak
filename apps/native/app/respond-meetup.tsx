@@ -1,8 +1,9 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button, Spinner } from "heroui-native";
 import { useState } from "react";
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { Container } from "@/components/container";
 import { MeetupConfirmedModal } from "@/components/meetup-confirmed-modal";
@@ -17,6 +18,7 @@ export default function RespondMeetupScreen() {
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<{ venueName: string; date: string; time: string } | null>(null);
 
@@ -89,10 +91,10 @@ export default function RespondMeetupScreen() {
     return (
       <Container isScrollable={false}>
         <View testID="no-proposal-state" className="flex-1 items-center justify-center p-6">
-          <Text className="text-foreground text-lg font-semibold text-center mb-2">
+          <Text className="text-foreground text-lg font-manrope-bold text-center mb-2">
             No incoming proposals
           </Text>
-          <Text className="text-muted-foreground text-center">
+          <Text className="text-muted-foreground font-manrope text-center">
             There are no pending meetup proposals waiting for your response.
           </Text>
         </View>
@@ -140,12 +142,12 @@ export default function RespondMeetupScreen() {
     return (
       <Container>
         <ScrollView contentContainerStyle={{ padding: 16 }}>
-          <Text className="text-foreground text-2xl font-bold mb-1">Counter-propose</Text>
-          <Text testID="counter-round-label" className="text-muted-foreground text-sm mb-6">
+          <Text className="text-foreground text-2xl font-manrope-bold mb-1">Counter-propose</Text>
+          <Text testID="counter-round-label" className="text-muted-foreground font-manrope text-sm mb-6">
             Round {proposal.round + 1} of 3
           </Text>
 
-          <Text className="text-foreground font-semibold mb-2">Location</Text>
+          <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: "#8A7570" }}>Location</Text>
           {venuesQuery.isPending ? (
             <Spinner />
           ) : (
@@ -157,7 +159,7 @@ export default function RespondMeetupScreen() {
                   onPress={() => setSelectedVenueId(v.id)}
                   className={`border rounded-xl p-3 ${selectedVenueId === v.id ? "border-primary bg-primary/10" : "border-border bg-card"}`}
                 >
-                  <Text className={`font-medium ${selectedVenueId === v.id ? "text-primary" : "text-foreground"}`}>
+                  <Text className={`font-manrope-semi ${selectedVenueId === v.id ? "text-primary" : "text-foreground"}`}>
                     {v.name}
                   </Text>
                 </TouchableOpacity>
@@ -165,17 +167,37 @@ export default function RespondMeetupScreen() {
             </View>
           )}
 
-          <Text className="text-foreground font-semibold mb-2">Date (YYYY-MM-DD)</Text>
-          <TextInput
+          <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: "#8A7570" }}>Date</Text>
+          <TouchableOpacity
             testID="counter-date-input"
-            value={date}
-            onChangeText={(t) => { setDate(t); setError(null); }}
-            placeholder="2026-05-01"
-            className="border border-border rounded-xl px-3 py-2 text-foreground bg-card mb-6"
-            placeholderTextColor="#888"
-          />
+            className="border border-border rounded-xl px-3 py-2 bg-card mb-3"
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text className="text-foreground font-manrope">
+              {date ? new Date(date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : "Select a date"}
+            </Text>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              testID="counter-date-picker"
+              value={date ? new Date(date) : new Date()}
+              mode="date"
+              minimumDate={new Date()}
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              onChange={(_event, picked) => {
+                setShowDatePicker(Platform.OS === "ios");
+                if (picked) {
+                  const y = picked.getFullYear();
+                  const m = String(picked.getMonth() + 1).padStart(2, "0");
+                  const d = String(picked.getDate()).padStart(2, "0");
+                  setDate(`${y}-${m}-${d}`);
+                  setError(null);
+                }
+              }}
+            />
+          )}
 
-          <Text className="text-foreground font-semibold mb-2">Time</Text>
+          <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2 mt-4" style={{ color: "#8A7570" }}>Time</Text>
           {date && slotsQuery.data ? (
             <View className="flex flex-row flex-wrap gap-2 mb-6">
               {slotsQuery.data.map((slot) => (
@@ -185,23 +207,16 @@ export default function RespondMeetupScreen() {
                   onPress={() => setTime(slot)}
                   className={`border rounded-lg px-3 py-1.5 ${time === slot ? "border-primary bg-primary/10" : "border-border bg-card"}`}
                 >
-                  <Text className={time === slot ? "text-primary font-medium" : "text-foreground"}>{slot}</Text>
+                  <Text className={`font-manrope ${time === slot ? "text-primary font-manrope-semi" : "text-foreground"}`}>{slot}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           ) : (
-            <TextInput
-              testID="counter-time-input"
-              value={time}
-              onChangeText={(t) => { setTime(t); setError(null); }}
-              placeholder="14:00"
-              className="border border-border rounded-xl px-3 py-2 text-foreground bg-card mb-6"
-              placeholderTextColor="#888"
-            />
+            <Text className="text-muted-foreground font-manrope text-sm mb-6">Select a date to see available time slots</Text>
           )}
 
           {error && (
-            <Text testID="counter-error" className="text-destructive text-sm mb-4">{error}</Text>
+            <Text testID="counter-error" className="text-destructive text-sm font-manrope mb-4">{error}</Text>
           )}
 
           <View className="flex flex-col gap-3">
@@ -216,7 +231,7 @@ export default function RespondMeetupScreen() {
             </Button>
             <Button
               variant="ghost"
-              onPress={() => { setCounterMode(false); setError(null); }}
+              onPress={() => { setCounterMode(false); setError(null); setShowDatePicker(false); }}
               isDisabled={isPending}
             >
               <Button.Label>Back</Button.Label>
@@ -240,32 +255,32 @@ export default function RespondMeetupScreen() {
       )}
     <Container>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <Text className="text-foreground text-2xl font-bold mb-1">Meetup proposal</Text>
-        <Text testID="round-label" className="text-muted-foreground text-sm mb-6">
+        <Text className="text-foreground text-2xl font-manrope-bold mb-1">Meetup proposal</Text>
+        <Text testID="round-label" className="text-muted-foreground font-manrope text-sm mb-6">
           Round {proposal.round} of 3
         </Text>
 
         <View className="bg-card border border-border rounded-2xl p-4 mb-6">
-          <Text testID="proposer-name" className="text-foreground font-semibold text-base mb-4">
+          <Text testID="proposer-name" className="text-foreground font-manrope-semi text-base mb-4">
             From {proposal.proposer.name}
           </Text>
 
           <View className="flex flex-col gap-2">
             <View className="flex-row items-center gap-2">
-              <Text className="text-muted-foreground text-sm w-20">Location</Text>
-              <Text testID="proposal-venue" className="text-foreground font-medium flex-1">
+              <Text className="text-muted-foreground font-manrope text-sm w-20">Location</Text>
+              <Text testID="proposal-venue" className="text-foreground font-manrope-semi flex-1">
                 {proposal.venue.name}
               </Text>
             </View>
             <View className="flex-row items-center gap-2">
-              <Text className="text-muted-foreground text-sm w-20">Date</Text>
-              <Text testID="proposal-date" className="text-foreground font-medium flex-1">
+              <Text className="text-muted-foreground font-manrope text-sm w-20">Date</Text>
+              <Text testID="proposal-date" className="text-foreground font-manrope-semi flex-1">
                 {proposal.date}
               </Text>
             </View>
             <View className="flex-row items-center gap-2">
-              <Text className="text-muted-foreground text-sm w-20">Time</Text>
-              <Text testID="proposal-time" className="text-foreground font-medium flex-1">
+              <Text className="text-muted-foreground font-manrope text-sm w-20">Time</Text>
+              <Text testID="proposal-time" className="text-foreground font-manrope-semi flex-1">
                 {proposal.time}
               </Text>
             </View>
