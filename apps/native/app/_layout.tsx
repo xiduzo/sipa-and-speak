@@ -37,8 +37,21 @@ import { OnboardingModal } from "@/components/onboarding-modal"; // edge-case: c
 
 SplashScreen.preventAutoHideAsync();
 
+const CUSTOM_MODAL_TYPES = new Set(["match_accepted", "meetup_confirmed"]);
+
 function useNotificationCategories() {
   useEffect(() => {
+    Notifications.setNotificationHandler({
+      handleNotification: async (notification) => {
+        const type = notification.request.content.data?.type;
+        const hasCustomModal = typeof type === "string" && CUSTOM_MODAL_TYPES.has(type);
+        return {
+          shouldShowAlert: !hasCustomModal,
+          shouldPlaySound: !hasCustomModal,
+          shouldSetBadge: true,
+        };
+      },
+    });
     void Notifications.setNotificationCategoryAsync("match_accepted", [
       { identifier: "connect_now", buttonTitle: "Connect Now" },
     ]);
