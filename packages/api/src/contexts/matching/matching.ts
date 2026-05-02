@@ -161,7 +161,14 @@ export const matchingRouter = router({
 
       // Cursor-based pagination (cursor = index offset as string)
       const startIndex = input.cursor ? parseInt(input.cursor, 10) : 0;
-      const page = scored.slice(startIndex, startIndex + input.limit);
+      const page = scored.slice(startIndex, startIndex + input.limit).map((candidate) => {
+        const partnerSpoken = candidate.spokenLanguages.map((l) => l.language);
+        const compatibleLanguages = Array.from(new Set([
+          ...myLearning.filter((lang) => partnerSpoken.includes(lang)),
+          ...mySpoken.filter((lang) => candidate.learningLanguages.includes(lang)),
+        ]));
+        return { ...candidate, compatibleLanguages };
+      });
       const nextCursor =
         startIndex + input.limit < scored.length
           ? String(startIndex + input.limit)
