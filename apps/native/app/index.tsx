@@ -708,26 +708,41 @@ export default function OnboardingScreen() {
                 </>
               )}
               {step === 3 && (
-                <GoldButton
-                  onPress={handleStep3Continue}
-                  disabled={spokenLanguages.length === 0}
-                  label="Continue →"
-                />
+                <>
+                  <GoldButton
+                    onPress={handleStep3Continue}
+                    disabled={spokenLanguages.length === 0}
+                    label="Continue →"
+                  />
+                  <Pressable onPress={() => setStep(2)} className="items-center py-2.5">
+                    <Text className="font-manrope text-sm" style={{ color: "#8A7570" }}>← Back</Text>
+                  </Pressable>
+                </>
               )}
               {step === 4 && (
-                <GoldButton
-                  onPress={handleStep4Continue}
-                  disabled={learningLanguages.length === 0}
-                  label="Continue →"
-                />
+                <>
+                  <GoldButton
+                    onPress={handleStep4Continue}
+                    disabled={learningLanguages.length === 0}
+                    label="Continue →"
+                  />
+                  <Pressable onPress={() => setStep(3)} className="items-center py-2.5">
+                    <Text className="font-manrope text-sm" style={{ color: "#8A7570" }}>← Back</Text>
+                  </Pressable>
+                </>
               )}
               {step === 5 && (
-                <GoldButton
-                  onPress={handleFinish}
-                  loading={upsertMutation.isPending}
-                  disabled={interests.length < 3}
-                  label="Finish — find matches →"
-                />
+                <>
+                  <GoldButton
+                    onPress={handleFinish}
+                    loading={upsertMutation.isPending}
+                    disabled={interests.length < 3}
+                    label="Finish — find matches →"
+                  />
+                  <Pressable onPress={() => setStep(4)} className="items-center py-2.5">
+                    <Text className="font-manrope text-sm" style={{ color: "#8A7570" }}>← Back</Text>
+                  </Pressable>
+                </>
               )}
             </View>
           </View>
@@ -737,10 +752,11 @@ export default function OnboardingScreen() {
       <LanguagePickerModal
         visible={pickerTarget !== null}
         title={pickerTarget === "spoken" ? "Add spoken language" : "Add learning language"}
-        disabledLanguages={[
-          ...spokenLanguages.map((l) => l.language),
-          ...learningLanguages.map((l) => l.language),
-        ]}
+        disabledLanguages={
+          pickerTarget === "spoken"
+            ? spokenLanguages.map((l) => l.language)
+            : learningLanguages.map((l) => l.language)
+        }
         onSelect={(lang) => {
           if (pickerTarget === "spoken") {
             setSpokenLanguages((prev) => [...prev, { language: lang, proficiency: "beginner" }]);
