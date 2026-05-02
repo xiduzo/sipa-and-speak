@@ -6,6 +6,9 @@ import { Image, Pressable, Text, View } from "react-native";
 
 import { trpc } from "@/utils/trpc";
 import { interestLabel } from "@/utils/interest-labels";
+import { getLanguageFlag } from "@/utils/language-flags";
+
+const GOLD = "#F2C94C";
 
 interface CandidateCardProps {
   userId: string;
@@ -14,6 +17,7 @@ interface CandidateCardProps {
   spokenLanguages: { language: string; proficiency: string | null }[];
   learningLanguages: string[];
   interests: string[];
+  compatibleLanguages?: string[];
 }
 
 export function CandidateCard({
@@ -23,6 +27,7 @@ export function CandidateCard({
   spokenLanguages,
   learningLanguages,
   interests,
+  compatibleLanguages,
 }: CandidateCardProps) {
   const router = useRouter();
   const [sendConflictError, setSendConflictError] = useState<string | null>(null);
@@ -91,6 +96,23 @@ export function CandidateCard({
             {learningLanguages.map((lang) => (
               <View key={lang} className="bg-secondary/10 px-2 py-0.5 rounded-full">
                 <Text className="text-secondary-foreground text-xs">{lang}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {(compatibleLanguages ?? []).length > 0 && (
+        <View className="mb-2">
+          <Text className="text-muted-foreground text-xs uppercase font-medium mb-1">
+            In common
+          </Text>
+          <View className="flex-row flex-wrap gap-1" testID="candidate-compatible-languages">
+            {(compatibleLanguages ?? []).map((lang) => (
+              <View key={lang} className="px-2 py-0.5 rounded-full" style={{ backgroundColor: GOLD }}>
+                <Text className="text-xs font-semibold" style={{ color: "#2C1810" }}>
+                  {getLanguageFlag(lang)} {lang}
+                </Text>
               </View>
             ))}
           </View>
