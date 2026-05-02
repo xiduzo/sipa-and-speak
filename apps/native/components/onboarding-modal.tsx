@@ -18,7 +18,6 @@ import { Spinner, useToast } from "heroui-native";
 import { LanguagePickerModal } from "@/components/language-picker-modal";
 import { authClient } from "@/lib/auth-client";
 import { queryClient, trpc } from "@/utils/trpc";
-import { extractNameFromEmail } from "@/utils/email-name-extract";
 import { pickAndEncodeProfilePicture } from "@/utils/profile-picture";
 
 const GOLD = "#F2C94C";
@@ -175,10 +174,6 @@ export function OnboardingModal() {
     if (identity?.name || identity?.surname) {
       setNameInput(identity.name ?? "");
       setSurnameInput(identity.surname ?? "");
-    } else {
-      const { name, surname } = extractNameFromEmail(identity?.email ?? "");
-      setNameInput(name);
-      setSurnameInput(surname);
     }
     setImageUri(identity?.image ?? undefined);
     if (needsFullOnboarding && onboardingStatus.data.identityProfileComplete) {

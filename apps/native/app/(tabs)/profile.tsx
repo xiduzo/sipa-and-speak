@@ -16,7 +16,6 @@ import { LanguagePickerModal } from "@/components/language-picker-modal";
 import { authClient } from "@/lib/auth-client";
 import { queryClient, trpc } from "@/utils/trpc";
 import { pickAndEncodeProfilePicture } from "@/utils/profile-picture";
-import { extractNameFromEmail } from "@/utils/email-name-extract";
 
 const GOLD = "#F2C94C";
 const BORDER = "#D9C9BC";
@@ -97,10 +96,6 @@ export default function ProfileScreen() {
     if (identity?.name || identity?.surname) {
       setNameInput(identity.name ?? "");
       setSurnameInput(identity.surname ?? "");
-    } else {
-      const { name, surname } = extractNameFromEmail(identity?.email ?? "");
-      setNameInput(name);
-      setSurnameInput(surname);
     }
     setImageUri(identity?.image ?? undefined);
     setIdentityInitialized(true);
