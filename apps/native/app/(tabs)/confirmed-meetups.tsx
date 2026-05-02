@@ -1,8 +1,9 @@
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Button, Spinner } from "heroui-native";
 import { useState } from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { Container } from "@/components/container";
 import { trpc, queryClient } from "@/utils/trpc";
@@ -18,6 +19,8 @@ export default function ConfirmedMeetupsScreen() {
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [rescheduleError, setRescheduleError] = useState<string | null>(null);
+  const [showRescheduleDatePicker, setShowRescheduleDatePicker] = useState(false);
+  const [showRescheduleTimePicker, setShowRescheduleTimePicker] = useState(false);
 
   const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
 
@@ -66,6 +69,8 @@ export default function ConfirmedMeetupsScreen() {
     setRescheduleDate("");
     setRescheduleTime("");
     setRescheduleError(null);
+    setShowRescheduleDatePicker(false);
+    setShowRescheduleTimePicker(false);
   }
 
   function handleRescheduleSubmit(meetupId: string) {
@@ -223,25 +228,60 @@ export default function ConfirmedMeetupsScreen() {
                     )}
 
                     <Text className="text-foreground font-semibold mb-2">Date (YYYY-MM-DD)</Text>
-                    <View className="border border-border rounded-xl px-3 py-2 bg-card mb-4">
-                      <Text
-                        testID="reschedule-date-input"
-                        className="text-foreground"
-                        onPress={() => {/* date picker placeholder */}}
-                      >
+                    <TouchableOpacity
+                      testID="reschedule-date-input"
+                      className="border border-border rounded-xl px-3 py-2 bg-card mb-2"
+                      onPress={() => setShowRescheduleDatePicker(true)}
+                    >
+                      <Text className="text-foreground">
                         {rescheduleDate || "YYYY-MM-DD"}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
+                    {showRescheduleDatePicker && (
+                      <DateTimePicker
+                        testID="reschedule-date-picker"
+                        value={rescheduleDate ? new Date(rescheduleDate) : new Date()}
+                        mode="date"
+                        minimumDate={new Date()}
+                        display={Platform.OS === "ios" ? "inline" : "default"}
+                        onChange={(_event, picked) => {
+                          setShowRescheduleDatePicker(Platform.OS === "ios");
+                          if (picked) {
+                            const y = picked.getFullYear();
+                            const m = String(picked.getMonth() + 1).padStart(2, "0");
+                            const d = String(picked.getDate()).padStart(2, "0");
+                            setRescheduleDate(`${y}-${m}-${d}`);
+                          }
+                        }}
+                      />
+                    )}
 
-                    <Text className="text-foreground font-semibold mb-2">Time (HH:MM)</Text>
-                    <View className="border border-border rounded-xl px-3 py-2 bg-card mb-4">
-                      <Text
-                        testID="reschedule-time-input"
-                        className="text-foreground"
-                      >
+                    <Text className="text-foreground font-semibold mb-2 mt-2">Time (HH:MM)</Text>
+                    <TouchableOpacity
+                      testID="reschedule-time-input"
+                      className="border border-border rounded-xl px-3 py-2 bg-card mb-2"
+                      onPress={() => setShowRescheduleTimePicker(true)}
+                    >
+                      <Text className="text-foreground">
                         {rescheduleTime || "HH:MM"}
                       </Text>
-                    </View>
+                    </TouchableOpacity>
+                    {showRescheduleTimePicker && (
+                      <DateTimePicker
+                        testID="reschedule-time-picker"
+                        value={rescheduleTime ? new Date(`1970-01-01T${rescheduleTime}:00`) : new Date()}
+                        mode="time"
+                        display={Platform.OS === "ios" ? "inline" : "default"}
+                        onChange={(_event, picked) => {
+                          setShowRescheduleTimePicker(Platform.OS === "ios");
+                          if (picked) {
+                            const h = String(picked.getHours()).padStart(2, "0");
+                            const min = String(picked.getMinutes()).padStart(2, "0");
+                            setRescheduleTime(`${h}:${min}`);
+                          }
+                        }}
+                      />
+                    )}
 
                     {rescheduleError && (
                       <Text testID="reschedule-error" className="text-destructive text-sm mb-4">
