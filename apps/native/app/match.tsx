@@ -207,6 +207,7 @@ export default function MatchModalScreen() {
           yourLanguage={yourLanguage}
           onAccept={() => setIndex((i) => i + 1)}
           onDecline={() => setIndex((i) => i + 1)}
+          onBack={index > 0 ? () => setIndex((i) => Math.max(0, i - 1)) : undefined}
         />
       )}
 

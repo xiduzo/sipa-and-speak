@@ -37,6 +37,7 @@ interface MatchCardProps {
   yourLanguage: string;
   onAccept: () => void;
   onDecline: () => void;
+  onBack?: () => void;
 }
 
 function pickTheirNative(spokenLanguages: SpokenLanguage[]): {
@@ -57,6 +58,7 @@ export function MatchCard({
   yourLanguage,
   onAccept,
   onDecline,
+  onBack,
 }: MatchCardProps) {
   const insets = useSafeAreaInsets();
   const sendRequestMutation = useMutation({
@@ -256,6 +258,26 @@ export function MatchCard({
         className="flex-row items-center gap-3 px-6 pt-2"
         style={{ backgroundColor: CREAM, paddingBottom: insets.bottom + 16 }}
       >
+        {onBack && (
+          <Pressable
+            testID="back-button"
+            onPress={onBack}
+            className="items-center justify-center"
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: "#F0E5DA",
+            }}
+          >
+            <Text
+              className="font-manrope-bold text-brand-muted-foreground"
+              style={{ fontSize: 22 }}
+            >
+              ←
+            </Text>
+          </Pressable>
+        )}
         <Pressable
           testID="decline-button"
           onPress={onDecline}
