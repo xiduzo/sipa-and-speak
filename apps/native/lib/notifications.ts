@@ -11,8 +11,15 @@ type NotificationReceived = {
   request: { content: { data?: Record<string, unknown> | null; body?: string | null } };
 };
 
+type NotificationHandlerResponse = {
+  shouldShowAlert: boolean;
+  shouldPlaySound: boolean;
+  shouldSetBadge: boolean;
+};
+
 type NotificationsApi = {
   setNotificationCategoryAsync: (id: string, actions: Array<{ identifier: string; buttonTitle: string }>) => Promise<unknown>;
+  setNotificationHandler: (handler: { handleNotification: (n: NotificationReceived) => Promise<NotificationHandlerResponse> } | null) => void;
   requestPermissionsAsync: () => Promise<{ status: string }>;
   getExpoPushTokenAsync: (opts?: { projectId?: string }) => Promise<{ data: string }>;
   addNotificationReceivedListener: (cb: (n: NotificationReceived) => void) => Subscription;
@@ -26,6 +33,7 @@ const noopSubscription: Subscription = { remove: () => {} };
 
 const stub: NotificationsApi = {
   setNotificationCategoryAsync: async () => undefined,
+  setNotificationHandler: () => {},
   requestPermissionsAsync: async () => ({ status: "denied" }),
   getExpoPushTokenAsync: async () => {
     throw new Error("Push notifications unavailable in Expo Go on Android");
@@ -41,6 +49,7 @@ const impl: NotificationsApi = isExpoGoAndroid
 
 export const {
   setNotificationCategoryAsync,
+  setNotificationHandler,
   requestPermissionsAsync,
   getExpoPushTokenAsync,
   addNotificationReceivedListener,
