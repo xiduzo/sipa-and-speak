@@ -8,6 +8,11 @@ import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react
 import { Container } from "@/components/container";
 import { trpc, queryClient } from "@/utils/trpc";
 
+const GOLD = "#F2C94C";
+const BORDER = "#D9C9BC";
+const DARK = "#2C1810";
+const MUTED = "#8A7570";
+
 export default function ConfirmedMeetupsScreen() {
   const router = useRouter();
   const meetupsQuery = useQuery(trpc.meetup.getConfirmed.queryOptions());
@@ -100,10 +105,10 @@ export default function ConfirmedMeetupsScreen() {
     return (
       <Container isScrollable={false}>
         <View testID="no-meetups-state" className="flex-1 items-center justify-center p-6">
-          <Text className="text-foreground text-lg font-semibold text-center mb-2">
+          <Text className="text-foreground text-lg font-manrope-bold text-center mb-2">
             No meetups yet
           </Text>
-          <Text className="text-muted-foreground text-center">
+          <Text className="font-manrope text-center" style={{ color: MUTED }}>
             Propose a meetup to a match to get started.
           </Text>
         </View>
@@ -129,24 +134,24 @@ export default function ConfirmedMeetupsScreen() {
   return (
     <Container>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <Text className="text-foreground text-2xl font-bold mb-6">Meetups</Text>
+        <Text className="text-foreground text-2xl font-manrope-bold mb-6">Meetups</Text>
 
         {pending.length > 0 && (
           <View testID="pending-proposals-section" className="mb-6">
-            <Text className="text-foreground text-base font-semibold mb-3">Pending proposals</Text>
+            <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-3" style={{ color: MUTED }}>Pending proposals</Text>
             {pending.map((p) => (
               <View
                 key={p.id}
                 testID="pending-proposal-card"
                 className="bg-card border border-border rounded-2xl p-4 mb-3"
               >
-                <Text className="text-foreground font-semibold text-base mb-1">
+                <Text className="font-manrope-semi text-base mb-1" style={{ color: DARK }}>
                   With {p.partner.name}
                 </Text>
-                <Text className="text-muted-foreground text-sm mb-0.5">{p.venue.name}</Text>
-                <Text className="text-muted-foreground text-sm mb-3">{p.date} at {p.time}</Text>
+                <Text className="font-manrope text-sm mb-0.5" style={{ color: MUTED }}>{p.venue.name}</Text>
+                <Text className="font-manrope text-sm mb-3" style={{ color: MUTED }}>{p.date} at {p.time}</Text>
                 {p.isProposer ? (
-                  <Text testID="awaiting-response-label" className="text-muted-foreground text-xs text-center">
+                  <Text testID="awaiting-response-label" className="font-manrope text-xs text-center" style={{ color: MUTED }}>
                     Awaiting response from {p.partner.name}
                   </Text>
                 ) : (
@@ -169,13 +174,13 @@ export default function ConfirmedMeetupsScreen() {
             testID="meetup-card"
             className="bg-card border border-border rounded-2xl p-4 mb-4"
           >
-            <Text testID="meetup-partner" className="text-foreground font-semibold text-base mb-1">
+            <Text testID="meetup-partner" className="font-manrope-semi text-base mb-1" style={{ color: DARK }}>
               With {m.partner.name}
             </Text>
-            <Text testID="meetup-venue" className="text-muted-foreground text-sm mb-0.5">
+            <Text testID="meetup-venue" className="font-manrope text-sm mb-0.5" style={{ color: MUTED }}>
               {m.venue.name}
             </Text>
-            <Text testID="meetup-datetime" className="text-muted-foreground text-sm mb-4">
+            <Text testID="meetup-datetime" className="font-manrope text-sm mb-4" style={{ color: MUTED }}>
               {m.date} at {m.time}
             </Text>
 
@@ -209,7 +214,7 @@ export default function ConfirmedMeetupsScreen() {
                   </Button>
                 ) : (
                   <View testID="reschedule-form" className="mt-2">
-                    <Text className="text-foreground font-semibold mb-2">Location</Text>
+                    <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>Location</Text>
                     {venuesQuery.isPending ? (
                       <Spinner />
                     ) : (
@@ -219,15 +224,20 @@ export default function ConfirmedMeetupsScreen() {
                             key={v.id}
                             testID="reschedule-venue-option"
                             onPress={() => setRescheduleVenueId(v.id)}
-                            className={`border rounded-xl p-3 ${rescheduleVenueId === v.id ? "border-primary bg-primary/10" : "border-border bg-card"}`}
+                            className="rounded-xl p-3"
+                            style={{
+                              borderWidth: 1.5,
+                              borderColor: rescheduleVenueId === v.id ? GOLD : BORDER,
+                              backgroundColor: rescheduleVenueId === v.id ? "#FFF9EC" : "#F5EFE8",
+                            }}
                           >
-                            <Text className={`font-medium ${rescheduleVenueId === v.id ? "text-primary" : "text-foreground"}`}>{v.name}</Text>
+                            <Text className="font-manrope-semi" style={{ color: rescheduleVenueId === v.id ? DARK : MUTED }}>{v.name}</Text>
                           </TouchableOpacity>
                         ))}
                       </View>
                     )}
 
-                    <Text className="text-foreground font-semibold mb-2">Date (YYYY-MM-DD)</Text>
+                    <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>Date</Text>
                     <TouchableOpacity
                       testID="reschedule-date-input"
                       className="border border-border rounded-xl px-3 py-2 bg-card mb-2"
@@ -256,7 +266,7 @@ export default function ConfirmedMeetupsScreen() {
                       />
                     )}
 
-                    <Text className="text-foreground font-semibold mb-2 mt-2">Time (HH:MM)</Text>
+                    <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2 mt-4" style={{ color: MUTED }}>Time</Text>
                     <TouchableOpacity
                       testID="reschedule-time-input"
                       className="border border-border rounded-xl px-3 py-2 bg-card mb-2"
@@ -317,7 +327,7 @@ export default function ConfirmedMeetupsScreen() {
             {/* #95 — Attendance prompt shown after meetup time passes */}
             {m.isPast && !m.hasReported && (
               <View testID="attendance-prompt" className="mt-2">
-                <Text className="text-foreground font-semibold text-sm text-center mb-3">
+                <Text className="font-manrope-semi text-sm text-center mb-3" style={{ color: DARK }}>
                   Did your meetup take place?
                 </Text>
                 <View className="flex flex-row gap-2">
@@ -347,7 +357,7 @@ export default function ConfirmedMeetupsScreen() {
             )}
 
             {m.isPast && m.hasReported && (
-              <Text testID="attendance-reported-label" className="text-muted-foreground text-xs text-center mt-2">
+              <Text testID="attendance-reported-label" className="font-manrope text-xs text-center mt-2" style={{ color: MUTED }}>
                 {m.myAttendance ? "You reported attending this meetup" : "You reported not attending this meetup"}
               </Text>
             )}
