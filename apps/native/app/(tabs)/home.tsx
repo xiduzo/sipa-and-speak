@@ -31,6 +31,8 @@ export default function HomeScreen() {
   const name = profileQuery.data?.identity?.name ?? "";
   const initial = (name || "?").charAt(0).toUpperCase();
 
+  const incomingRequestsQuery = useQuery(trpc.matching.getIncomingRequests.queryOptions());
+
   const { hero, secondaries } = resolveHomeState({
     confirmed: confirmedQuery.data ?? [],
     pending: (pendingQuery.data ?? []).map((p) => ({
@@ -185,6 +187,63 @@ export default function HomeScreen() {
                   state={s}
                   onPress={() => handleSecondaryPress(s)}
                 />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {(incomingRequestsQuery.data ?? []).length > 0 && (
+          <View className="mt-8">
+            <Text
+              className="font-manrope-semi tracking-widest text-brand-muted-foreground"
+              style={{ fontSize: 12 }}
+            >
+              MATCH REQUESTS
+            </Text>
+            <View className="mt-3 gap-3">
+              {(incomingRequestsQuery.data ?? []).map((req) => (
+                <Pressable
+                  key={req.matchRequestId}
+                  testID="incoming-request-card"
+                  onPress={() =>
+                    router.push(
+                      `/partner/${req.requesterId}?matchRequestId=${req.matchRequestId}` as never,
+                    )
+                  }
+                  className="bg-card border border-border rounded-2xl p-4 active:opacity-70"
+                >
+                  <View className="flex-row items-center gap-3">
+                    {req.requesterPhotoUrl ? (
+                      <Image
+                        source={{ uri: req.requesterPhotoUrl }}
+                        style={{ width: 44, height: 44, borderRadius: 22 }}
+                      />
+                    ) : (
+                      <View
+                        className="items-center justify-center rounded-full bg-muted"
+                        style={{ width: 44, height: 44 }}
+                      >
+                        <Text className="text-muted-foreground text-lg font-semibold">
+                          {(req.requesterName || "?").charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
+                    <View className="flex-1">
+                      <Text className="text-foreground font-semibold text-base">
+                        {req.requesterName}
+                      </Text>
+                      {req.requesterOfferedLanguages.length > 0 && (
+                        <Text className="text-muted-foreground text-xs mt-0.5">
+                          Speaks {req.requesterOfferedLanguages.join(", ")}
+                          {req.requesterTargetedLanguages.length > 0
+                            ? ` · Learning ${req.requesterTargetedLanguages.join(", ")}`
+                            : ""}
+                        </Text>
+                      )}
+                    </View>
+                    <Text className="text-brand-muted-foreground text-xs">›</Text>
+                  </View>
+                </Pressable>
               ))}
             </View>
           </View>
