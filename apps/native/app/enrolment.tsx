@@ -334,7 +334,7 @@ export default function EnrolmentScreen() {
                 Sip&Speak
               </Text>
               <Text className="font-manrope-bold text-[36px] text-foreground leading-[42px]">
-                {"Find a partner\nover "}
+                {"Find a language buddy\nover "}
                 <Text className="font-caveat text-[44px] leading-[48px]" style={{ color: "#9B6B3A" }}>
                   koffie.
                 </Text>

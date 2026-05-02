@@ -1,7 +1,7 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Button, Spinner } from "heroui-native";
+import { Spinner } from "heroui-native";
 import { useMemo, useState } from "react";
 import {
   Alert,
@@ -15,16 +15,15 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Container } from "@/components/container";
 import { trpc, queryClient } from "@/utils/trpc";
 
 const GOLD = "#F2C94C";
 const GOLD_TINT = "#FCE9A0";
-const ROSE = "#C99A8A";
+const MUTED_BORDER = "#D9C9BC";
 
 type Suggestion = {
-  date: string; // YYYY-MM-DD
-  time: string; // HH:MM
+  date: string;
+  time: string;
   weekday: string;
   hint?: string;
 };
@@ -51,6 +50,35 @@ function buildSuggestions(): Suggestion[] {
   });
 }
 
+function GoldButton({
+  onPress, disabled, label, loading,
+}: { onPress: () => void; disabled?: boolean; label: string; loading?: boolean }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled || loading}
+      style={({ pressed }) => ({
+        backgroundColor: (disabled || loading) ? "#D4C898" : pressed ? "#DFB83A" : GOLD,
+        borderRadius: 50,
+        paddingVertical: 18,
+        alignItems: "center",
+        opacity: (disabled || loading) ? 0.7 : 1,
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 8,
+      })}
+    >
+      {loading && <Spinner size="sm" color="default" />}
+      <Text
+        className="font-manrope-bold text-[17px]"
+        style={{ color: (disabled || loading) ? "#8A7570" : "#2C1810" }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export default function ProposeMeetupScreen() {
   const { partnerId, partnerName } = useLocalSearchParams<{
     partnerId: string;
@@ -70,7 +98,6 @@ export default function ProposeMeetupScreen() {
   const suggestions = useMemo(buildSuggestions, []);
 
   const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
-  const hasLocationsQuery = useQuery(trpc.venue.hasActiveLocations.queryOptions());
 
   const slotChecks = useQueries({
     queries: suggestions.map((s) =>
@@ -103,21 +130,6 @@ export default function ProposeMeetupScreen() {
       onError: (err) => setError(err.message),
     }),
   );
-
-  if (hasLocationsQuery.data === false) {
-    return (
-      <Container isScrollable={false}>
-        <View className="flex-1 items-center justify-center p-6">
-          <Text className="text-brand-foreground font-jakarta text-lg text-center mb-2">
-            No locations available
-          </Text>
-          <Text className="text-brand-muted-foreground font-manrope text-center">
-            No on-campus locations are currently available. Please check back later.
-          </Text>
-        </View>
-      </Container>
-    );
-  }
 
   function pickedDateTime(): { date: string; time: string } | null {
     if (customMode) {
@@ -152,15 +164,17 @@ export default function ProposeMeetupScreen() {
     proposeMutation.mutate({ partnerId, venueId: selectedVenueId, ...dt });
   }
 
-  const partnerInitial = (partnerName ?? "?").charAt(0).toUpperCase();
   const venues = venuesQuery.data ?? [];
 
   return (
-    <Container isScrollable={false}>
+    <View
+      className="flex-1 bg-background"
+      style={{ flex: 1, paddingBottom: insets.bottom }}
+    >
       <ScrollView
         contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingTop: insets.top + 8,
+          paddingHorizontal: 24,
+          paddingTop: insets.top + 12,
           paddingBottom: 32,
         }}
         keyboardShouldPersistTaps="handled"
@@ -168,7 +182,7 @@ export default function ProposeMeetupScreen() {
         <Pressable
           testID="back-button"
           onPress={() => router.back()}
-          className="self-start items-center justify-center rounded-full mb-4"
+          className="self-start items-center justify-center rounded-full mb-6"
           style={{ width: 36, height: 36, backgroundColor: "#F0E5DA" }}
         >
           <Text className="text-brand-muted-foreground font-manrope-bold" style={{ fontSize: 16 }}>
@@ -176,36 +190,42 @@ export default function ProposeMeetupScreen() {
           </Text>
         </Pressable>
 
-        <View className="flex-row items-center justify-between mb-6">
-          <View className="flex-1 pr-4">
-            <Text
-              className="text-brand-muted-foreground font-manrope-semi tracking-widest mb-1"
-              style={{ fontSize: 11 }}
-            >
-              PLAN A SIP
-            </Text>
-            <Text
-              className="text-brand-foreground font-jakarta"
-              style={{ fontSize: 36, lineHeight: 40 }}
-              testID="propose-header"
-            >
-              with {partnerName ?? "partner"}
-            </Text>
-          </View>
-          <View
-            testID="partner-avatar"
-            className="items-center justify-center rounded-full"
-            style={{ width: 56, height: 56, backgroundColor: ROSE }}
+        <View className="mb-8">
+          <Text
+            className="font-manrope-semi tracking-[2px] uppercase mb-1"
+            style={{ fontSize: 11, color: GOLD }}
           >
-            <Text className="text-white font-jakarta" style={{ fontSize: 22 }}>
-              {partnerInitial}
-            </Text>
-          </View>
+            PLAN A SIP
+          </Text>
+          <Text
+            className="font-caveat text-foreground leading-[46px]"
+            style={{ fontSize: 42 }}
+            testID="propose-header"
+          >
+            with {partnerName ?? "partner"}
+          </Text>
         </View>
 
-        <SectionLabel>PICK A VENUE</SectionLabel>
+        <Text
+          className="font-manrope-semi tracking-[2px] uppercase mb-3"
+          style={{ fontSize: 11, color: "#8A7570" }}
+        >
+          PICK A VENUE
+        </Text>
+
         {venuesQuery.isPending ? (
-          <Spinner />
+          <View className="items-center py-6">
+            <Spinner />
+          </View>
+        ) : venues.length === 0 ? (
+          <View
+            className="rounded-2xl px-5 py-4 mb-6"
+            style={{ backgroundColor: "#F5EFE8", borderWidth: 1.5, borderColor: MUTED_BORDER }}
+          >
+            <Text className="font-manrope text-[14px]" style={{ color: "#8A7570" }}>
+              No venues available at the moment. Check back soon.
+            </Text>
+          </View>
         ) : (
           <View className="gap-3 mb-6">
             {venues.map((v) => {
@@ -216,24 +236,21 @@ export default function ProposeMeetupScreen() {
                   testID="venue-option"
                   onPress={() => setSelectedVenueId(v.id)}
                   activeOpacity={0.85}
-                  className="rounded-2xl px-4 py-3.5 flex-row items-center"
+                  className="rounded-2xl px-5 py-4 flex-row items-center"
                   style={{
                     backgroundColor: "#FFFFFF",
-                    borderWidth: picked ? 2 : 0,
-                    borderColor: picked ? GOLD : "transparent",
+                    borderWidth: picked ? 2 : 1.5,
+                    borderColor: picked ? GOLD : MUTED_BORDER,
                   }}
                 >
                   <View className="flex-1 pr-3">
-                    <Text
-                      className="text-brand-foreground font-manrope-bold"
-                      style={{ fontSize: 16 }}
-                    >
+                    <Text className="font-manrope-bold text-foreground" style={{ fontSize: 16 }}>
                       {v.name}
                     </Text>
                     {v.description ? (
                       <Text
-                        className="text-brand-muted-foreground font-manrope mt-0.5"
-                        style={{ fontSize: 13 }}
+                        className="font-manrope mt-0.5"
+                        style={{ fontSize: 13, color: "#8A7570" }}
                         numberOfLines={1}
                       >
                         {v.description}
@@ -246,18 +263,12 @@ export default function ProposeMeetupScreen() {
                       className="rounded-full px-3 py-1"
                       style={{ backgroundColor: GOLD }}
                     >
-                      <Text
-                        className="text-brand-foreground font-manrope-semi"
-                        style={{ fontSize: 12 }}
-                      >
+                      <Text className="font-manrope-semi text-[12px]" style={{ color: "#2C1810" }}>
                         picked
                       </Text>
                     </View>
                   ) : (
-                    <Text
-                      className="text-brand-muted-foreground font-manrope-bold"
-                      style={{ fontSize: 18 }}
-                    >
+                    <Text className="font-manrope-bold" style={{ fontSize: 18, color: "#8A7570" }}>
                       →
                     </Text>
                   )}
@@ -267,7 +278,12 @@ export default function ProposeMeetupScreen() {
           </View>
         )}
 
-        <SectionLabel>SUGGESTED TIMES</SectionLabel>
+        <Text
+          className="font-manrope-semi tracking-[2px] uppercase mb-3"
+          style={{ fontSize: 11, color: "#8A7570" }}
+        >
+          SUGGESTED TIMES
+        </Text>
         <View className="gap-3 mb-3">
           {suggestions.map((s, idx) => {
             const slots = slotChecks[idx]?.data;
@@ -289,34 +305,26 @@ export default function ProposeMeetupScreen() {
                   setError(null);
                 }}
                 activeOpacity={0.85}
-                className="rounded-2xl px-4 py-3.5 flex-row items-center"
+                className="rounded-2xl px-5 py-4 flex-row items-center"
                 style={{
-                  backgroundColor: selected
-                    ? GOLD
-                    : isTop
-                      ? GOLD_TINT
-                      : "#FFFFFF",
+                  backgroundColor: selected ? GOLD : isTop ? GOLD_TINT : "#FFFFFF",
+                  borderWidth: 1.5,
+                  borderColor: selected ? GOLD : MUTED_BORDER,
                 }}
               >
                 <View className="flex-1 pr-3">
-                  <Text
-                    className="text-brand-foreground font-manrope-bold"
-                    style={{ fontSize: 16 }}
-                  >
+                  <Text className="font-manrope-bold text-foreground" style={{ fontSize: 16 }}>
                     {s.weekday}, {s.time}
                   </Text>
                   <Text
-                    className="text-brand-foreground font-manrope mt-0.5"
-                    style={{ fontSize: 13, opacity: 0.75 }}
+                    className="font-manrope mt-0.5"
+                    style={{ fontSize: 13, color: "#8A7570" }}
                     numberOfLines={1}
                   >
                     {subtitle}
                   </Text>
                 </View>
-                <Text
-                  className="text-brand-foreground font-manrope-bold"
-                  style={{ fontSize: 18 }}
-                >
+                <Text className="font-manrope-bold" style={{ fontSize: 18, color: "#8A7570" }}>
                   →
                 </Text>
               </TouchableOpacity>
@@ -333,7 +341,7 @@ export default function ProposeMeetupScreen() {
           }}
           className="self-center py-2 mb-4"
         >
-          <Text className="text-brand-muted-foreground font-manrope" style={{ fontSize: 14 }}>
+          <Text className="font-manrope" style={{ fontSize: 14, color: "#8A7570" }}>
             {customMode ? "Use a suggested time" : "Or propose another time"}
           </Text>
         </Pressable>
@@ -343,18 +351,18 @@ export default function ProposeMeetupScreen() {
             <Pressable
               testID="date-input"
               onPress={() => setShowDatePicker(true)}
-              className="rounded-2xl px-4 py-3.5"
-              style={{ backgroundColor: "#FFFFFF" }}
+              className="rounded-2xl px-5 py-4"
+              style={{ backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: MUTED_BORDER }}
             >
               <Text
-                className="text-brand-muted-foreground font-manrope-semi tracking-widest"
-                style={{ fontSize: 11 }}
+                className="font-manrope-semi tracking-[2px] uppercase mb-1"
+                style={{ fontSize: 11, color: "#8A7570" }}
               >
                 DATE
               </Text>
               <Text
-                className={`font-manrope-bold mt-0.5 ${customDate ? "text-brand-foreground" : "text-brand-muted-foreground"}`}
-                style={{ fontSize: 16 }}
+                className={`font-manrope-bold mt-0.5 ${customDate ? "text-foreground" : ""}`}
+                style={{ fontSize: 16, color: customDate ? undefined : "#8A7570" }}
               >
                 {customDate
                   ? customDate.toLocaleDateString(undefined, {
@@ -383,10 +391,13 @@ export default function ProposeMeetupScreen() {
               />
             )}
 
-            <View className="rounded-2xl px-4 py-3.5" style={{ backgroundColor: "#FFFFFF" }}>
+            <View
+              className="rounded-2xl px-5 py-4"
+              style={{ backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: MUTED_BORDER }}
+            >
               <Text
-                className="text-brand-muted-foreground font-manrope-semi tracking-widest mb-1"
-                style={{ fontSize: 11 }}
+                className="font-manrope-semi tracking-[2px] uppercase mb-1"
+                style={{ fontSize: 11, color: "#8A7570" }}
               >
                 TIME
               </Text>
@@ -397,14 +408,16 @@ export default function ProposeMeetupScreen() {
                       key={slot}
                       testID="time-slot"
                       onPress={() => setCustomTime(slot)}
-                      className="rounded-lg px-3 py-1.5"
+                      className="rounded-xl px-4 py-2"
                       style={{
                         backgroundColor: customTime === slot ? GOLD : "#F5EFE8",
+                        borderWidth: 1.5,
+                        borderColor: customTime === slot ? GOLD : MUTED_BORDER,
                       }}
                     >
                       <Text
-                        className="text-brand-foreground font-manrope-semi"
-                        style={{ fontSize: 14 }}
+                        className="font-manrope-semi"
+                        style={{ fontSize: 14, color: customTime === slot ? "#2C1810" : "#5C4A3F" }}
                       >
                         {slot}
                       </Text>
@@ -420,9 +433,9 @@ export default function ProposeMeetupScreen() {
                     setError(null);
                   }}
                   placeholder="14:00"
-                  className="text-brand-foreground font-manrope-bold"
+                  className="font-manrope-bold text-foreground"
                   style={{ fontSize: 16 }}
-                  placeholderTextColor="#9b8d85"
+                  placeholderTextColor={MUTED_BORDER}
                 />
               )}
             </View>
@@ -430,32 +443,27 @@ export default function ProposeMeetupScreen() {
         )}
 
         {error && (
-          <Text testID="proposal-error" className="text-destructive font-manrope text-sm mb-3">
-            {error}
-          </Text>
+          <View
+            className="rounded-xl px-4 py-3 mb-4"
+            style={{ backgroundColor: "#FDF0ED", borderWidth: 1, borderColor: "#C0876A" }}
+          >
+            <Text
+              testID="proposal-error"
+              className="font-manrope text-[13px]"
+              style={{ color: "#C0876A" }}
+            >
+              {error}
+            </Text>
+          </View>
         )}
 
-        <Button
+        <GoldButton
           onPress={handleSubmit}
-          isDisabled={proposeMutation.isPending}
-          testID="submit-proposal-btn"
-        >
-          <Button.Label>
-            {proposeMutation.isPending ? "Sending…" : "Send proposal"}
-          </Button.Label>
-        </Button>
+          disabled={proposeMutation.isPending || venues.length === 0}
+          loading={proposeMutation.isPending}
+          label="Send proposal →"
+        />
       </ScrollView>
-    </Container>
-  );
-}
-
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <Text
-      className="text-brand-muted-foreground font-manrope-semi tracking-widest mb-3"
-      style={{ fontSize: 11 }}
-    >
-      {children}
-    </Text>
+    </View>
   );
 }

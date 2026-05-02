@@ -113,7 +113,7 @@ const STEP_TITLES = [
   "Add a face\nto your name.",
   "What do\nyou speak?",
   "What are\nyou learning?",
-  "What do\nyou talk about?",
+  "Which topics do\nyou want to practice?",
 ];
 
 const STEP_SUBTITLES = [
