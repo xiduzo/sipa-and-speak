@@ -90,6 +90,7 @@ describe("buildMessageSentRecipes", () => {
       senderId: "u1",
       senderName: "Alice",
       recipientId: "u2",
+      recipientIsPresent: false,
     });
     expect(recipes).toHaveLength(1);
     expect(recipes[0]?.recipientId).toBe("u2");

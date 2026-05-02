@@ -1,14 +1,8 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
-import {
-  languageProfile,
-  userLanguage,
-  userInterest,
-  meetup,
-  conversation,
-  message,
-  messageReadStatus,
-} from "./sip-and-speak";
+import { languageProfile, userLanguage, userInterest } from "./identity";
+import { meetup } from "./scheduling";
+import { conversation, message, messageReadStatus } from "./conversation";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),

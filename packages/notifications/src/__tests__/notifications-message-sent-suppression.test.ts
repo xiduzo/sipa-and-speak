@@ -1,10 +1,12 @@
 /**
  * Tests for task #153 — Suppress push notification when recipient is actively viewing
  *
+ * The presence check runs in the conversation context before MessageSent is emitted.
+ * The dispatcher reads event.recipientIsPresent and suppresses the push if true.
+ *
  * Covers:
- *   - No push sent when recipient has an active (non-stale) presence record
- *   - Push sent when recipient is not viewing (no presence record)
- *   - Push sent when presence record is stale (activeUntil in the past)
+ *   - No push sent when recipientIsPresent is true
+ *   - Push sent when recipientIsPresent is false
  */
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 
@@ -29,12 +31,8 @@ const fetchCalls: CapturedFetchCall[] = [];
 
 // ── Schema mocks ──────────────────────────────────────────────────────────────
 
-const DEVICE_TOKEN_TABLE = "userDeviceToken";
-const PRESENCE_TABLE = "conversationPresence";
-
-mock.module("@sip-and-speak/db/schema/sip-and-speak", () => ({
-  userDeviceToken: DEVICE_TOKEN_TABLE,
-  conversationPresence: PRESENCE_TABLE,
+mock.module("@sip-and-speak/db/schema/identity", () => ({
+  userDeviceToken: "userDeviceToken",
   userLanguage: "userLanguage",
 }));
 
@@ -57,83 +55,57 @@ const CONVERSATION_ID = "conv-1";
 
 const RECIPIENT_TOKEN = [{ id: "tok-1", token: "ExponentPushToken[recipient]" }];
 
-// Presence record control — null means no record
-let mockPresence: { activeUntil: Date } | null = null;
-
 mock.module("@sip-and-speak/db", () => ({
   db: {
-    select: (fields: Record<string, unknown>) => {
-      const isPresenceQuery = "activeUntil" in fields;
-      return {
-        from: (_table: unknown) => ({
-          where: (_clause: unknown) => {
-            if (isPresenceQuery) {
-              return {
-                limit: (_n: number) => Promise.resolve(mockPresence ? [mockPresence] : []),
-              };
-            }
-            // Token query — always return recipient token for simplicity
-            return Promise.resolve(RECIPIENT_TOKEN);
-          },
-        }),
-      };
-    },
+    select: (_fields: Record<string, unknown>) => ({
+      from: (_table: unknown) => ({
+        where: (_clause: unknown) => Promise.resolve(RECIPIENT_TOKEN),
+      }),
+    }),
     delete: (_table: unknown) => ({
       where: (_clause: unknown) => Promise.resolve([]),
     }),
   },
 }));
 
+// ── Import under test (after mocks) ──────────────────────────────────────────
+
 // ── Domain events mock ────────────────────────────────────────────────────────
 
 mock.module("@sip-and-speak/api/domain-events", () => ({
-  domainEvents: { on: mock((_evt: string, _fn: unknown) => undefined), emit: mock(() => undefined) },
+  domainEvents: { on: mock((_evt: string, _fn: unknown) => undefined), emit: mock(() => undefined), removeAllListeners: mock(() => undefined) },
 }));
-
-// ── Import under test (after mocks) ──────────────────────────────────────────
 
 // eslint-disable-next-line import/first
 import { handleMessageSent } from "../dispatcher";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeEvent() {
+function makeEvent(recipientIsPresent = false) {
   return {
     conversationId: CONVERSATION_ID,
     senderId: SENDER_ID,
     recipientId: RECIPIENT_ID,
     senderName: "Alice",
+    recipientIsPresent,
   };
 }
 
 beforeEach(() => {
   fetchCalls.length = 0;
-  mockPresence = null;
 });
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("#153 — Suppress push when recipient is actively viewing", () => {
-  it("suppresses push when recipient has an active presence record", async () => {
-    mockPresence = { activeUntil: new Date(Date.now() + 30_000) };
-
-    await handleMessageSent(makeEvent());
+  it("suppresses push when recipientIsPresent is true", async () => {
+    await handleMessageSent(makeEvent(true));
 
     expect(fetchCalls).toHaveLength(0);
   });
 
-  it("sends push when recipient is not viewing (no presence record)", async () => {
-    mockPresence = null;
-
-    await handleMessageSent(makeEvent());
-
-    expect(fetchCalls).toHaveLength(1);
-  });
-
-  it("sends push when recipient presence record is stale (activeUntil in past)", async () => {
-    mockPresence = { activeUntil: new Date(Date.now() - 1_000) };
-
-    await handleMessageSent(makeEvent());
+  it("sends push when recipientIsPresent is false", async () => {
+    await handleMessageSent(makeEvent(false));
 
     expect(fetchCalls).toHaveLength(1);
   });

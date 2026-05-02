@@ -46,7 +46,8 @@
     "db:start": "turbo -F @sip-and-speak/db db:start",
     "db:watch": "turbo -F @sip-and-speak/db db:watch",
     "db:stop": "turbo -F @sip-and-speak/db db:stop",
-    "db:down": "turbo -F @sip-and-speak/db db:down"
+    "db:down": "turbo -F @sip-and-speak/db db:down",
+    "test": "turbo test --filter=@sip-and-speak/api --filter=@sip-and-speak/auth --filter=@sip-and-speak/db --filter=@sip-and-speak/notifications --ui=stream"
   },
   "dependencies": {
     "@react-native-community/datetimepicker": "^9.1.0",

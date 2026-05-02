@@ -1,6 +1,7 @@
 import { eq, or } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { conversation, messagingOptIn, meetup } from "@sip-and-speak/db/schema/sip-and-speak";
+import { conversation, messagingOptIn } from "@sip-and-speak/db/schema/conversation";
+import { meetup } from "@sip-and-speak/db/schema/scheduling";
 
 export interface MeetupMessagingState {
   mine: "accept" | "decline" | null;

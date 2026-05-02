@@ -2,13 +2,8 @@ import { and, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "@sip-and-speak/db";
-import {
-  languageProfile,
-  userLanguage,
-  userInterest,
-  studentComment,
-  userDeviceToken,
-} from "@sip-and-speak/db/schema/sip-and-speak";
+import { languageProfile, userLanguage, userInterest, userDeviceToken } from "@sip-and-speak/db/schema/identity";
+import { studentComment } from "@sip-and-speak/db/schema/moderation";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";

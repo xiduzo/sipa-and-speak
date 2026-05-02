@@ -2,15 +2,8 @@ import { and, desc, eq, lt, or, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
-import {
-  conversation,
-  message,
-  messageReadStatus,
-  meetup,
-  venue,
-  attendanceReport,
-  messagingOptIn,
-} from "@sip-and-speak/db/schema/sip-and-speak";
+import { conversation, message, messageReadStatus, messagingOptIn } from "@sip-and-speak/db/schema/conversation";
+import { meetup, venue, attendanceReport } from "@sip-and-speak/db/schema/scheduling";
 import { user } from "@sip-and-speak/db/schema/auth";
 import {
   checkReadAccess,

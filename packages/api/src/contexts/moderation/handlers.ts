@@ -6,20 +6,17 @@
  * cancelling active meetup proposals, transitioning conversation state, and
  * adding removed Students' emails to the registration blocklist.
  *
- * The push-notification side effects of those same events live in the
- * notifications package as INDEPENDENT subscribers on the same domain
- * events. We deliberately avoid having the moderation context emit a new
- * "internal" event for notifications to consume — that would either create
- * a circular package dependency (api ↔ notifications) or require a third
- * shared package. Two independent subscribers is simpler; the cost is one
- * duplicated peer-id query.
+ * After cancelling proposals, this handler emits ProposalsCancelledByCascade
+ * carrying the affected peer IDs. The notifications package subscribes to
+ * that event — no second query needed there.
  *
  * Fire-and-forget: errors are logged in the dispatcher, never thrown to
  * callers.
  */
 import { and, eq, inArray, or } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { meetup, conversation } from "@sip-and-speak/db/schema/sip-and-speak";
+import { meetup } from "@sip-and-speak/db/schema/scheduling";
+import { conversation } from "@sip-and-speak/db/schema/conversation";
 import { user } from "@sip-and-speak/db/schema/auth";
 import {
   domainEvents,
@@ -51,6 +48,11 @@ async function handleStudentSuspendedCancelProposals(event: StudentSuspendedEven
         inArray(meetup.status, ["pending", "confirmed"]),
       ),
     );
+
+  const peerIds = [...new Set(
+    activeProposals.map((p) => (p.proposerId === event.targetId ? p.receiverId : p.proposerId)),
+  )];
+  domainEvents.emit("ProposalsCancelledByCascade", { targetId: event.targetId, peerIds });
 }
 
 async function handleStudentSuspendedSuspendConversations(event: StudentSuspendedEvent): Promise<void> {
@@ -130,6 +132,11 @@ async function handleStudentRemovedCancelProposals(event: StudentRemovedEvent): 
         inArray(meetup.status, ["pending", "confirmed"]),
       ),
     );
+
+  const peerIds = [...new Set(
+    activeProposals.map((p) => (p.proposerId === event.targetId ? p.receiverId : p.proposerId)),
+  )];
+  domainEvents.emit("ProposalsCancelledByCascade", { targetId: event.targetId, peerIds });
 }
 
 async function handleStudentRemovedCloseConversations(event: StudentRemovedEvent): Promise<void> {

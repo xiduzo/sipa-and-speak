@@ -14,7 +14,7 @@ const fetchCalls: CapturedFetchCall[] = [];
   return { json: async () => ({ data: [{ status: "ok", id: "ticket-1" }] }) };
 });
 
-mock.module("@sip-and-speak/db/schema/sip-and-speak", () => ({ userDeviceToken: "userDeviceToken", userLanguage: "userLanguage" }));
+mock.module("@sip-and-speak/db/schema/identity", () => ({ userDeviceToken: "userDeviceToken", userLanguage: "userLanguage" }));
 mock.module("@sip-and-speak/db/schema/auth", () => ({ user: "user" }));
 mock.module("drizzle-orm", () => ({ eq: (_col: unknown, val: unknown) => ({ _val: val }), or: (...args: unknown[]) => args }));
 
@@ -37,8 +37,10 @@ mock.module("@sip-and-speak/db", () => ({
   },
 }));
 
+// ── Domain events mock ────────────────────────────────────────────────────────
+
 mock.module("@sip-and-speak/api/domain-events", () => ({
-  domainEvents: { on: mock(() => undefined), emit: mock(() => undefined) },
+  domainEvents: { on: mock((_evt: string, _fn: unknown) => undefined), emit: mock(() => undefined), removeAllListeners: mock(() => undefined) },
 }));
 
 // eslint-disable-next-line import/first

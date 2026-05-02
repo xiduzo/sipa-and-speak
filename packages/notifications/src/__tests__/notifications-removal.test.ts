@@ -22,7 +22,7 @@ let fetchShouldFail = false;
 
 let mockTokenRows: Array<{ token: string }> = [];
 
-mock.module("@sip-and-speak/db/schema/sip-and-speak", () => ({
+mock.module("@sip-and-speak/db/schema/identity", () => ({
   userDeviceToken: "userDeviceToken",
   userLanguage: "userLanguage",
   conversationPresence: "conversationPresence",
@@ -58,6 +58,14 @@ mock.module("@sip-and-speak/db", () => ({
     }),
   },
 }));
+
+// ── Domain events mock ────────────────────────────────────────────────────────
+
+mock.module("@sip-and-speak/api/domain-events", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { EventEmitter } = require("events") as typeof import("events");
+  return { domainEvents: new EventEmitter() };
+});
 
 import { registerNotificationHandlers } from "../dispatcher";
 import { domainEvents } from "@sip-and-speak/api/domain-events";

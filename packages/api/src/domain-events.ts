@@ -194,6 +194,7 @@ export interface MessageSentEvent {
   senderId: string;
   recipientId: string;
   senderName: string;
+  recipientIsPresent: boolean;
 }
 
 export interface StudentFlaggedEvent {
@@ -233,6 +234,11 @@ export interface StudentRemovedEvent {
   targetId: string;
   moderatorId: string;
   removedAt: Date;
+}
+
+export interface ProposalsCancelledByCascadeEvent {
+  targetId: string;
+  peerIds: string[];
 }
 
 // #276 — Feature #275
@@ -277,6 +283,7 @@ type DomainEventMap = {
   StudentSuspended: [StudentSuspendedEvent];
   SuspensionLifted: [SuspensionLiftedEvent];
   StudentRemoved: [StudentRemovedEvent];
+  ProposalsCancelledByCascade: [ProposalsCancelledByCascadeEvent];
   StudentProfileCompleted: [StudentProfileCompletedEvent];
   StudentProfileUpdated: [StudentProfileUpdatedEvent];
 };
@@ -296,6 +303,9 @@ class TypedEventEmitter extends EventEmitter {
     listener: (...args: DomainEventMap[K]) => void,
   ): this {
     return super.off(event as string, listener);
+  }
+  removeAllListeners(event?: keyof DomainEventMap): this {
+    return super.removeAllListeners(event as string | undefined);
   }
 }
 

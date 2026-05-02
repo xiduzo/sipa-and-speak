@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { and, count, eq, ne } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { meetup, venue } from "@sip-and-speak/db/schema/sip-and-speak";
+import { meetup, venue } from "@sip-and-speak/db/schema/scheduling";
 import { protectedProcedure, router } from "../../index";
 
 async function assertNameUnique(name: string, excludeId?: string) {

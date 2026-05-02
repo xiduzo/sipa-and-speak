@@ -10,14 +10,8 @@ import { describe, it, expect, mock, beforeEach } from "bun:test";
 const dbUpdateCalls: Array<{ table: string; status: string }> = [];
 let mockConversationRows: Array<{ id: string }> = [];
 
-mock.module("@sip-and-speak/db/schema/sip-and-speak", () => ({
-  userDeviceToken: "userDeviceToken",
-  userLanguage: "userLanguage",
-  conversationPresence: "conversationPresence",
-  meetup: "meetup",
-  blockedEmail: "blockedEmail",
-  conversation: "conversation",
-}));
+mock.module("@sip-and-speak/db/schema/scheduling", () => ({ meetup: "meetup" }));
+mock.module("@sip-and-speak/db/schema/conversation", () => ({ conversation: "conversation" }));
 mock.module("@sip-and-speak/db/schema/auth", () => ({ user: "user" }));
 mock.module("drizzle-orm", () => ({
   eq: (_col: unknown, val: unknown) => ({ _eq: val }),

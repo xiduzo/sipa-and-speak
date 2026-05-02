@@ -30,7 +30,7 @@ const fetchCalls: CapturedFetchCall[] = [];
 
 const DEVICE_TOKEN_TABLE = "userDeviceToken";
 
-mock.module("@sip-and-speak/db/schema/sip-and-speak", () => ({
+mock.module("@sip-and-speak/db/schema/identity", () => ({
   userDeviceToken: DEVICE_TOKEN_TABLE,
   userLanguage: "userLanguage",
 }));
@@ -67,6 +67,14 @@ mock.module("@sip-and-speak/db", () => ({
     }),
   },
 }));
+
+// ── Domain events mock ────────────────────────────────────────────────────────
+
+mock.module("@sip-and-speak/api/domain-events", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { EventEmitter } = require("events") as typeof import("events");
+  return { domainEvents: new EventEmitter() };
+});
 
 // ── Subject under test ────────────────────────────────────────────────────────
 

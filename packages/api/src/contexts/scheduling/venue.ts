@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { venue } from "@sip-and-speak/db/schema/sip-and-speak";
+import { venue } from "@sip-and-speak/db/schema/scheduling";
 import { protectedProcedure, router } from "../../index";
 import { haversineDistance } from "../../lib/geo";
 

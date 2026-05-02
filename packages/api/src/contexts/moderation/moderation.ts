@@ -4,7 +4,7 @@ import { and, eq, count, asc, ne } from "drizzle-orm";
 
 import { protectedProcedure, router } from "../../index";
 import { db } from "@sip-and-speak/db";
-import { userFlag } from "@sip-and-speak/db/schema/sip-and-speak";
+import { userFlag } from "@sip-and-speak/db/schema/moderation";
 import { user } from "@sip-and-speak/db/schema/auth";
 import {
   FLAG_VALIDATION_MESSAGES,

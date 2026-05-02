@@ -3,6 +3,10 @@
  *   task #102 — Cancel active proposals on Student suspension + notify peers
  *   task #104 — Notify suspended Student of the moderation decision
  *   task #106 — Notify Student when suspension is lifted
+ *
+ * The proposal cancellation (DB side) and peer-id resolution now live in the
+ * moderation context handlers. The notifications package subscribes to
+ * ProposalsCancelledByCascade (which carries peer IDs) instead of re-querying.
  */
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 
@@ -17,14 +21,9 @@ const fetchCalls: CapturedFetchCall[] = [];
   return { json: async () => ({ data: [{ status: "ok", id: "t-1" }] }) };
 });
 
-// Track DB update calls for proposal cancellation
-const dbUpdateCalls: Array<{ table: string; status: string }> = [];
-
-mock.module("@sip-and-speak/db/schema/sip-and-speak", () => ({
+mock.module("@sip-and-speak/db/schema/identity", () => ({
   userDeviceToken: "userDeviceToken",
   userLanguage: "userLanguage",
-  conversationPresence: "conversationPresence",
-  meetup: "meetup",
 }));
 mock.module("@sip-and-speak/db/schema/auth", () => ({ user: "user" }));
 mock.module("drizzle-orm", () => ({
@@ -34,41 +33,30 @@ mock.module("drizzle-orm", () => ({
   inArray: (_col: unknown, vals: unknown) => ({ _inArray: vals }),
 }));
 
-// Rows returned by meetup select (active proposals)
-let mockMeetupRows: Array<{ id: string; proposerId: string; receiverId: string }> = [];
-// Rows returned by device token select
 let mockTokenRows: Array<{ token: string }> = [];
 let mockTokenRowsForSuspended: Array<{ token: string }> = [];
 
+// Controls which token set is returned depending on query context.
+// Peer tokens → mockTokenRows; suspended student tokens → mockTokenRowsForSuspended.
+let returnPeerTokens = false;
+
 mock.module("@sip-and-speak/db", () => ({
   db: {
-    select: (cols?: unknown) => {
-      // Distinguish based on field shape — crude but effective for unit tests
-      const hasId = cols && typeof cols === "object" && "id" in (cols as object);
-      return {
-        from: (_table: unknown) => ({
-          where: () => {
-            if (hasId) {
-              // meetup select (has `id` field)
-              return Promise.resolve(mockMeetupRows);
-            }
-            // Alternate between "for peer tokens" and "for suspended student tokens"
-            // by returning mockTokenRows (peer) when mockMeetupRows is non-empty
-            return Promise.resolve(mockMeetupRows.length > 0 ? mockTokenRows : mockTokenRowsForSuspended);
-          },
-        }),
-      };
-    },
-    update: (_table: unknown) => ({
-      set: (_vals: unknown) => ({
-        where: () => {
-          dbUpdateCalls.push({ table: "meetup", status: "cancelled" });
-          return Promise.resolve();
-        },
+    select: (_cols?: unknown) => ({
+      from: (_table: unknown) => ({
+        where: () => Promise.resolve(returnPeerTokens ? mockTokenRows : mockTokenRowsForSuspended),
       }),
     }),
   },
 }));
+
+// ── Domain events mock ────────────────────────────────────────────────────────
+
+mock.module("@sip-and-speak/api/domain-events", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { EventEmitter } = require("events") as typeof import("events");
+  return { domainEvents: new EventEmitter() };
+});
 
 import { registerNotificationHandlers } from "../dispatcher";
 import { domainEvents } from "@sip-and-speak/api/domain-events";
@@ -76,22 +64,17 @@ import { domainEvents } from "@sip-and-speak/api/domain-events";
 describe("handleStudentSuspended — proposal cancellation (#102)", () => {
   beforeEach(() => {
     fetchCalls.length = 0;
-    dbUpdateCalls.length = 0;
-    mockMeetupRows = [];
     mockTokenRows = [];
     mockTokenRowsForSuspended = [];
+    returnPeerTokens = false;
     domainEvents.removeAllListeners();
     registerNotificationHandlers();
   });
 
-  // DB-cascade assertions for #102 live in @sip-and-speak/api
-  // (packages/api/src/contexts/moderation/__tests__/handler-suspension-cancel-proposals.test.ts).
-  // The notifications package only owns the push side now.
-
   it("notifies affected peer when proposal is cancelled", async () => {
-    mockMeetupRows = [{ id: "m-1", proposerId: "student-1", receiverId: "student-2" }];
+    returnPeerTokens = true;
     mockTokenRows = [{ token: "ExponentPushToken[peer]" }];
-    domainEvents.emit("StudentSuspended", { flagId: "flag-1", targetId: "student-1", moderatorId: "mod-1", suspendedAt: new Date() });
+    domainEvents.emit("ProposalsCancelledByCascade", { targetId: "student-1", peerIds: ["student-2"] });
     await new Promise((r) => setTimeout(r, 30));
     const proposalCancelMsg = fetchCalls.find((c) => c.messages[0]?.title === "Meetup proposal cancelled");
     expect(proposalCancelMsg).toBeDefined();
@@ -99,18 +82,17 @@ describe("handleStudentSuspended — proposal cancellation (#102)", () => {
   });
 
   it("notification does not reveal moderation reason", async () => {
-    mockMeetupRows = [{ id: "m-1", proposerId: "student-1", receiverId: "student-2" }];
+    returnPeerTokens = true;
     mockTokenRows = [{ token: "ExponentPushToken[peer]" }];
-    domainEvents.emit("StudentSuspended", { flagId: "flag-1", targetId: "student-1", moderatorId: "mod-1", suspendedAt: new Date() });
+    domainEvents.emit("ProposalsCancelledByCascade", { targetId: "student-1", peerIds: ["student-2"] });
     await new Promise((r) => setTimeout(r, 30));
     const proposalCancelMsg = fetchCalls.find((c) => c.messages[0]?.title === "Meetup proposal cancelled");
     expect(proposalCancelMsg!.messages[0]!.body).not.toContain("suspend");
     expect(proposalCancelMsg!.messages[0]!.body).not.toContain("moderation");
   });
 
-  it("does not push proposal-cancelled when Student has no active proposals", async () => {
-    mockMeetupRows = [];
-    domainEvents.emit("StudentSuspended", { flagId: "flag-2", targetId: "student-1", moderatorId: "mod-1", suspendedAt: new Date() });
+  it("does not push proposal-cancelled when peerIds is empty", async () => {
+    domainEvents.emit("ProposalsCancelledByCascade", { targetId: "student-1", peerIds: [] });
     await new Promise((r) => setTimeout(r, 30));
     const proposalCancelMsg = fetchCalls.find((c) => c.messages[0]?.title === "Meetup proposal cancelled");
     expect(proposalCancelMsg).toBeUndefined();
@@ -120,9 +102,9 @@ describe("handleStudentSuspended — proposal cancellation (#102)", () => {
 describe("handleSuspensionLifted — notify Student (#106)", () => {
   beforeEach(() => {
     fetchCalls.length = 0;
-    mockMeetupRows = [];
     mockTokenRows = [];
     mockTokenRowsForSuspended = [];
+    returnPeerTokens = false;
     domainEvents.removeAllListeners();
     registerNotificationHandlers();
   });

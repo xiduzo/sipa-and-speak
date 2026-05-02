@@ -2,15 +2,10 @@
  * Wires domain events to push notifications.
  * Fire-and-forget: errors are logged in the dispatcher, never thrown to callers.
  *
- * NOTE: moderation cascades (cancelling proposals, transitioning conversation
- * state, blocklisting removed Students' emails) live in
- * @sip-and-speak/api/contexts/moderation/handlers.ts. This package only owns
- * push-notification handlers. Where the same event has both a cascade and a
- * push, the two subscribe independently — see e.g. handleProposalCancelledOnSuspended.
+ * NOTE: moderation cascades live in @sip-and-speak/api/contexts/moderation/handlers.ts.
+ * That handler emits ProposalsCancelledByCascade with peer IDs after cancelling proposals;
+ * this dispatcher subscribes to that event rather than re-querying the DB.
  */
-import { and, eq, or } from "drizzle-orm";
-import { db } from "@sip-and-speak/db";
-import { conversationPresence, meetup } from "@sip-and-speak/db/schema/sip-and-speak";
 import {
   domainEvents,
   type MatchRequestSentEvent,
@@ -35,6 +30,7 @@ import {
   type StudentSuspendedEvent,
   type SuspensionLiftedEvent,
   type StudentRemovedEvent,
+  type ProposalsCancelledByCascadeEvent,
 } from "@sip-and-speak/api/domain-events";
 import {
   buildMatchRequestSentRecipes,
@@ -131,19 +127,8 @@ export async function handleMessagingDeclineOutcome(event: MessagingDeclineOutco
   await dispatch(buildMessagingDeclineOutcomeRecipes(event));
 }
 
-// Suppress when recipient is actively viewing this conversation
 export async function handleMessageSent(event: MessageSentEvent): Promise<void> {
-  const [presence] = await db
-    .select({ activeUntil: conversationPresence.activeUntil })
-    .from(conversationPresence)
-    .where(
-      and(
-        eq(conversationPresence.studentId, event.recipientId),
-        eq(conversationPresence.conversationId, event.conversationId),
-      ),
-    )
-    .limit(1);
-  if (presence && presence.activeUntil > new Date()) return;
+  if (event.recipientIsPresent) return;
   await dispatch(buildMessageSentRecipes(event));
 }
 
@@ -163,44 +148,9 @@ async function handleStudentRemovedNotify(event: StudentRemovedEvent): Promise<v
   await dispatch(buildStudentRemovedNotifyRecipes(event));
 }
 
-// Push side of the suspension cascade. The DB cancellation lives in the
-// moderation context; this handler runs independently against the same
-// event and re-queries the affected peers so it can dispatch the
-// "proposal cancelled" push. Duplicated query is intentional — see
-// header comment.
-async function handleProposalCancelledOnSuspended(event: StudentSuspendedEvent): Promise<void> {
-  const activeProposals = await db
-    .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
-    .from(meetup)
-    .where(
-      or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
-    );
-
-  if (activeProposals.length === 0) return;
-
-  const peerIds = [...new Set(
-    activeProposals.map((p) => (p.proposerId === event.targetId ? p.receiverId : p.proposerId)),
-  )];
-
-  await dispatch(buildProposalCancelledRecipes(peerIds));
-}
-
-// Push side of the removal cascade. See handleProposalCancelledOnSuspended.
-async function handleProposalCancelledOnRemoved(event: StudentRemovedEvent): Promise<void> {
-  const activeProposals = await db
-    .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
-    .from(meetup)
-    .where(
-      or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
-    );
-
-  if (activeProposals.length === 0) return;
-
-  const peerIds = [...new Set(
-    activeProposals.map((p) => (p.proposerId === event.targetId ? p.receiverId : p.proposerId)),
-  )];
-
-  await dispatch(buildProposalCancelledRecipes(peerIds));
+async function handleProposalsCancelledByCascade(event: ProposalsCancelledByCascadeEvent): Promise<void> {
+  if (event.peerIds.length === 0) return;
+  await dispatch(buildProposalCancelledRecipes(event.peerIds));
 }
 
 export function registerNotificationHandlers(): void {
@@ -223,15 +173,8 @@ export function registerNotificationHandlers(): void {
   domainEvents.on("MessagingDeclineOutcome", (event) => { void handleMessagingDeclineOutcome(event); });
   domainEvents.on("MessageSent", (event) => { void handleMessageSent(event); });
   domainEvents.on("StudentWarned", (event) => { void handleStudentWarned(event); });
-  domainEvents.on("StudentSuspended", (event) => {
-    void handleStudentSuspendedNotify(event);
-    void handleProposalCancelledOnSuspended(event);
-  });
-  domainEvents.on("SuspensionLifted", (event) => {
-    void handleSuspensionLifted(event);
-  });
-  domainEvents.on("StudentRemoved", (event) => {
-    void handleStudentRemovedNotify(event);
-    void handleProposalCancelledOnRemoved(event);
-  });
+  domainEvents.on("StudentSuspended", (event) => { void handleStudentSuspendedNotify(event); });
+  domainEvents.on("SuspensionLifted", (event) => { void handleSuspensionLifted(event); });
+  domainEvents.on("StudentRemoved", (event) => { void handleStudentRemovedNotify(event); });
+  domainEvents.on("ProposalsCancelledByCascade", (event) => { void handleProposalsCancelledByCascade(event); });
 }

@@ -8,7 +8,7 @@
  */
 import { eq } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
-import { blockedEmail } from "@sip-and-speak/db/schema/sip-and-speak";
+import { blockedEmail } from "@sip-and-speak/db/schema/moderation";
 import { normalizeEmail } from "./moderation-utils";
 
 /**

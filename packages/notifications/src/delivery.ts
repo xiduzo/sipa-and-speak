@@ -59,9 +59,10 @@ export class InMemoryDelivery implements NotificationDelivery {
   }
 }
 
-let currentDelivery: NotificationDelivery = new ExpoPushDelivery();
+let currentDelivery: NotificationDelivery | undefined;
 
 export function getDelivery(): NotificationDelivery {
+  if (!currentDelivery) currentDelivery = new ExpoPushDelivery();
   return currentDelivery;
 }
 

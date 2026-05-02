@@ -5,7 +5,8 @@ import { and, eq, isNull } from "drizzle-orm";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";
 import { db } from "@sip-and-speak/db";
-import { meetup, messagingOptIn, conversation, conversationPresence, message } from "@sip-and-speak/db/schema/sip-and-speak";
+import { messagingOptIn, conversation, conversationPresence, message } from "@sip-and-speak/db/schema/conversation";
+import { meetup } from "@sip-and-speak/db/schema/scheduling";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { validateMessageContent, checkConversationAccess } from "./messaging-utils";
 
@@ -266,14 +267,25 @@ export const messagingRouter = router({
       ]);
       const created = createdRows[0]!;
 
-      // #152 — Notify recipient about new message
+      // #152 — Notify recipient about new message; suppress if recipient is actively viewing
       const recipientId = conv!.user1Id === senderId ? conv!.user2Id : conv!.user1Id;
       const senderName = senderResult[0]?.name ?? "Your match";
+      const [presence] = await db
+        .select({ activeUntil: conversationPresence.activeUntil })
+        .from(conversationPresence)
+        .where(
+          and(
+            eq(conversationPresence.studentId, recipientId),
+            eq(conversationPresence.conversationId, input.conversationId),
+          ),
+        )
+        .limit(1);
       domainEvents.emit("MessageSent", {
         conversationId: input.conversationId,
         senderId,
         recipientId,
         senderName,
+        recipientIsPresent: !!presence && presence.activeUntil > new Date(),
       });
 
       console.log(

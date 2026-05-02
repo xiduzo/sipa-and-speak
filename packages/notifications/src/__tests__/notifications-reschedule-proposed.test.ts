@@ -15,7 +15,7 @@ const mockDb = {
 };
 
 mock.module("@sip-and-speak/db", () => ({ db: mockDb }));
-mock.module("@sip-and-speak/db/schema/sip-and-speak", () => ({
+mock.module("@sip-and-speak/db/schema/identity", () => ({
   userDeviceToken: { id: "id", token: "token", userId: "user_id" },
   userLanguage: {},
 }));
@@ -23,6 +23,14 @@ mock.module("@sip-and-speak/db/schema/auth", () => ({ user: { id: "id", name: "n
 mock.module("@sip-and-speak/api/routers/matching-utils", () => ({
   buildMatchRequestNotificationBody: () => "body",
 }));
+
+// ── Domain events mock ────────────────────────────────────────────────────────
+
+mock.module("@sip-and-speak/api/domain-events", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { EventEmitter } = require("events") as typeof import("events");
+  return { domainEvents: new EventEmitter() };
+});
 
 import { domainEvents } from "@sip-and-speak/api/domain-events";
 import { registerNotificationHandlers } from "../dispatcher";
