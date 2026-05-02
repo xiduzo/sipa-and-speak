@@ -152,7 +152,7 @@ export default function RespondMeetupScreen() {
         <ScrollView contentContainerStyle={{ padding: 16 }}>
           <Text className="text-foreground text-2xl font-manrope-bold mb-1">Counter-propose</Text>
           <Text testID="counter-round-label" className="text-muted-foreground font-manrope text-sm mb-6">
-            Round {proposal.round + 1} of 3
+            Round {proposal.round + 1} of 5
           </Text>
 
           <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: "#8A7570" }}>Location</Text>
@@ -265,7 +265,7 @@ export default function RespondMeetupScreen() {
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <Text className="text-foreground text-2xl font-manrope-bold mb-1">Meetup proposal</Text>
         <Text testID="round-label" className="text-muted-foreground font-manrope text-sm mb-6">
-          Round {proposal.round} of 3
+          Round {proposal.round} of 5
         </Text>
 
         <View className="bg-card border border-border rounded-2xl p-4 mb-6">

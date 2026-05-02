@@ -268,7 +268,7 @@ export const meetupRouter = router({
         });
       }
 
-      // #73 — Reject counter-propose when round is already at 3
+      // #73 — Reject counter-propose when round is already at 5
       if (!canCounterPropose(existing.meetup.round)) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -565,7 +565,7 @@ export const meetupRouter = router({
     return {
       meetupId: row.meetup.id,
       round: row.meetup.round,
-      canCounterPropose: row.meetup.round < 3,
+      canCounterPropose: row.meetup.round < 5,
       venue: row.venue,
       date: row.meetup.date,
       time: row.meetup.time,
