@@ -123,11 +123,11 @@ export default function PartnerProfileScreen() {
               </Text>
             </View>
           )}
-          <Text testID="profile-name" className="text-foreground text-2xl font-bold">
+          <Text testID="profile-name" className="text-foreground text-2xl font-manrope-bold mt-1">
             {profile.name}
           </Text>
           {(profile.age != null || profile.university) && (
-            <Text className="text-muted-foreground mt-1">
+            <Text className="text-muted-foreground font-manrope mt-1">
               {[profile.age != null ? `${profile.age} years` : null, profile.university]
                 .filter(Boolean)
                 .join(" · ")}
@@ -138,19 +138,19 @@ export default function PartnerProfileScreen() {
         {/* Bio / Introduction */}
         {profile.bio && (
           <View className="mb-4">
-            <Text className="text-foreground font-semibold mb-1">Introduction</Text>
-            <Text className="text-muted-foreground">{profile.bio}</Text>
+            <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: "#8A7570" }}>Introduction</Text>
+            <Text className="text-muted-foreground font-manrope">{profile.bio}</Text>
           </View>
         )}
 
         {/* Spoken languages */}
         {profile.spokenLanguages.length > 0 && (
           <View className="mb-4">
-            <Text className="text-foreground font-semibold mb-2">Speaks</Text>
+            <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: "#8A7570" }}>Speaks</Text>
             <View className="flex-row flex-wrap gap-2" testID="profile-offered-languages">
               {profile.spokenLanguages.map((l) => (
                 <View key={l.language} className="bg-primary/10 px-3 py-1 rounded-full">
-                  <Text className="text-primary text-sm">
+                  <Text className="text-primary text-xs font-manrope-semi">
                     {l.language}{l.proficiency ? ` · ${l.proficiency}` : ""}
                   </Text>
                 </View>
@@ -162,11 +162,11 @@ export default function PartnerProfileScreen() {
         {/* Learning languages */}
         {profile.learningLanguages.length > 0 && (
           <View className="mb-4">
-            <Text className="text-foreground font-semibold mb-2">Learning</Text>
+            <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: "#8A7570" }}>Learning</Text>
             <View className="flex-row flex-wrap gap-2" testID="profile-targeted-languages">
               {profile.learningLanguages.map((lang) => (
                 <View key={lang} className="bg-secondary/10 px-3 py-1 rounded-full">
-                  <Text className="text-secondary-foreground text-sm">{lang}</Text>
+                  <Text className="text-secondary-foreground text-xs font-manrope-semi">{lang}</Text>
                 </View>
               ))}
             </View>
@@ -176,11 +176,11 @@ export default function PartnerProfileScreen() {
         {/* Interests / Topics */}
         {profile.interests.length > 0 && (
           <View className="mb-4">
-            <Text className="text-foreground font-semibold mb-2">Topics</Text>
+            <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: "#8A7570" }}>Topics</Text>
             <View className="flex-row flex-wrap gap-2" testID="profile-topics">
               {profile.interests.map((topic) => (
                 <View key={topic} className="bg-muted px-3 py-1 rounded-full">
-                  <Text className="text-muted-foreground text-sm">{interestLabel(topic)}</Text>
+                  <Text className="text-muted-foreground text-xs font-manrope">{interestLabel(topic)}</Text>
                 </View>
               ))}
             </View>
@@ -189,7 +189,7 @@ export default function PartnerProfileScreen() {
 
         {/* #119 — Comments section */}
         <View className="mb-6" testID="comments-section">
-          <Text className="text-foreground font-semibold mb-3">What others say</Text>
+          <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-3" style={{ color: "#8A7570" }}>What others say</Text>
           {comments.length === 0 ? (
             <Text testID="comments-empty" className="text-muted-foreground text-sm">
               No reviews yet.
@@ -201,10 +201,10 @@ export default function PartnerProfileScreen() {
                 testID="comment-item"
                 className="bg-muted/50 rounded-xl p-3 mb-2"
               >
-                <Text className="text-foreground text-sm font-medium mb-1">
+                <Text className="text-foreground text-sm font-manrope-semi mb-1">
                   {comment.authorName}
                 </Text>
-                <Text className="text-muted-foreground text-sm">{comment.content}</Text>
+                <Text className="text-muted-foreground text-sm font-manrope">{comment.content}</Text>
               </View>
             ))
           )}
