@@ -16,9 +16,34 @@ import {
   computeInterestScore,
   computeProximityScore,
   computeCompositeScore,
+  computeBridgeRuleEligibility,
   scoreCandidates,
   type CandidateProfile,
 } from "../matching-utils";
+
+// ── computeBridgeRuleEligibility ──────────────────────────────────────────────
+
+describe("computeBridgeRuleEligibility", () => {
+  it("returns true when partner speaks Dutch and is learning Dutch", () => {
+    expect(computeBridgeRuleEligibility(["Dutch"], ["Dutch"])).toBe(true);
+  });
+
+  it("returns true when partner speaks Dutch and is learning English", () => {
+    expect(computeBridgeRuleEligibility(["Dutch"], ["English"])).toBe(true);
+  });
+
+  it("returns false when partner does not speak Dutch", () => {
+    expect(computeBridgeRuleEligibility(["English"], ["Dutch"])).toBe(false);
+  });
+
+  it("returns false when partner speaks Dutch but learns neither Dutch nor English", () => {
+    expect(computeBridgeRuleEligibility(["Dutch"], ["Spanish"])).toBe(false);
+  });
+
+  it("returns false when lists are empty", () => {
+    expect(computeBridgeRuleEligibility([], [])).toBe(false);
+  });
+});
 
 // ── computeLanguageScore ──────────────────────────────────────────────────────
 
@@ -170,15 +195,15 @@ describe("scoreCandidates", () => {
       spokenLanguages: [{ language: "English", proficiency: "C1" }],
       learningLanguages: ["Dutch"],
     });
-    const noMatch = makeCandidate({
-      userId: "no-match",
-      spokenLanguages: [{ language: "Spanish", proficiency: "B2" }],
+    const partialMatch = makeCandidate({
+      userId: "partial-match",
+      spokenLanguages: [{ language: "English", proficiency: "B2" }],
       learningLanguages: ["French"],
     });
 
-    const result = scoreCandidates(ME, [noMatch, perfect]);
+    const result = scoreCandidates(ME, [partialMatch, perfect]);
     expect(result[0]!.userId).toBe("perfect");
-    expect(result[1]!.userId).toBe("no-match");
+    expect(result[1]!.userId).toBe("partial-match");
   });
 
   it("excludes candidates who don't speak the filter language", () => {
@@ -224,6 +249,30 @@ describe("scoreCandidates", () => {
     expect(result[0]!.distance).toBeNull();
   });
 
+  it("surfaces bridge-eligible candidate with langScore 0 at effectiveLangScore 0.5", () => {
+    const bridgeCandidate = makeCandidate({
+      userId: "bridge",
+      spokenLanguages: [{ language: "Dutch", proficiency: "C2" }],
+      learningLanguages: ["English"],
+    });
+
+    const result = scoreCandidates(ME, [bridgeCandidate]);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.userId).toBe("bridge");
+    expect(result[0]!.score).toBeCloseTo(0.5 * 0.5);
+  });
+
+  it("excludes candidate with zero langScore who is not bridge-eligible", () => {
+    const noMatch = makeCandidate({
+      userId: "no-match",
+      spokenLanguages: [{ language: "Spanish", proficiency: "B2" }],
+      learningLanguages: ["French"],
+    });
+
+    const result = scoreCandidates(ME, [noMatch]);
+    expect(result).toHaveLength(0);
+  });
+
   it("near_you filter boosts proximity weight over language weight", () => {
     const me = { ...ME, latitude: 51.45, longitude: 5.45 };
     // languageMatch: perfect language, far away
@@ -234,10 +283,10 @@ describe("scoreCandidates", () => {
       latitude: 51.45 + 0.4, // ~44 km away
       longitude: 5.45,
     });
-    // nearbyMatch: imperfect language, very close
+    // nearbyMatch: partial language (one direction only), very close
     const nearbyMatch = makeCandidate({
       userId: "nearby-match",
-      spokenLanguages: [{ language: "Spanish", proficiency: "B2" }],
+      spokenLanguages: [{ language: "English", proficiency: "B2" }],
       learningLanguages: ["French"],
       latitude: 51.451, // < 1 km away
       longitude: 5.451,
