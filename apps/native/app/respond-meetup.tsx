@@ -39,6 +39,7 @@ export default function RespondMeetupScreen() {
     void queryClient.invalidateQueries(trpc.meetup.getPendingIncoming.queryOptions());
     void queryClient.invalidateQueries(trpc.meetup.list.queryOptions({ status: "pending" }));
     void queryClient.invalidateQueries(trpc.meetup.pendingCount.queryOptions());
+    void queryClient.invalidateQueries(trpc.matching.getMyMatches.queryOptions());
   }
 
   const acceptMutation = useMutation(
@@ -92,6 +93,18 @@ export default function RespondMeetupScreen() {
           <Spinner />
         </View>
       </Container>
+    );
+  }
+
+  if (confirmed) {
+    return (
+      <MeetupConfirmedModal
+        visible
+        venueName={confirmed.venueName}
+        date={confirmed.date}
+        time={confirmed.time}
+        onDismiss={() => { setConfirmed(null); router.back(); }}
+      />
     );
   }
 
@@ -251,16 +264,6 @@ export default function RespondMeetupScreen() {
   }
 
   return (
-    <>
-      {confirmed && (
-        <MeetupConfirmedModal
-          visible
-          venueName={confirmed.venueName}
-          date={confirmed.date}
-          time={confirmed.time}
-          onDismiss={() => { setConfirmed(null); router.back(); }}
-        />
-      )}
     <Container>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <Text className="text-foreground text-2xl font-manrope-bold mb-1">Meetup proposal</Text>
@@ -340,6 +343,5 @@ export default function RespondMeetupScreen() {
         </View>
       </ScrollView>
     </Container>
-    </>
   );
 }
