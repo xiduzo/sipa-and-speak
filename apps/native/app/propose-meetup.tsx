@@ -307,7 +307,7 @@ export default function ProposeMeetupScreen() {
                 activeOpacity={0.85}
                 className="rounded-2xl px-5 py-4 flex-row items-center"
                 style={{
-                  backgroundColor: selected ? GOLD : isTop ? GOLD_TINT : "#FFFFFF",
+                  backgroundColor: selected ? GOLD : "#FFFFFF",
                   borderWidth: 1.5,
                   borderColor: selected ? GOLD : MUTED_BORDER,
                 }}
