@@ -12,13 +12,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
 
-// ── Router mock ───────────────────────────────────────────────────────────────
-
-jest.mock("expo-router", () => ({
-  useLocalSearchParams: () => ({ targetId: "user-2", targetName: "Alice" }),
-  useRouter: () => ({ back: jest.fn() }),
-}));
-
 // ── tRPC / query mock ─────────────────────────────────────────────────────────
 
 const mockFlagStudent = jest.fn();
@@ -42,10 +35,16 @@ jest.mock("@/utils/trpc", () => ({
   queryClient: { invalidateQueries: jest.fn() },
 }));
 
+jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
 import { Alert } from "react-native";
-import FlagUserScreen from "../app/flag-user";
+import { FlagUserModal } from "../components/flag-user-modal";
 
 jest.spyOn(Alert, "alert").mockImplementation(() => {});
+
+const mockDismiss = jest.fn();
 
 function renderWithQuery(ui: React.ReactElement) {
   const client = new QueryClient({
@@ -54,8 +53,15 @@ function renderWithQuery(ui: React.ReactElement) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
+function renderModal() {
+  return renderWithQuery(
+    <FlagUserModal visible targetId="user-2" targetName="Alice" onDismiss={mockDismiss} />,
+  );
+}
+
 beforeEach(() => {
   mockFlagStudent.mockReset();
+  mockDismiss.mockReset();
   flagStudentCallbacks = {};
 });
 
@@ -64,7 +70,7 @@ beforeEach(() => {
 describe("#65 — Flag submission UI", () => {
   it("calls mutation with targetId and selected reason on submit", async () => {
     mockFlagStudent.mockResolvedValue({ ok: true });
-    renderWithQuery(<FlagUserScreen />);
+    renderModal();
 
     fireEvent.press(screen.getByTestId("reason-HARASSMENT"));
     fireEvent.press(screen.getByTestId("flag-submit-btn"));
@@ -79,7 +85,7 @@ describe("#65 — Flag submission UI", () => {
 
   it("includes free-text detail in mutation when provided", async () => {
     mockFlagStudent.mockResolvedValue({ ok: true });
-    renderWithQuery(<FlagUserScreen />);
+    renderModal();
 
     fireEvent.press(screen.getByTestId("reason-SPAM"));
     fireEvent.changeText(screen.getByTestId("flag-detail-input"), "They kept sending irrelevant links.");
@@ -98,7 +104,7 @@ describe("#65 — Flag submission UI", () => {
   });
 
   it("blocks submission and shows validation error when no reason is selected", () => {
-    renderWithQuery(<FlagUserScreen />);
+    renderModal();
 
     fireEvent.press(screen.getByTestId("flag-submit-btn"));
 
@@ -107,7 +113,7 @@ describe("#65 — Flag submission UI", () => {
   });
 
   it("shows character count warning and disables Submit when detail exceeds 450 chars", () => {
-    renderWithQuery(<FlagUserScreen />);
+    renderModal();
 
     fireEvent.changeText(screen.getByTestId("flag-detail-input"), "a".repeat(451));
 
@@ -118,7 +124,7 @@ describe("#65 — Flag submission UI", () => {
 
   it("disables Submit button while mutation is in-flight", async () => {
     mockFlagStudent.mockReturnValue(new Promise(() => {}));
-    renderWithQuery(<FlagUserScreen />);
+    renderModal();
 
     fireEvent.press(screen.getByTestId("reason-OFFENSIVE_LANGUAGE"));
     fireEvent.press(screen.getByTestId("flag-submit-btn"));

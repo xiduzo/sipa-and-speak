@@ -1,8 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
+import { MeetupFlowModal, type MeetupFlowMode } from "@/components/meetup-flow-modal";
+import { ProfileModal } from "@/components/profile-modal";
 import { trpc, queryClient } from "@/utils/trpc";
 import { HeroNoMeetup } from "@/components/home/hero-nomeetup";
 import { HeroMatchFound } from "@/components/home/hero-matchfound";
@@ -22,6 +25,8 @@ function greeting(): string {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [meetupModal, setMeetupModal] = useState<MeetupFlowMode | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const profileQuery = useQuery(trpc.profile.getMyProfile.queryOptions());
   const discoverQuery = useQuery(trpc.matching.discover.queryOptions({}));
   const matchesQuery = useQuery(trpc.matching.getMyMatches.queryOptions());
@@ -30,8 +35,6 @@ export default function HomeScreen() {
 
   const name = profileQuery.data?.identity?.name ?? "";
   const initial = (name || "?").charAt(0).toUpperCase();
-
-  const incomingRequestsQuery = useQuery(trpc.matching.getIncomingRequests.queryOptions());
 
   const acceptRescheduleMutation = useMutation(trpc.meetup.acceptReschedule.mutationOptions({
     onSuccess: () => {
@@ -64,13 +67,16 @@ export default function HomeScreen() {
         if (state.proposal.isProposer) {
           router.push("/(tabs)/confirmed-meetups");
         } else {
-          router.push({
-            pathname: "/respond-meetup",
-            params: { meetupId: state.proposal.id },
-          });
+          setMeetupModal({ type: "respond", meetupId: state.proposal.id });
         }
         return;
       case "matchfound":
+        setMeetupModal({
+          type: "propose",
+          partnerId: state.match.partnerId,
+          partnerName: state.match.partnerName,
+        });
+        return;
       case "nomeetup":
         router.push("/match");
         return;
@@ -92,7 +98,15 @@ export default function HomeScreen() {
         return (
           <HeroConfirmed
             meetup={hero.meetup}
-            onReschedule={() => router.push("/(tabs)/confirmed-meetups")}
+            onReschedule={() =>
+              setMeetupModal({
+                type: "reschedule",
+                meetupId: hero.meetup.meetupId,
+                currentVenueId: hero.meetup.venue.id,
+                currentDate: hero.meetup.date,
+                currentTime: hero.meetup.time,
+              })
+            }
             onAcceptReschedule={() =>
               acceptRescheduleMutation.mutate({ meetupId: hero.meetup.meetupId })
             }
@@ -102,12 +116,7 @@ export default function HomeScreen() {
         return (
           <HeroWaiting
             proposal={hero.proposal}
-            onRespond={() =>
-              router.push({
-                pathname: "/respond-meetup",
-                params: { meetupId: hero.proposal.id },
-              })
-            }
+            onRespond={() => setMeetupModal({ type: "respond", meetupId: hero.proposal.id })}
           />
         );
       case "matchfound":
@@ -115,12 +124,10 @@ export default function HomeScreen() {
           <HeroMatchFound
             match={hero.match}
             onPropose={() =>
-              router.push({
-                pathname: "/propose-meetup",
-                params: {
-                  partnerId: hero.match.partnerId,
-                  partnerName: hero.match.partnerName,
-                },
+              setMeetupModal({
+                type: "propose",
+                partnerId: hero.match.partnerId,
+                partnerName: hero.match.partnerName,
               })
             }
             onViewProfile={() =>
@@ -144,6 +151,8 @@ export default function HomeScreen() {
 
   return (
     <Container>
+      <MeetupFlowModal mode={meetupModal} onDismiss={() => setMeetupModal(null)} />
+      <ProfileModal visible={profileOpen} onDismiss={() => setProfileOpen(false)} />
       <View className="flex-1 px-6 pt-4">
         <View className="flex-row items-start justify-between mb-10">
           <View>
@@ -162,7 +171,7 @@ export default function HomeScreen() {
           </View>
           <Pressable
             testID="profile-avatar"
-            onPress={() => router.push("/(tabs)/profile")}
+            onPress={() => setProfileOpen(true)}
             className="items-center justify-center rounded-full"
             style={{ width: 44, height: 44, backgroundColor: GOLD }}
           >
@@ -201,111 +210,6 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {(matchesQuery.data ?? []).length > 0 && (
-          <View className="mt-8">
-            <Text
-              className="font-manrope-semi tracking-widest text-brand-muted-foreground"
-              style={{ fontSize: 12 }}
-            >
-              MY MATCHES
-            </Text>
-            <View className="flex-row flex-wrap gap-4 mt-3">
-              {(matchesQuery.data ?? []).map((match) => (
-                <Pressable
-                  key={match.matchId}
-                  testID="matched-partner-card"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/partner/[id]",
-                      params: { id: match.partnerId },
-                    })
-                  }
-                  className="items-center active:opacity-70"
-                >
-                  {match.partnerPhotoUrl ? (
-                    <Image
-                      source={{ uri: match.partnerPhotoUrl }}
-                      style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: "#D9C9BC" }}
-                    />
-                  ) : (
-                    <View
-                      className="items-center justify-center rounded-full"
-                      style={{ width: 56, height: 56, backgroundColor: GOLD, borderWidth: 2, borderColor: "#D9C9BC" }}
-                    >
-                      <Text className="font-manrope-bold" style={{ fontSize: 20 }}>
-                        {(match.partnerName || "?").charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
-                  )}
-                  <Text
-                    className="text-brand-foreground font-manrope-semi mt-1"
-                    style={{ fontSize: 11 }}
-                    numberOfLines={1}
-                  >
-                    {match.partnerName}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {(incomingRequestsQuery.data ?? []).length > 0 && (
-          <View className="mt-8">
-            <Text
-              className="font-manrope-semi tracking-widest text-brand-muted-foreground"
-              style={{ fontSize: 12 }}
-            >
-              MATCH REQUESTS
-            </Text>
-            <View className="mt-3 gap-3">
-              {(incomingRequestsQuery.data ?? []).map((req) => (
-                <Pressable
-                  key={req.matchRequestId}
-                  testID="incoming-request-card"
-                  onPress={() =>
-                    router.push(
-                      `/partner/${req.requesterId}?matchRequestId=${req.matchRequestId}` as never,
-                    )
-                  }
-                  className="bg-card border border-border rounded-2xl p-4 active:opacity-70"
-                >
-                  <View className="flex-row items-center gap-3">
-                    {req.requesterPhotoUrl ? (
-                      <Image
-                        source={{ uri: req.requesterPhotoUrl }}
-                        style={{ width: 44, height: 44, borderRadius: 22 }}
-                      />
-                    ) : (
-                      <View
-                        className="items-center justify-center rounded-full bg-muted"
-                        style={{ width: 44, height: 44 }}
-                      >
-                        <Text className="text-muted-foreground text-lg font-semibold">
-                          {(req.requesterName || "?").charAt(0).toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                    <View className="flex-1">
-                      <Text className="text-foreground font-semibold text-base">
-                        {req.requesterName}
-                      </Text>
-                      {req.requesterOfferedLanguages.length > 0 && (
-                        <Text className="text-muted-foreground text-xs mt-0.5">
-                          Speaks {req.requesterOfferedLanguages.join(", ")}
-                          {req.requesterTargetedLanguages.length > 0
-                            ? ` · Learning ${req.requesterTargetedLanguages.join(", ")}`
-                            : ""}
-                        </Text>
-                      )}
-                    </View>
-                    <Text className="text-brand-muted-foreground text-xs">›</Text>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        )}
       </View>
     </Container>
   );

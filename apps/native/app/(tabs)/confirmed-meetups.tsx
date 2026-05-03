@@ -1,33 +1,19 @@
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
 import { Button, Spinner } from "heroui-native";
 import { useState } from "react";
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
+import { MeetupFlowModal, type MeetupFlowMode } from "@/components/meetup-flow-modal";
 import { trpc, queryClient } from "@/utils/trpc";
 
-const GOLD = "#F2C94C";
-const BORDER = "#D9C9BC";
 const DARK = "#2C1810";
 const MUTED = "#8A7570";
 
 export default function ConfirmedMeetupsScreen() {
-  const router = useRouter();
   const meetupsQuery = useQuery(trpc.meetup.getConfirmed.queryOptions());
   const pendingQuery = useQuery(trpc.meetup.list.queryOptions({ status: "pending" }));
-
-  // Track which meetup has the reschedule form open
-  const [reschedulingMeetupId, setReschedulingMeetupId] = useState<string | null>(null);
-  const [rescheduleVenueId, setRescheduleVenueId] = useState<string | null>(null);
-  const [rescheduleDate, setRescheduleDate] = useState("");
-  const [rescheduleTime, setRescheduleTime] = useState("");
-  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
-  const [showRescheduleDatePicker, setShowRescheduleDatePicker] = useState(false);
-  const [showRescheduleTimePicker, setShowRescheduleTimePicker] = useState(false);
-
-  const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
+  const [meetupModal, setMeetupModal] = useState<MeetupFlowMode | null>(null);
 
   const reportAttendanceMutation = useMutation(
     trpc.meetup.reportAttendance.mutationOptions({
@@ -48,45 +34,6 @@ export default function ConfirmedMeetupsScreen() {
       onError: (err) => Alert.alert("Error", err.message),
     }),
   );
-
-  const rescheduleMutation = useMutation(
-    trpc.meetup.proposeReschedule.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
-        closeRescheduleForm();
-        Alert.alert("Reschedule proposed", "Your reschedule request has been sent to your partner.");
-      },
-      onError: (err) => setRescheduleError(err.message),
-    }),
-  );
-
-  function openRescheduleForm(meetupId: string, currentVenueId: string, currentDate: string, currentTime: string) {
-    setReschedulingMeetupId(meetupId);
-    setRescheduleVenueId(currentVenueId);
-    setRescheduleDate(currentDate);
-    setRescheduleTime(currentTime);
-    setRescheduleError(null);
-  }
-
-  function closeRescheduleForm() {
-    setReschedulingMeetupId(null);
-    setRescheduleVenueId(null);
-    setRescheduleDate("");
-    setRescheduleTime("");
-    setRescheduleError(null);
-    setShowRescheduleDatePicker(false);
-    setShowRescheduleTimePicker(false);
-  }
-
-  function handleRescheduleSubmit(meetupId: string) {
-    setRescheduleError(null);
-    if (!rescheduleVenueId) { setRescheduleError("Please select a location"); return; }
-    if (!rescheduleDate.match(/^\d{4}-\d{2}-\d{2}$/)) { setRescheduleError("Enter a date in YYYY-MM-DD format"); return; }
-    if (!rescheduleTime.match(/^\d{2}:\d{2}$/)) { setRescheduleError("Enter a time in HH:MM format"); return; }
-    const proposed = new Date(`${rescheduleDate}T${rescheduleTime}:00`);
-    if (proposed <= new Date()) { setRescheduleError("Date and time must be in the future"); return; }
-    rescheduleMutation.mutate({ meetupId, venueId: rescheduleVenueId, date: rescheduleDate, time: rescheduleTime });
-  }
 
   if (meetupsQuery.isPending || pendingQuery.isPending) {
     return (
@@ -133,6 +80,7 @@ export default function ConfirmedMeetupsScreen() {
 
   return (
     <Container>
+      <MeetupFlowModal mode={meetupModal} onDismiss={() => setMeetupModal(null)} />
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <Text className="text-foreground text-2xl font-manrope-bold mb-6">Meetups</Text>
 
@@ -158,7 +106,7 @@ export default function ConfirmedMeetupsScreen() {
                   <Button
                     testID="respond-to-proposal-btn"
                     variant="primary"
-                    onPress={() => router.push({ pathname: "/respond-meetup", params: { meetupId: p.id } })}
+                    onPress={() => setMeetupModal({ type: "respond", meetupId: p.id })}
                   >
                     <Button.Label>Respond to proposal</Button.Label>
                   </Button>
@@ -197,130 +145,28 @@ export default function ConfirmedMeetupsScreen() {
                 </Button>
 
                 {/* #86 — Reschedule action */}
-                {reschedulingMeetupId !== m.meetupId ? (
-                  <Button
-                    testID="reschedule-meetup-btn"
-                    variant="outline"
-                    onPress={() => openRescheduleForm(m.meetupId, m.venue.id, m.date, m.time)}
-                    isDisabled={m.reschedulePending}
-                  >
-                    <Button.Label>
-                      {m.reschedulePending && m.rescheduleIsFromMe
-                        ? "Reschedule pending…"
-                        : m.reschedulePending
-                          ? "Partner proposed reschedule"
-                          : "Reschedule"}
-                    </Button.Label>
-                  </Button>
-                ) : (
-                  <View testID="reschedule-form" className="mt-2">
-                    <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>Location</Text>
-                    {venuesQuery.isPending ? (
-                      <Spinner />
-                    ) : (
-                      <View className="flex flex-col gap-2 mb-4">
-                        {(venuesQuery.data ?? []).map((v) => (
-                          <TouchableOpacity
-                            key={v.id}
-                            testID="reschedule-venue-option"
-                            onPress={() => setRescheduleVenueId(v.id)}
-                            className="rounded-xl p-3"
-                            style={{
-                              borderWidth: 1.5,
-                              borderColor: rescheduleVenueId === v.id ? GOLD : BORDER,
-                              backgroundColor: rescheduleVenueId === v.id ? "#FFF9EC" : "#F5EFE8",
-                            }}
-                          >
-                            <Text className="font-manrope-semi" style={{ color: rescheduleVenueId === v.id ? DARK : MUTED }}>{v.name}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    )}
-
-                    <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>Date</Text>
-                    <TouchableOpacity
-                      testID="reschedule-date-input"
-                      className="border border-border rounded-xl px-3 py-2 bg-card mb-2"
-                      onPress={() => setShowRescheduleDatePicker(true)}
-                    >
-                      <Text className="text-foreground">
-                        {rescheduleDate || "YYYY-MM-DD"}
-                      </Text>
-                    </TouchableOpacity>
-                    {showRescheduleDatePicker && (
-                      <DateTimePicker
-                        testID="reschedule-date-picker"
-                        value={rescheduleDate ? new Date(rescheduleDate) : new Date()}
-                        mode="date"
-                        minimumDate={new Date()}
-                        display={Platform.OS === "ios" ? "inline" : "default"}
-                        onChange={(_event, picked) => {
-                          setShowRescheduleDatePicker(Platform.OS === "ios");
-                          if (picked) {
-                            const y = picked.getFullYear();
-                            const m = String(picked.getMonth() + 1).padStart(2, "0");
-                            const d = String(picked.getDate()).padStart(2, "0");
-                            setRescheduleDate(`${y}-${m}-${d}`);
-                          }
-                        }}
-                      />
-                    )}
-
-                    <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2 mt-4" style={{ color: MUTED }}>Time</Text>
-                    <TouchableOpacity
-                      testID="reschedule-time-input"
-                      className="border border-border rounded-xl px-3 py-2 bg-card mb-2"
-                      onPress={() => setShowRescheduleTimePicker(true)}
-                    >
-                      <Text className="text-foreground">
-                        {rescheduleTime || "HH:MM"}
-                      </Text>
-                    </TouchableOpacity>
-                    {showRescheduleTimePicker && (
-                      <DateTimePicker
-                        testID="reschedule-time-picker"
-                        value={rescheduleTime ? new Date(`1970-01-01T${rescheduleTime}:00`) : new Date()}
-                        mode="time"
-                        display={Platform.OS === "ios" ? "inline" : "default"}
-                        onChange={(_event, picked) => {
-                          setShowRescheduleTimePicker(Platform.OS === "ios");
-                          if (picked) {
-                            const h = String(picked.getHours()).padStart(2, "0");
-                            const min = String(picked.getMinutes()).padStart(2, "0");
-                            setRescheduleTime(`${h}:${min}`);
-                          }
-                        }}
-                      />
-                    )}
-
-                    {rescheduleError && (
-                      <Text testID="reschedule-error" className="text-destructive text-sm mb-4">
-                        {rescheduleError}
-                      </Text>
-                    )}
-
-                    <View className="flex flex-row gap-2">
-                      <Button
-                        testID="reschedule-submit-btn"
-                        onPress={() => handleRescheduleSubmit(m.meetupId)}
-                        isDisabled={rescheduleMutation.isPending}
-                        className="flex-1"
-                      >
-                        <Button.Label>
-                          {rescheduleMutation.isPending ? "Sending…" : "Propose reschedule"}
-                        </Button.Label>
-                      </Button>
-                      <Button
-                        testID="reschedule-cancel-btn"
-                        variant="ghost"
-                        onPress={closeRescheduleForm}
-                        className="flex-1"
-                      >
-                        <Button.Label>Cancel</Button.Label>
-                      </Button>
-                    </View>
-                  </View>
-                )}
+                <Button
+                  testID="reschedule-meetup-btn"
+                  variant="outline"
+                  onPress={() =>
+                    setMeetupModal({
+                      type: "reschedule",
+                      meetupId: m.meetupId,
+                      currentVenueId: m.venue.id,
+                      currentDate: m.date,
+                      currentTime: m.time,
+                    })
+                  }
+                  isDisabled={m.reschedulePending}
+                >
+                  <Button.Label>
+                    {m.reschedulePending && m.rescheduleIsFromMe
+                      ? "Reschedule pending…"
+                      : m.reschedulePending
+                        ? "Partner proposed reschedule"
+                        : "Reschedule"}
+                  </Button.Label>
+                </Button>
               </View>
             )}
 

@@ -23,8 +23,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="suggestions"
-        options={{ href: null }}
+        name="matches"
+        options={{
+          title: "Matches",
+          tabBarIcon: ({ color, size }) => (
+            <StyledIonicons name="people-outline" size={size} color={color} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="confirmed-meetups"
@@ -45,13 +50,8 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <StyledIonicons name="person-outline" size={size} color={color} />
-          ),
-        }}
+        name="suggestions"
+        options={{ href: null }}
       />
     </Tabs>
   );

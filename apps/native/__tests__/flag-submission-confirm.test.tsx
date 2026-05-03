@@ -4,21 +4,13 @@
  * Covers:
  *   - Successful submission → confirmation screen shown (not the form)
  *   - Confirmation screen contains "Moderator will review" message
- *   - Done button on confirmation screen calls router.back()
+ *   - Done button on confirmation screen calls onDismiss
  *   - Backend error → inline error message shown (not confirmation)
  *   - Backend error → confirmation screen NOT shown
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
-
-// ── Router mock ───────────────────────────────────────────────────────────────
-
-const mockBack = jest.fn();
-jest.mock("expo-router", () => ({
-  useLocalSearchParams: () => ({ targetId: "user-2", targetName: "Alice" }),
-  useRouter: () => ({ back: mockBack }),
-}));
 
 // ── tRPC / query mock ─────────────────────────────────────────────────────────
 
@@ -43,7 +35,13 @@ jest.mock("@/utils/trpc", () => ({
   queryClient: { invalidateQueries: jest.fn() },
 }));
 
-import FlagUserScreen from "../app/flag-user";
+jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
+import { FlagUserModal } from "../components/flag-user-modal";
+
+const mockDismiss = jest.fn();
 
 function renderWithQuery(ui: React.ReactElement) {
   const client = new QueryClient({
@@ -52,9 +50,15 @@ function renderWithQuery(ui: React.ReactElement) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
+function renderModal() {
+  return renderWithQuery(
+    <FlagUserModal visible targetId="user-2" targetName="Alice" onDismiss={mockDismiss} />,
+  );
+}
+
 beforeEach(() => {
   mockFlagStudent.mockReset();
-  mockBack.mockReset();
+  mockDismiss.mockReset();
   flagStudentCallbacks = {};
 });
 
@@ -63,7 +67,7 @@ beforeEach(() => {
 describe("#74 — Flag submission confirmation", () => {
   it("shows confirmation screen after successful submission", async () => {
     mockFlagStudent.mockResolvedValue({ ok: true });
-    renderWithQuery(<FlagUserScreen />);
+    renderModal();
 
     fireEvent.press(screen.getByTestId("reason-HARASSMENT"));
     fireEvent.press(screen.getByTestId("flag-submit-btn"));
@@ -80,7 +84,7 @@ describe("#74 — Flag submission confirmation", () => {
 
   it("confirmation message informs Student that Moderator will review", async () => {
     mockFlagStudent.mockResolvedValue({ ok: true });
-    renderWithQuery(<FlagUserScreen />);
+    renderModal();
 
     fireEvent.press(screen.getByTestId("reason-SPAM"));
     fireEvent.press(screen.getByTestId("flag-submit-btn"));
@@ -92,9 +96,9 @@ describe("#74 — Flag submission confirmation", () => {
     });
   });
 
-  it("Done button on confirmation screen calls router.back()", async () => {
+  it("Done button on confirmation screen calls onDismiss", async () => {
     mockFlagStudent.mockResolvedValue({ ok: true });
-    renderWithQuery(<FlagUserScreen />);
+    renderModal();
 
     fireEvent.press(screen.getByTestId("reason-OTHER"));
     fireEvent.press(screen.getByTestId("flag-submit-btn"));
@@ -106,12 +110,12 @@ describe("#74 — Flag submission confirmation", () => {
     });
 
     fireEvent.press(screen.getByTestId("flag-confirmation-done"));
-    expect(mockBack).toHaveBeenCalledTimes(1);
+    expect(mockDismiss).toHaveBeenCalledTimes(1);
   });
 
   it("shows inline error when backend returns an error", async () => {
     mockFlagStudent.mockRejectedValue(new Error("Something went wrong"));
-    renderWithQuery(<FlagUserScreen />);
+    renderModal();
 
     fireEvent.press(screen.getByTestId("reason-SPAM"));
     fireEvent.press(screen.getByTestId("flag-submit-btn"));
@@ -125,7 +129,7 @@ describe("#74 — Flag submission confirmation", () => {
 
   it("does not show confirmation when backend returns an error", async () => {
     mockFlagStudent.mockRejectedValue(new Error("Network error"));
-    renderWithQuery(<FlagUserScreen />);
+    renderModal();
 
     fireEvent.press(screen.getByTestId("reason-HARASSMENT"));
     fireEvent.press(screen.getByTestId("flag-submit-btn"));

@@ -33,7 +33,7 @@ jest.mock("@/utils/trpc", () => ({
   },
 }));
 
-import ProfileScreen from "../app/(tabs)/profile";
+import ProfileScreen from "../app/profile";
 
 function renderScreen() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

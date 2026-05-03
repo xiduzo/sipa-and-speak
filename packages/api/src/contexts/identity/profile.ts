@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "@sip-and-speak/db";
@@ -556,6 +556,11 @@ export const profileRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+
+      // Remove token from any other user (same physical device, different account)
+      await db
+        .delete(userDeviceToken)
+        .where(and(eq(userDeviceToken.token, input.token), ne(userDeviceToken.userId, userId)));
 
       // Upsert: update if (userId, token) exists, insert otherwise
       await db

@@ -1,4 +1,4 @@
-import { FlatList, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
@@ -92,8 +92,15 @@ export default function ChatsScreen() {
                   router.push(`/chat/locked/${item.meetupId}`)
                 }
               >
-                <View className="w-10 h-10 rounded-full bg-muted items-center justify-center mr-3">
-                  <Ionicons name="lock-closed" size={18} color="#6b7280" />
+                <View className="w-10 h-10 rounded-full bg-muted items-center justify-center mr-3 overflow-hidden">
+                  {item.partner.image ? (
+                    <Image
+                      source={{ uri: item.partner.image }}
+                      className="w-10 h-10 rounded-full"
+                    />
+                  ) : (
+                    <Ionicons name="lock-closed" size={18} color="#6b7280" />
+                  )}
                 </View>
                 <View className="flex-1">
                   <Text className="text-foreground font-semibold">
@@ -116,6 +123,16 @@ export default function ChatsScreen() {
               className="flex-row items-center px-4 py-3 border-b border-border"
               onPress={() => router.push(`/chat/${item.id}`)}
             >
+              <View className="w-10 h-10 rounded-full bg-muted items-center justify-center mr-3 overflow-hidden">
+                {item.partner?.image ? (
+                  <Image
+                    source={{ uri: item.partner.image }}
+                    className="w-10 h-10 rounded-full"
+                  />
+                ) : (
+                  <Ionicons name="person" size={18} color="#6b7280" />
+                )}
+              </View>
               <View className="flex-1">
                 <Text className="text-foreground font-semibold">
                   {item.partner?.name ?? "Unknown"}
