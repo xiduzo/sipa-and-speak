@@ -52,7 +52,7 @@ export function createAuth() {
       env.CORS_ORIGIN,
       "sip-and-speak://",
       ...(env.NODE_ENV === "development"
-        ? ["exp://", "exp://**", "exp://192.168.*.*:*/**", "http://localhost:8081"]
+        ? ["exp://", "exp://**", "exp://192.168.*.*:*", "exp://192.168.*.*:*/**", "http://localhost:8081"]
         : []),
     ],
     emailAndPassword: {

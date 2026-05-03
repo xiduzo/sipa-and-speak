@@ -12,17 +12,9 @@ import { getLanguageFlag } from "@/utils/language-flags";
 
 const GOLD = "#F2C94C";
 const BORDER = "#D9C9BC";
-
-function SectionLabel({ children }: { children: string }) {
-  return (
-    <Text
-      className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2"
-      style={{ color: "#8A7570" }}
-    >
-      {children}
-    </Text>
-  );
-}
+const WARM_BROWN = "#2C1810";
+const MUTED = "#8A7570";
+const CARD_BG = "#EDE5DC";
 
 export default function PartnerProfileScreen() {
   const { id, matchRequestId } = useLocalSearchParams<{ id: string; matchRequestId?: string }>();
@@ -69,7 +61,6 @@ export default function PartnerProfileScreen() {
     },
   });
 
-  // #121 — if profile is no longer available, navigate back
   useEffect(() => {
     if (profileQuery.error && (profileQuery.error as { data?: { code?: string } }).data?.code === "NOT_FOUND") {
       router.back();
@@ -118,194 +109,208 @@ export default function PartnerProfileScreen() {
           onDismiss={() => setShowCelebration(false)}
         />
       )}
-    <Container isScrollable={false}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* Header: photo + name */}
-        <View className="items-center mb-6">
-          <View
-            style={{ borderWidth: 2.5, borderColor: GOLD, borderRadius: 52, padding: 2, marginBottom: 12 }}
-          >
-            {profile.image ? (
-              <Image
-                testID="profile-photo"
-                source={{ uri: profile.image }}
-                style={{ width: 96, height: 96, borderRadius: 48 }}
-              />
-            ) : (
-              <View
-                testID="profile-photo-placeholder"
-                style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: "#E2C5BD", alignItems: "center", justifyContent: "center" }}
-              >
-                <Text className="text-3xl font-jakarta" style={{ color: "#2C1810" }}>
-                  {profile.name.charAt(0).toUpperCase()}
+      <Container isScrollable={false}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32, paddingTop: 8 }}>
+
+          {/* Avatar */}
+          <View className="items-center mb-5">
+            <View style={{ borderWidth: 2, borderColor: WARM_BROWN, borderRadius: 60, padding: 3, marginBottom: 16 }}>
+              {profile.image ? (
+                <Image
+                  testID="profile-photo"
+                  source={{ uri: profile.image }}
+                  style={{ width: 104, height: 104, borderRadius: 52 }}
+                />
+              ) : (
+                <View
+                  testID="profile-photo-placeholder"
+                  style={{ width: 104, height: 104, borderRadius: 52, backgroundColor: "#E2C5BD", alignItems: "center", justifyContent: "center" }}
+                >
+                  <Text className="font-jakarta" style={{ fontSize: 40, color: WARM_BROWN }}>
+                    {profile.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Name + age */}
+            <Text testID="profile-name" className="font-jakarta" style={{ fontSize: 28, color: WARM_BROWN, fontStyle: "italic" }}>
+              {profile.age != null ? `${profile.name}, ${profile.age}` : profile.name}
+            </Text>
+
+            {/* University */}
+            {profile.university && (
+              <Text className="font-manrope mt-1" style={{ color: MUTED, fontSize: 14 }}>
+                {profile.university}
+              </Text>
+            )}
+
+            {/* Sips + rating chip */}
+            {(profile.sipCount > 0 || profile.averageRating !== null) && (
+              <View className="mt-3 px-4 py-1.5 rounded-full" style={{ backgroundColor: GOLD }}>
+                <Text className="font-manrope-semi text-sm" style={{ color: WARM_BROWN }}>
+                  {[
+                    profile.sipCount > 0 ? `${profile.sipCount} ${profile.sipCount === 1 ? "sip" : "sips"}` : null,
+                    profile.averageRating !== null ? `${profile.averageRating}★` : null,
+                  ].filter(Boolean).join(" · ")}
                 </Text>
               </View>
             )}
           </View>
-          <Text testID="profile-name" className="text-foreground text-2xl font-manrope-bold mt-1">
-            {profile.name}
-          </Text>
-          {(profile.age != null || profile.university) && (
-            <Text className="text-muted-foreground font-manrope mt-1">
-              {[profile.age != null ? `${profile.age} years` : null, profile.university]
-                .filter(Boolean)
-                .join(" · ")}
-            </Text>
+
+          {/* Bio card */}
+          {profile.bio && (
+            <View
+              className="mb-5 rounded-2xl p-4"
+              style={{ backgroundColor: CARD_BG, borderWidth: 1.5, borderColor: BORDER }}
+            >
+              <Text className="font-manrope" style={{ color: WARM_BROWN, fontSize: 15, fontStyle: "italic", lineHeight: 22 }}>
+                "{profile.bio}"
+              </Text>
+            </View>
           )}
-        </View>
 
-        {/* Bio / Introduction */}
-        {profile.bio && (
-          <View className="mb-4">
-            <SectionLabel>Introduction</SectionLabel>
-            <Text className="font-manrope" style={{ color: "#8A7570" }}>{profile.bio}</Text>
+          {/* Spoken languages */}
+          {profile.spokenLanguages.length > 0 && (
+            <View className="mb-4">
+              <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>
+                Speaks
+              </Text>
+              <View className="flex-row flex-wrap gap-2" testID="profile-offered-languages">
+                {profile.spokenLanguages.map((l) => (
+                  <View key={l.language} className="px-3 py-1 rounded-full" style={{ borderWidth: 1.5, borderColor: GOLD, backgroundColor: "#FFF9EC" }}>
+                    <Text className="text-xs font-manrope-semi" style={{ color: WARM_BROWN }}>
+                      {getLanguageFlag(l.language)} {l.language}{l.proficiency ? ` · ${l.proficiency}` : ""}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Learning languages */}
+          {profile.learningLanguages.length > 0 && (
+            <View className="mb-4">
+              <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>
+                Learning
+              </Text>
+              <View className="flex-row flex-wrap gap-2" testID="profile-targeted-languages">
+                {profile.learningLanguages.map((lang) => (
+                  <View key={lang} className="px-3 py-1 rounded-full" style={{ borderWidth: 1.5, borderColor: BORDER, backgroundColor: "#F5EFE8" }}>
+                    <Text className="text-xs font-manrope-semi" style={{ color: MUTED }}>
+                      {getLanguageFlag(lang)} {lang}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Interests */}
+          {profile.interests.length > 0 && (
+            <View className="mb-5">
+              <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>
+                Topics
+              </Text>
+              <View className="flex-row flex-wrap gap-2" testID="profile-topics">
+                {profile.interests.map((topic) => (
+                  <View key={topic} className="px-3 py-1.5 rounded-full" style={{ borderWidth: 1.5, borderColor: BORDER, backgroundColor: "#F5EFE8" }}>
+                    <Text className="text-sm font-manrope" style={{ color: WARM_BROWN }}>{interestLabel(topic)}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Comments */}
+          <View className="mb-6" testID="comments-section">
+            <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-3" style={{ color: MUTED }}>
+              What others say
+            </Text>
+            {comments.length === 0 ? (
+              <Text testID="comments-empty" className="font-manrope text-sm" style={{ color: MUTED }}>
+                No reviews yet.
+              </Text>
+            ) : (
+              comments.map((comment, idx) => (
+                <View
+                  key={idx}
+                  testID="comment-item"
+                  className="rounded-2xl p-3 mb-2"
+                  style={{ backgroundColor: CARD_BG, borderWidth: 1, borderColor: BORDER }}
+                >
+                  <Text className="font-manrope-semi text-sm mb-1" style={{ color: WARM_BROWN }}>
+                    {comment.authorName}
+                  </Text>
+                  <Text className="font-manrope text-sm" style={{ color: MUTED }}>{comment.content}</Text>
+                </View>
+              ))
+            )}
           </View>
-        )}
 
-        {/* Spoken languages */}
-        {profile.spokenLanguages.length > 0 && (
-          <View className="mb-4">
-            <SectionLabel>Speaks</SectionLabel>
-            <View className="flex-row flex-wrap gap-2" testID="profile-offered-languages">
-              {profile.spokenLanguages.map((l) => (
-                <View key={l.language} className="px-3 py-1 rounded-full" style={{ borderWidth: 1, borderColor: GOLD, backgroundColor: "#FFF9EC" }}>
-                  <Text className="text-xs font-manrope-semi" style={{ color: "#2C1810" }}>
-                    {getLanguageFlag(l.language)} {l.language}{l.proficiency ? ` · ${l.proficiency}` : ""}
+          {/* Feedback messages */}
+          {sendRequestMutation.isSuccess && (
+            <View testID="confirmation-message" className="bg-primary/10 rounded-xl p-3 mb-3">
+              <Text className="text-primary text-sm text-center font-manrope">
+                Request sent! We'll let you know when they respond.
+              </Text>
+            </View>
+          )}
+          {sendConflictError && (
+            <View testID="conflict-error-message" className="bg-danger/10 rounded-xl p-3 mb-3">
+              <Text className="text-danger text-sm text-center font-manrope">{sendConflictError}</Text>
+            </View>
+          )}
+
+          {/* CTAs */}
+          {matchRequestId ? (
+            acceptMutation.isSuccess ? (
+              <View testID="accepted-propose-bar" className="mb-4">
+                <View className="bg-primary/10 rounded-xl p-3 mb-3">
+                  <Text className="text-primary text-sm text-center font-manrope-semi">
+                    Matched! Propose a meetup to get started.
                   </Text>
                 </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Learning languages */}
-        {profile.learningLanguages.length > 0 && (
-          <View className="mb-4">
-            <SectionLabel>Learning</SectionLabel>
-            <View className="flex-row flex-wrap gap-2" testID="profile-targeted-languages">
-              {profile.learningLanguages.map((lang) => (
-                <View key={lang} className="px-3 py-1 rounded-full" style={{ borderWidth: 1, borderColor: BORDER }}>
-                  <Text className="text-xs font-manrope-semi" style={{ color: "#8A7570" }}>
-                    {getLanguageFlag(lang)} {lang}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Interests / Topics */}
-        {profile.interests.length > 0 && (
-          <View className="mb-4">
-            <SectionLabel>Topics</SectionLabel>
-            <View className="flex-row flex-wrap gap-2" testID="profile-topics">
-              {profile.interests.map((topic) => (
-                <View key={topic} className="px-3 py-1 rounded-full" style={{ borderWidth: 1, borderColor: BORDER, backgroundColor: "#F5EFE8" }}>
-                  <Text className="text-xs font-manrope" style={{ color: "#8A7570" }}>{interestLabel(topic)}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* #119 — Comments section */}
-        <View className="mb-6" testID="comments-section">
-          <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-3" style={{ color: "#8A7570" }}>What others say</Text>
-          {comments.length === 0 ? (
-            <Text testID="comments-empty" className="text-muted-foreground text-sm">
-              No reviews yet.
-            </Text>
-          ) : (
-            comments.map((comment, idx) => (
-              <View
-                key={idx}
-                testID="comment-item"
-                className="bg-muted/50 rounded-xl p-3 mb-2"
-              >
-                <Text className="text-foreground text-sm font-manrope-semi mb-1">
-                  {comment.authorName}
-                </Text>
-                <Text className="text-muted-foreground text-sm font-manrope">{comment.content}</Text>
-              </View>
-            ))
-          )}
-        </View>
-
-        {/* #124 — Confirmation feedback */}
-        {sendRequestMutation.isSuccess && (
-          <View testID="confirmation-message" className="bg-primary/10 rounded-xl p-3 mb-3">
-            <Text className="text-primary text-sm text-center">
-              Request sent! We'll let you know when they respond.
-            </Text>
-          </View>
-        )}
-
-        {/* #123 — Conflict error */}
-        {sendConflictError && (
-          <View testID="conflict-error-message" className="bg-danger/10 rounded-xl p-3 mb-3">
-            <Text className="text-danger text-sm text-center">{sendConflictError}</Text>
-          </View>
-        )}
-
-        {/* #127 — Accept/Decline bar (when opened from incoming request context) */}
-        {matchRequestId ? (
-          acceptMutation.isSuccess ? (
-            <View testID="accepted-propose-bar" className="mb-4">
-              <View className="bg-primary/10 rounded-xl p-3 mb-3">
-                <Text className="text-primary text-sm text-center font-medium">
-                  Matched! Propose a meetup to get started.
-                </Text>
-              </View>
-              <Button
-                testID="propose-meetup-after-accept-btn"
-                variant="primary"
-                onPress={() =>
-                  router.push({
-                    pathname: "/propose-meetup",
-                    params: { partnerId: id, partnerName: profile.name },
-                  })
-                }
-              >
-                <Button.Label>Propose a meetup</Button.Label>
-              </Button>
-            </View>
-          ) : (
-            <View testID="accept-decline-bar" className="flex-row gap-3 mb-4">
-              <Button
-                testID="decline-button"
-                variant="ghost"
-                className="flex-1"
-                isDisabled={declineMutation.isPending}
-                onPress={() => {
-                  if (matchRequestId) {
-                    declineMutation.mutate({ matchRequestId });
+                <Button
+                  testID="propose-meetup-after-accept-btn"
+                  variant="primary"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/propose-meetup",
+                      params: { partnerId: id, partnerName: profile.name },
+                    })
                   }
-                }}
-              >
-                <Button.Label>Decline</Button.Label>
-              </Button>
-              <Button
-                testID="accept-button"
-                variant="primary"
-                className="flex-1"
-                isDisabled={acceptMutation.isPending}
-                onPress={() => {
-                  if (matchRequestId) {
-                    acceptMutation.mutate({ matchRequestId });
-                  }
-                }}
-              >
-                {acceptMutation.isPending ? (
-                  <Spinner size="sm" />
-                ) : (
-                  <Button.Label>Accept</Button.Label>
-                )}
-              </Button>
-            </View>
-          )
-        ) : (
-          /* #120/#122 — Contextual Send Request / Propose meetup */
-          requestIsAccepted ? (
+                >
+                  <Button.Label>Propose a meetup</Button.Label>
+                </Button>
+              </View>
+            ) : (
+              <View testID="accept-decline-bar" className="flex-row gap-3 mb-4">
+                <Button
+                  testID="decline-button"
+                  variant="ghost"
+                  className="flex-1"
+                  isDisabled={declineMutation.isPending}
+                  onPress={() => {
+                    if (matchRequestId) declineMutation.mutate({ matchRequestId });
+                  }}
+                >
+                  <Button.Label>Decline</Button.Label>
+                </Button>
+                <Button
+                  testID="accept-button"
+                  variant="primary"
+                  className="flex-1"
+                  isDisabled={acceptMutation.isPending}
+                  onPress={() => {
+                    if (matchRequestId) acceptMutation.mutate({ matchRequestId });
+                  }}
+                >
+                  {acceptMutation.isPending ? <Spinner size="sm" /> : <Button.Label>Accept</Button.Label>}
+                </Button>
+              </View>
+            )
+          ) : requestIsAccepted ? (
             <Button
               testID="propose-meetup-btn"
               variant="primary"
@@ -320,8 +325,8 @@ export default function PartnerProfileScreen() {
               <Button.Label>Propose a meetup</Button.Label>
             </Button>
           ) : requestIsPending ? (
-            <View testID="request-sent-indicator" className="bg-muted rounded-xl p-4 mb-4 items-center">
-              <Text className="text-muted-foreground font-medium">Request Sent</Text>
+            <View testID="request-sent-indicator" className="rounded-xl p-4 mb-4 items-center" style={{ backgroundColor: CARD_BG }}>
+              <Text className="font-manrope-semi" style={{ color: MUTED }}>Request Sent</Text>
             </View>
           ) : (
             <Button
@@ -331,30 +336,26 @@ export default function PartnerProfileScreen() {
               onPress={() => sendRequestMutation.mutate({ receiverId: id })}
               className="mb-4"
             >
-              {sendRequestMutation.isPending ? (
-                <Spinner size="sm" />
-              ) : (
-                <Button.Label>Send Request</Button.Label>
-              )}
+              {sendRequestMutation.isPending ? <Spinner size="sm" /> : <Button.Label>Send Request</Button.Label>}
             </Button>
-          )
-        )}
-        {/* #65 — Report / flag this Student */}
-        <Button
-          testID="report-student-btn"
-          variant="ghost"
-          className="mb-2"
-          onPress={() =>
-            router.push({
-              pathname: "/flag-user",
-              params: { targetId: id, targetName: profile.name },
-            })
-          }
-        >
-          <Button.Label>Report Student</Button.Label>
-        </Button>
-      </ScrollView>
-    </Container>
+          )}
+
+          <Button
+            testID="report-student-btn"
+            variant="ghost"
+            className="mb-2"
+            onPress={() =>
+              router.push({
+                pathname: "/flag-user",
+                params: { targetId: id, targetName: profile.name },
+              })
+            }
+          >
+            <Button.Label>Report Student</Button.Label>
+          </Button>
+
+        </ScrollView>
+      </Container>
     </>
   );
 }

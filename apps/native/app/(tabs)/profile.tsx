@@ -10,6 +10,8 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Constants from "expo-constants";
+import * as Updates from "expo-updates";
 import { useToast } from "heroui-native";
 
 import { LanguagePickerModal } from "@/components/language-picker-modal";
@@ -55,8 +57,28 @@ export default function ProfileScreen() {
   const [imageUri, setImageUri] = useState<string | undefined>();
   const [identityInitialized, setIdentityInitialized] = useState(false);
   const [addingType, setAddingType] = useState<"spoken" | "learning" | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (__DEV__) return;
+    Updates.checkForUpdateAsync()
+      .then(({ isAvailable }) => setUpdateAvailable(isAvailable))
+      .catch(() => {});
+  }, []);
+
+  async function handleUpdate() {
+    setIsUpdating(true);
+    try {
+      await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    } catch {
+      toast.show({ variant: "danger", label: "Update failed. Try again later." });
+      setIsUpdating(false);
+    }
+  }
 
   useEffect(() => {
     if (identityInitialized || !profileQuery.data) return;
@@ -483,6 +505,41 @@ export default function ProfileScreen() {
               </Text>
             )}
           </View>
+        </View>
+
+        {/* App version */}
+        <View className="px-6 pt-8 items-center gap-1">
+          {updateAvailable && (
+            <Pressable
+              onPress={handleUpdate}
+              disabled={isUpdating}
+              style={{
+                backgroundColor: GOLD,
+                paddingHorizontal: 20,
+                paddingVertical: 10,
+                borderRadius: 12,
+                marginBottom: 8,
+                opacity: isUpdating ? 0.6 : 1,
+              }}
+            >
+              <Text className="font-manrope-bold text-[14px]" style={{ color: "#2C1810" }}>
+                {isUpdating ? "Updating…" : "Update available — tap to restart"}
+              </Text>
+            </Pressable>
+          )}
+          <Text className="font-manrope text-[12px]" style={{ color: BORDER }}>
+            v{Constants.expoConfig?.version}
+            {Constants.expoConfig?.ios?.buildNumber
+              ? ` (${Constants.expoConfig.ios.buildNumber})`
+              : Constants.expoConfig?.android?.versionCode
+                ? ` (${Constants.expoConfig.android.versionCode})`
+                : null}
+          </Text>
+          {Updates.updateId ? (
+            <Text className="font-manrope text-[11px]" style={{ color: BORDER }} numberOfLines={1}>
+              {Updates.updateId}
+            </Text>
+          ) : null}
         </View>
       </ScrollView>
 

@@ -1,10 +1,10 @@
-import { and, eq, ne, inArray, notInArray, or } from "drizzle-orm";
+import { and, eq, ne, inArray, notInArray, or, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "@sip-and-speak/db";
 import { languageProfile, userLanguage, userInterest } from "@sip-and-speak/db/schema/identity";
 import { matchRequest, studentMatch } from "@sip-and-speak/db/schema/matching";
-import { meetup } from "@sip-and-speak/db/schema/scheduling";
+import { meetup, attendanceReport } from "@sip-and-speak/db/schema/scheduling";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";
@@ -254,11 +254,40 @@ export const matchingRouter = router({
         .from(userInterest)
         .where(eq(userInterest.userId, input.userId));
 
-      const userInfo = await db
-        .select({ id: user.id, name: user.name, image: user.image, email: user.email })
-        .from(user)
-        .where(eq(user.id, input.userId))
-        .then((rows) => rows[0] ?? null);
+      const [userInfo, completedMeetups, sipCount] = await Promise.all([
+        db
+          .select({ id: user.id, name: user.name, image: user.image, email: user.email })
+          .from(user)
+          .where(eq(user.id, input.userId))
+          .then((rows) => rows[0] ?? null),
+        db
+          .select({ id: meetup.id })
+          .from(meetup)
+          .where(and(
+            or(eq(meetup.proposerId, input.userId), eq(meetup.receiverId, input.userId)),
+            eq(meetup.status, "completed"),
+          )),
+        db
+          .select({ count: sql<number>`cast(count(*) as int)` })
+          .from(attendanceReport)
+          .where(and(eq(attendanceReport.studentId, input.userId), eq(attendanceReport.attended, true)))
+          .then((rows) => rows[0]?.count ?? 0),
+      ]);
+
+      const meetupIds = completedMeetups.map((m) => m.id);
+      const averageRating = meetupIds.length > 0
+        ? await db
+            .select({ avg: sql<string>`avg(${attendanceReport.rating})` })
+            .from(attendanceReport)
+            .where(and(
+              inArray(attendanceReport.meetupId, meetupIds),
+              ne(attendanceReport.studentId, input.userId),
+            ))
+            .then((rows) => {
+              const val = rows[0]?.avg ? parseFloat(rows[0].avg) : null;
+              return val !== null ? Math.round(val * 10) / 10 : null;
+            })
+        : null;
 
       return {
         userId: profile.userId,
@@ -277,6 +306,8 @@ export const matchingRouter = router({
           .map((l) => l.language),
         interests: interests.map((i) => i.interest),
         onboardingComplete: profile.onboardingComplete,
+        sipCount,
+        averageRating,
       };
     }),
 
