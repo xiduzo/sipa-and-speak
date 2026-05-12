@@ -166,6 +166,7 @@ export const matchingRouter = router({
         const compatibleLanguages = Array.from(new Set([
           ...myLearning.filter((lang) => partnerSpoken.includes(lang)),
           ...mySpoken.filter((lang) => candidate.learningLanguages.includes(lang)),
+          ...myLearning.filter((lang) => candidate.learningLanguages.includes(lang)),
         ]));
         return { ...candidate, compatibleLanguages };
       });

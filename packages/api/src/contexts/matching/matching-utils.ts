@@ -6,10 +6,10 @@ import { haversineDistance } from "../../lib/geo";
 const MAX_RADIUS_KM = 50;
 
 /**
- * Language complementarity score.
- * 1.0 — partner speaks a language user wants to learn AND partner wants to learn a language user speaks.
- * 0.5 — only one direction matches.
- * 0   — no complementarity.
+ * Language complementarity score. Both students must benefit.
+ * 1.0 — mutual teach/learn (partner speaks what user learns AND partner learns what user speaks),
+ *       OR both want to practice a common language.
+ * 0   — one-directional or no overlap.
  */
 export function computeLanguageScore(
   userSpoken: string[],
@@ -23,9 +23,12 @@ export function computeLanguageScore(
   const partnerLearnsWhatUserSpeaks = partnerLearning.some((lang) =>
     userSpoken.includes(lang),
   );
+  const sharedLearningLanguage = userLearning.some((lang) =>
+    partnerLearning.includes(lang),
+  );
 
   if (partnerSpeaksWhatUserLearns && partnerLearnsWhatUserSpeaks) return 1.0;
-  if (partnerSpeaksWhatUserLearns || partnerLearnsWhatUserSpeaks) return 0.5;
+  if (sharedLearningLanguage) return 1.0;
   return 0;
 }
 

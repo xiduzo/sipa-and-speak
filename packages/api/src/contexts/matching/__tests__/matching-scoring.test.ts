@@ -23,16 +23,20 @@ import {
 // ── computeLanguageScore ──────────────────────────────────────────────────────
 
 describe("computeLanguageScore", () => {
-  it("returns 1.0 when both directions match", () => {
+  it("returns 1.0 when both directions match (mutual teach/learn)", () => {
     expect(computeLanguageScore(["Dutch"], ["English"], ["English"], ["Dutch"])).toBe(1.0);
   });
 
-  it("returns 0.5 when only partner speaks what user learns", () => {
-    expect(computeLanguageScore(["Dutch"], ["English"], ["English"], ["French"])).toBe(0.5);
+  it("returns 1.0 when both want to practice a shared learning language", () => {
+    expect(computeLanguageScore(["Dutch"], ["English"], ["French"], ["English"])).toBe(1.0);
   });
 
-  it("returns 0.5 when only partner learns what user speaks", () => {
-    expect(computeLanguageScore(["Dutch"], ["French"], ["English"], ["Dutch"])).toBe(0.5);
+  it("returns 0 when only partner speaks what user learns (one-directional)", () => {
+    expect(computeLanguageScore(["Dutch"], ["English"], ["English"], ["French"])).toBe(0);
+  });
+
+  it("returns 0 when only partner learns what user speaks (one-directional)", () => {
+    expect(computeLanguageScore(["Dutch"], ["French"], ["English"], ["Dutch"])).toBe(0);
   });
 
   it("returns 0 when there is no complementarity", () => {
@@ -165,20 +169,23 @@ describe("scoreCandidates", () => {
   });
 
   it("sorts candidates by score descending", () => {
+    const meWithInterests = { ...ME, interests: ["hiking"] };
     const perfect = makeCandidate({
       userId: "perfect",
       spokenLanguages: [{ language: "English", proficiency: "C1" }],
       learningLanguages: ["Dutch"],
+      interests: ["hiking"],
     });
-    const partialMatch = makeCandidate({
-      userId: "partial-match",
+    const weaker = makeCandidate({
+      userId: "weaker",
       spokenLanguages: [{ language: "English", proficiency: "B2" }],
-      learningLanguages: ["French"],
+      learningLanguages: ["Dutch"],
+      interests: [],
     });
 
-    const result = scoreCandidates(ME, [partialMatch, perfect]);
+    const result = scoreCandidates(meWithInterests, [weaker, perfect]);
     expect(result[0]!.userId).toBe("perfect");
-    expect(result[1]!.userId).toBe("partial-match");
+    expect(result[1]!.userId).toBe("weaker");
   });
 
   it("excludes candidates who don't speak the filter language", () => {
@@ -198,8 +205,16 @@ describe("scoreCandidates", () => {
 
   it("does not apply language filter when mode is 'near_you'", () => {
     const candidates = [
-      makeCandidate({ userId: "a", spokenLanguages: [{ language: "Spanish", proficiency: "B2" }] }),
-      makeCandidate({ userId: "b", spokenLanguages: [{ language: "English", proficiency: "C1" }] }),
+      makeCandidate({
+        userId: "a",
+        spokenLanguages: [{ language: "Spanish", proficiency: "B2" }],
+        learningLanguages: ["English"],
+      }),
+      makeCandidate({
+        userId: "b",
+        spokenLanguages: [{ language: "English", proficiency: "C1" }],
+        learningLanguages: ["Dutch"],
+      }),
     ];
 
     const result = scoreCandidates(ME, candidates, { mode: "near_you" });
@@ -235,6 +250,31 @@ describe("scoreCandidates", () => {
     expect(result).toHaveLength(0);
   });
 
+  it("includes candidate who shares a learning language with the user (mutual practice)", () => {
+    const sharedLearner = makeCandidate({
+      userId: "shared-learner",
+      spokenLanguages: [{ language: "Spanish", proficiency: "B2" }],
+      learningLanguages: ["English"],
+    });
+
+    const result = scoreCandidates(ME, [sharedLearner]);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.userId).toBe("shared-learner");
+  });
+
+  it("excludes candidate with only one-directional language benefit", () => {
+    // Partner speaks what user learns (English) but neither learns the other's language
+    // and they share no learning language. Only user benefits — excluded.
+    const oneWay = makeCandidate({
+      userId: "one-way",
+      spokenLanguages: [{ language: "English", proficiency: "C1" }],
+      learningLanguages: ["French"],
+    });
+
+    const result = scoreCandidates(ME, [oneWay]);
+    expect(result).toHaveLength(0);
+  });
+
   it("excludes candidate who speaks user's language but does not learn what user speaks", () => {
     // User speaks Dutch, learns English. Candidate speaks Dutch (not what user learns)
     // and learns French (not what user speaks). No exchange possible.
@@ -248,31 +288,33 @@ describe("scoreCandidates", () => {
     expect(result).toHaveLength(0);
   });
 
-  it("near_you filter boosts proximity weight over language weight", () => {
-    const me = { ...ME, latitude: 51.45, longitude: 5.45 };
-    // languageMatch: perfect language, far away
-    const languageMatch = makeCandidate({
-      userId: "language-match",
+  it("near_you filter shifts ranking toward proximity over interest overlap", () => {
+    const me = { ...ME, interests: ["hiking"], latitude: 51.45, longitude: 5.45 };
+    // interestMatch: perfect language + interest, far away
+    const interestMatch = makeCandidate({
+      userId: "interest-match",
       spokenLanguages: [{ language: "English", proficiency: "C1" }],
       learningLanguages: ["Dutch"],
+      interests: ["hiking"],
       latitude: 51.45 + 0.4, // ~44 km away
       longitude: 5.45,
     });
-    // nearbyMatch: partial language (one direction only), very close
+    // nearbyMatch: same language match, no shared interests, very close
     const nearbyMatch = makeCandidate({
       userId: "nearby-match",
       spokenLanguages: [{ language: "English", proficiency: "B2" }],
-      learningLanguages: ["French"],
+      learningLanguages: ["Dutch"],
+      interests: [],
       latitude: 51.451, // < 1 km away
       longitude: 5.451,
     });
 
-    const defaultResult = scoreCandidates(me, [languageMatch, nearbyMatch]);
-    const nearYouResult = scoreCandidates(me, [languageMatch, nearbyMatch], { mode: "near_you" });
+    const defaultResult = scoreCandidates(me, [interestMatch, nearbyMatch]);
+    const nearYouResult = scoreCandidates(me, [interestMatch, nearbyMatch], { mode: "near_you" });
 
-    // Default: language-heavy → language match wins
-    expect(defaultResult[0]!.userId).toBe("language-match");
-    // near_you: proximity-heavy → nearby match wins
+    // Default: interest weighted 0.3 → interest-strong far candidate wins
+    expect(defaultResult[0]!.userId).toBe("interest-match");
+    // near_you: proximity weighted 0.5 → nearby candidate wins
     expect(nearYouResult[0]!.userId).toBe("nearby-match");
   });
 });
