@@ -16,34 +16,9 @@ import {
   computeInterestScore,
   computeProximityScore,
   computeCompositeScore,
-  computeBridgeRuleEligibility,
   scoreCandidates,
   type CandidateProfile,
 } from "../matching-utils";
-
-// ── computeBridgeRuleEligibility ──────────────────────────────────────────────
-
-describe("computeBridgeRuleEligibility", () => {
-  it("returns true when partner speaks Dutch and is learning Dutch", () => {
-    expect(computeBridgeRuleEligibility(["Dutch"], ["Dutch"])).toBe(true);
-  });
-
-  it("returns true when partner speaks Dutch and is learning English", () => {
-    expect(computeBridgeRuleEligibility(["Dutch"], ["English"])).toBe(true);
-  });
-
-  it("returns false when partner does not speak Dutch", () => {
-    expect(computeBridgeRuleEligibility(["English"], ["Dutch"])).toBe(false);
-  });
-
-  it("returns false when partner speaks Dutch but learns neither Dutch nor English", () => {
-    expect(computeBridgeRuleEligibility(["Dutch"], ["Spanish"])).toBe(false);
-  });
-
-  it("returns false when lists are empty", () => {
-    expect(computeBridgeRuleEligibility([], [])).toBe(false);
-  });
-});
 
 // ── computeLanguageScore ──────────────────────────────────────────────────────
 
@@ -249,20 +224,7 @@ describe("scoreCandidates", () => {
     expect(result[0]!.distance).toBeNull();
   });
 
-  it("surfaces bridge-eligible candidate with langScore 0 at effectiveLangScore 0.5", () => {
-    const bridgeCandidate = makeCandidate({
-      userId: "bridge",
-      spokenLanguages: [{ language: "Dutch", proficiency: "C2" }],
-      learningLanguages: ["English"],
-    });
-
-    const result = scoreCandidates(ME, [bridgeCandidate]);
-    expect(result).toHaveLength(1);
-    expect(result[0]!.userId).toBe("bridge");
-    expect(result[0]!.score).toBeCloseTo(0.5 * 0.5);
-  });
-
-  it("excludes candidate with zero langScore who is not bridge-eligible", () => {
+  it("excludes candidate with no language complementarity", () => {
     const noMatch = makeCandidate({
       userId: "no-match",
       spokenLanguages: [{ language: "Spanish", proficiency: "B2" }],
@@ -270,6 +232,19 @@ describe("scoreCandidates", () => {
     });
 
     const result = scoreCandidates(ME, [noMatch]);
+    expect(result).toHaveLength(0);
+  });
+
+  it("excludes candidate who speaks user's language but does not learn what user speaks", () => {
+    // User speaks Dutch, learns English. Candidate speaks Dutch (not what user learns)
+    // and learns French (not what user speaks). No exchange possible.
+    const noExchange = makeCandidate({
+      userId: "no-exchange",
+      spokenLanguages: [{ language: "Dutch", proficiency: "C2" }],
+      learningLanguages: ["French"],
+    });
+
+    const result = scoreCandidates(ME, [noExchange]);
     expect(result).toHaveLength(0);
   });
 

@@ -71,16 +71,6 @@ export function computeCompositeScore(
   return languageScore * 0.5 + interestScore * 0.3 + proximityScore * 0.2;
 }
 
-export function computeBridgeRuleEligibility(
-  partnerSpoken: string[],
-  partnerLearning: string[],
-): boolean {
-  return (
-    partnerSpoken.includes("Dutch") &&
-    (partnerLearning.includes("Dutch") || partnerLearning.includes("English"))
-  );
-}
-
 /**
  * Extract excluded user IDs from active match requests involving the given user.
  * Bidirectional: a candidate who sent a request to the user is also excluded.
@@ -147,9 +137,7 @@ export function scoreCandidates(
       candidate.learningLanguages,
     );
 
-    const bridgeEligible = computeBridgeRuleEligibility(partnerSpoken, candidate.learningLanguages);
-    if (langScore === 0 && !bridgeEligible) continue;
-    const effectiveLangScore = langScore > 0 ? langScore : 0.5;
+    if (langScore === 0) continue;
 
     const intScore = computeInterestScore(me.interests, candidate.interests);
 
@@ -168,7 +156,7 @@ export function scoreCandidates(
     scored.push({
       ...candidate,
       distance: distanceKm != null ? Math.round(distanceKm * 10) / 10 : null,
-      score: computeCompositeScore(effectiveLangScore, intScore, proxScore, filter?.mode),
+      score: computeCompositeScore(langScore, intScore, proxScore, filter?.mode),
     });
   }
 
