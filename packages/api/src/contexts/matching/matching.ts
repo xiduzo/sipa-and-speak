@@ -503,8 +503,16 @@ export const matchingRouter = router({
     }),
 
   getMyMatches: protectedProcedure
-    .query(async ({ ctx }) => {
+    .input(
+      z
+        .object({
+          includeWithActiveMeetup: z.boolean().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+      const includeWithActiveMeetup = input?.includeWithActiveMeetup ?? false;
 
       const matches = await db
         .select()
@@ -521,27 +529,30 @@ export const matchingRouter = router({
 
       if (matches.length === 0) return [];
 
-      // Exclude matches that already have an active (pending/confirmed) meetup proposal
-      const activeProposals = await db
-        .select({ proposerId: meetup.proposerId, receiverId: meetup.receiverId })
-        .from(meetup)
-        .where(
-          and(
-            inArray(meetup.status, ["pending", "confirmed"]),
-            or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
+      let proposableMatches = matches;
+
+      if (!includeWithActiveMeetup) {
+        const activeProposals = await db
+          .select({ proposerId: meetup.proposerId, receiverId: meetup.receiverId })
+          .from(meetup)
+          .where(
+            and(
+              inArray(meetup.status, ["pending", "confirmed"]),
+              or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
+            ),
+          );
+
+        const activePartnerIds = new Set(
+          activeProposals.map((p) =>
+            p.proposerId === userId ? p.receiverId : p.proposerId,
           ),
         );
 
-      const activePartnerIds = new Set(
-        activeProposals.map((p) =>
-          p.proposerId === userId ? p.receiverId : p.proposerId,
-        ),
-      );
-
-      const proposableMatches = matches.filter((m) => {
-        const partnerId = m.studentAId === userId ? m.studentBId : m.studentAId;
-        return !activePartnerIds.has(partnerId);
-      });
+        proposableMatches = matches.filter((m) => {
+          const partnerId = m.studentAId === userId ? m.studentBId : m.studentAId;
+          return !activePartnerIds.has(partnerId);
+        });
+      }
 
       if (proposableMatches.length === 0) return [];
 
