@@ -38,7 +38,7 @@ function lockedSubtitle(entry: Extract<ChatEntry, { kind: "locked" }>): string {
     case "awaiting_attendance":
       return "locked · did you meet?";
     case "awaiting_my_optin":
-      return "locked · tap to rate your meetup";
+      return "locked · tap to keep in touch";
     case "awaiting_partner_optin":
       return `locked · waiting on ${entry.partner.name.split(" ")[0]}`;
     case "declined":

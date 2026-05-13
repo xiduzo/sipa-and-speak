@@ -1,10 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 
 import { Container } from "@/components/container";
-import { trpc } from "@/utils/trpc";
+import { queryClient, trpc } from "@/utils/trpc";
 
 type LockedPhase =
   | "scheduled"
@@ -39,8 +39,8 @@ function copyForPhase(phase: LockedPhase, partnerFirstName: string) {
       };
     case "awaiting_my_optin":
       return {
-        headline: `How was ${partnerFirstName}?`,
-        body: "Share your take. Chat opens when you both opt in.",
+        headline: `Stay in touch with ${partnerFirstName}?`,
+        body: "Chat opens as soon as you both say yes.",
         cta: "Open meetup",
       };
     case "awaiting_partner_optin":
@@ -116,6 +116,16 @@ export default function LockedChatScreen() {
   );
   const entry = (entries as Array<LockedEntry | { kind: "open" }>).find(
     (e): e is LockedEntry => e.kind === "locked" && e.meetupId === meetupId,
+  );
+
+  const optInMutation = useMutation(
+    trpc.messaging.respondToOptIn.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(trpc.chat.listEntries.queryOptions());
+        void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
+      },
+      onError: (err) => Alert.alert("Couldn't save", err.message),
+    }),
   );
 
   if (isLoading) {
@@ -240,14 +250,41 @@ export default function LockedChatScreen() {
           </View>
         )}
 
-        <TouchableOpacity
-          testID="locked-cta"
-          onPress={handleCta}
-          className="rounded-full py-3.5 items-center"
-          style={{ backgroundColor: "#2C1810" }}
-        >
-          <Text className="text-background font-semibold">{copy.cta}</Text>
-        </TouchableOpacity>
+        {entry.phase === "awaiting_my_optin" ? (
+          <View className="gap-2">
+            <TouchableOpacity
+              testID="opt-in-accept"
+              disabled={optInMutation.isPending}
+              onPress={() =>
+                optInMutation.mutate({ meetupId: entry.meetupId, response: "accept" })
+              }
+              className="rounded-full py-3.5 items-center"
+              style={{ backgroundColor: "#2C1810", opacity: optInMutation.isPending ? 0.6 : 1 }}
+            >
+              <Text className="text-background font-semibold">Keep in touch</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="opt-in-decline"
+              disabled={optInMutation.isPending}
+              onPress={() =>
+                optInMutation.mutate({ meetupId: entry.meetupId, response: "decline" })
+              }
+              className="rounded-full py-3.5 items-center border"
+              style={{ borderColor: "#2C1810", opacity: optInMutation.isPending ? 0.6 : 1 }}
+            >
+              <Text className="text-foreground font-semibold">No thanks</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            testID="locked-cta"
+            onPress={handleCta}
+            className="rounded-full py-3.5 items-center"
+            style={{ backgroundColor: "#2C1810" }}
+          >
+            <Text className="text-background font-semibold">{copy.cta}</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </Container>
   );
