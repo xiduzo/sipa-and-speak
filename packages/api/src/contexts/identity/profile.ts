@@ -7,6 +7,46 @@ import { studentComment } from "@sip-and-speak/db/schema/moderation";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";
+import {
+  OnboardingProgression,
+  OnboardingRuleError,
+  type OnboardingSnapshot,
+} from "./onboarding-progression";
+
+/**
+ * Load the cross-table snapshot the OnboardingProgression aggregate needs.
+ * Reads identity + languages + interest count in parallel.
+ */
+async function loadOnboardingSnapshot(userId: string): Promise<OnboardingSnapshot> {
+  const [identityRows, languageRows, interestRows] = await Promise.all([
+    db
+      .select({ name: user.name, surname: user.surname })
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1),
+    db
+      .select({
+        language: userLanguage.language,
+        proficiency: userLanguage.proficiency,
+        type: userLanguage.type,
+      })
+      .from(userLanguage)
+      .where(eq(userLanguage.userId, userId)),
+    db.select({ id: userInterest.id }).from(userInterest).where(eq(userInterest.userId, userId)),
+  ]);
+  return {
+    identity: {
+      name: identityRows[0]?.name ?? null,
+      surname: identityRows[0]?.surname ?? null,
+    },
+    languages: languageRows.map((l) => ({
+      language: l.language,
+      proficiency: l.proficiency ?? undefined,
+      type: l.type as "spoken" | "learning",
+    })),
+    interestCount: interestRows.length,
+  };
+}
 
 const interestEnum = z.enum([
   "modern_art",
@@ -78,31 +118,36 @@ function assertNoNativeSpokenLearningConflict(
   spokenLanguages: { language: string; proficiency: string }[],
   learningLanguages: { language: string }[],
 ) {
-  const nativeSpeakerSet = new Set(
-    spokenLanguages
-      .filter((l) => l.proficiency === "native")
-      .map((l) => l.language),
-  );
-  const conflicts = learningLanguages
-    .filter((l) => nativeSpeakerSet.has(l.language))
-    .map((l) => l.language);
-  if (conflicts.length > 0) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Cannot add native-spoken language(s) as learning: ${conflicts.join(", ")}`,
+  try {
+    OnboardingProgression.assertNoNativeSpokenLearningConflict({
+      spoken: spokenLanguages,
+      learning: learningLanguages,
     });
+  } catch (err) {
+    if (err instanceof OnboardingRuleError) {
+      throw new TRPCError({ code: err.code, message: err.message });
+    }
+    throw err;
   }
 }
 
 async function syncMatchingEligibility(userId: string): Promise<boolean> {
+  // The aggregate only needs language/interest counts here — identity is
+  // already enforced elsewhere — so build a minimal snapshot.
   const [languages, interests] = await Promise.all([
     db.select({ type: userLanguage.type }).from(userLanguage).where(eq(userLanguage.userId, userId)),
     db.select({ id: userInterest.id }).from(userInterest).where(eq(userInterest.userId, userId)).limit(1),
   ]);
 
-  const hasSpoken = languages.some((l) => l.type === "spoken");
-  const hasLearning = languages.some((l) => l.type === "learning");
-  const isEligible = hasSpoken && hasLearning && interests.length > 0;
+  // Identity is not part of the matching-eligibility rule, so we feed the
+  // aggregate stub values for name/surname. `evaluate` returns the same
+  // `matchingEligible` flag regardless.
+  const snapshot: OnboardingSnapshot = {
+    identity: { name: "x", surname: "x" },
+    languages: languages.map((l) => ({ language: "", type: l.type as "spoken" | "learning" })),
+    interestCount: interests.length,
+  };
+  const isEligible = OnboardingProgression.evaluate(snapshot).matchingEligible;
 
   await db
     .update(languageProfile)
@@ -341,49 +386,43 @@ export const profileRouter = router({
   getOnboardingStatus: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const [profile, identity] = await Promise.all([
+    const [profile, snapshot] = await Promise.all([
       db.query.languageProfile.findFirst({
         where: eq(languageProfile.userId, userId),
         columns: { onboardingComplete: true },
       }),
-      db
-        .select({ name: user.name, surname: user.surname })
-        .from(user)
-        .where(eq(user.id, userId))
-        .limit(1),
+      loadOnboardingSnapshot(userId),
     ]);
 
-    const id = identity[0];
-    const identityProfileComplete = !!(id?.name?.trim() && id?.surname?.trim());
-
+    const state = OnboardingProgression.evaluate(snapshot);
     return {
       complete: profile?.onboardingComplete ?? false,
       hasProfile: profile !== null,
-      identityProfileComplete,
+      identityProfileComplete: state.identityComplete,
+      // New surface: which phase the Student is in + what's still missing.
+      phase: state.phase,
+      missingFields: state.missingFields,
     };
   }),
 
   submitProfile: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const [languages, interests, existing] = await Promise.all([
-      db.select().from(userLanguage).where(eq(userLanguage.userId, userId)),
-      db.select().from(userInterest).where(eq(userInterest.userId, userId)),
+    const [snapshot, existing] = await Promise.all([
+      loadOnboardingSnapshot(userId),
       db.query.languageProfile.findFirst({
         where: eq(languageProfile.userId, userId),
         columns: { onboardingComplete: true },
       }),
     ]);
 
-    const hasSpoken = languages.some((l) => l.type === "spoken");
-    const hasLearning = languages.some((l) => l.type === "learning");
-    const hasInterest = interests.length > 0;
-
-    if (!hasSpoken || !hasLearning || !hasInterest) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Profile is incomplete. Add at least one spoken language, one learning language, and one interest.",
-      });
+    try {
+      OnboardingProgression.assertCanSubmit(snapshot);
+    } catch (err) {
+      if (err instanceof OnboardingRuleError) {
+        throw new TRPCError({ code: err.code, message: err.message });
+      }
+      throw err;
     }
 
     const wasAlreadyEligible = existing?.onboardingComplete ?? false;
