@@ -1,9 +1,61 @@
-import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
+
 import { trpc } from "@/utils/trpc";
 import { Container } from "@/components/container";
+import { CARD, GOLD } from "@/components/home/tokens";
+
+const DARK = "#1A1A1A";
+const MUTED = "#8A7570";
+const LOCKED_TINT = "#A8635A";
+const DIVIDER = "#EFE7DD";
+
+const AVATAR_PALETTE = [
+  "#E8B5AA", // rose
+  "#B5CFC6", // sage
+  "#D4B59E", // peach
+  "#D6B7C2", // mauve
+  "#E6D4B8", // sand
+  "#C9D5C0", // moss
+  "#E2C5B0", // clay
+];
+
+function avatarTone(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    h = (h * 31 + seed.charCodeAt(i)) % 4096;
+  }
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
+
+function initials(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "?";
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase();
+  return (parts[0]!.charAt(0) + parts[parts.length - 1]!.charAt(0)).toUpperCase();
+}
+
+function formatChatTime(input: string | Date): string {
+  const at = input instanceof Date ? input : new Date(input);
+  const now = new Date();
+  const diffMs = now.getTime() - at.getTime();
+  if (diffMs < 60_000) return "just now";
+
+  const sameDay = at.toDateString() === now.toDateString();
+  if (sameDay) {
+    return at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (at.toDateString() === yesterday.toDateString()) return "Yesterday";
+
+  const diffDays = diffMs / 86_400_000;
+  if (diffDays < 7) return at.toLocaleDateString([], { weekday: "short" });
+  return at.toLocaleDateString([], { month: "short", day: "numeric" });
+}
 
 type ChatEntry =
   | {
@@ -34,13 +86,13 @@ function lockedSubtitle(entry: Extract<ChatEntry, { kind: "locked" }>): string {
   const at = new Date(entry.meetupAt);
   switch (entry.phase) {
     case "scheduled":
-      return `locked · unlocks ${formatUnlock(at)}`;
+      return `unlocks ${formatUnlock(at)}`;
     case "awaiting_attendance":
-      return "locked · did you meet?";
+      return "did you meet?";
     case "awaiting_my_optin":
-      return "locked · tap to keep in touch";
+      return "tap to keep in touch";
     case "awaiting_partner_optin":
-      return `locked · waiting on ${entry.partner.name.split(" ")[0]}`;
+      return `waiting on ${entry.partner.name.split(" ")[0]}`;
     case "declined":
       return "chat won't open";
   }
@@ -49,7 +101,7 @@ function lockedSubtitle(entry: Extract<ChatEntry, { kind: "locked" }>): string {
 function formatUnlock(at: Date): string {
   const now = new Date();
   const diffMs = at.getTime() - now.getTime();
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  const diffDays = diffMs / 86_400_000;
   const time = at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   if (diffDays < 1) return `today ${time}`;
   if (diffDays < 2) return `tomorrow ${time}`;
@@ -58,6 +110,253 @@ function formatUnlock(at: Date): string {
     return `${weekday} ${time}`;
   }
   return at.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function Avatar({
+  name,
+  image,
+  locked,
+}: {
+  name: string;
+  image: string | null;
+  locked?: boolean;
+}) {
+  const tone = avatarTone(name);
+  return (
+    <View style={{ width: 52, height: 52, marginRight: 14 }}>
+      <View
+        className="items-center justify-center rounded-full"
+        style={{
+          width: 52,
+          height: 52,
+          backgroundColor: tone,
+          opacity: locked ? 0.85 : 1,
+        }}
+      >
+        {image ? (
+          <Image
+            source={{ uri: image }}
+            style={{ width: 52, height: 52, borderRadius: 26 }}
+          />
+        ) : (
+          <Text
+            className="font-jakarta"
+            style={{ fontSize: 20, color: DARK }}
+          >
+            {initials(name)}
+          </Text>
+        )}
+      </View>
+      {locked && (
+        <View
+          className="items-center justify-center rounded-full"
+          style={{
+            position: "absolute",
+            right: -2,
+            bottom: -2,
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            backgroundColor: GOLD,
+            borderWidth: 2,
+            borderColor: "#FAF6F1",
+          }}
+        >
+          <Ionicons name="lock-closed" size={11} color={DARK} />
+        </View>
+      )}
+    </View>
+  );
+}
+
+function HeaderBlock({
+  openCount,
+  lockedCount,
+}: {
+  openCount: number;
+  lockedCount: number;
+}) {
+  return (
+    <View style={{ paddingHorizontal: 24, paddingTop: 12, paddingBottom: 18 }}>
+      <Text
+        className="font-jakarta"
+        style={{ fontSize: 42, lineHeight: 46, color: DARK, letterSpacing: -0.5 }}
+      >
+        Chats
+      </Text>
+      <View className="flex-row items-center" style={{ gap: 8, marginTop: 4 }}>
+        <Text className="font-manrope" style={{ fontSize: 14, color: MUTED }}>
+          {openCount} open
+        </Text>
+        {lockedCount > 0 && (
+          <>
+            <Text className="font-manrope" style={{ fontSize: 14, color: MUTED }}>
+              ·
+            </Text>
+            <Text
+              className="font-manrope-semi"
+              style={{ fontSize: 14, color: LOCKED_TINT }}
+            >
+              {lockedCount} locked
+            </Text>
+          </>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function OpenRow({
+  entry,
+  onPress,
+}: {
+  entry: Extract<ChatEntry, { kind: "open" }>;
+  onPress: () => void;
+}) {
+  const name = entry.partner?.name ?? "Unknown";
+  const preview = entry.lastMessage?.content;
+  const timestamp = entry.lastMessage?.createdAt;
+
+  return (
+    <Pressable
+      testID={`conversation-entry-${entry.id}`}
+      onPress={onPress}
+      android_ripple={{ color: "rgba(0,0,0,0.04)" }}
+      style={({ pressed }) => ({
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 24,
+        paddingVertical: 14,
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Avatar name={name} image={entry.partner?.image ?? null} />
+      <View style={{ flex: 1, marginRight: 10 }}>
+        <Text
+          className="font-jakarta"
+          style={{ fontSize: 17, color: DARK }}
+          numberOfLines={1}
+        >
+          {name}
+        </Text>
+        {preview ? (
+          <Text
+            className="font-manrope"
+            style={{ fontSize: 14, color: MUTED, marginTop: 2 }}
+            numberOfLines={1}
+          >
+            {preview}
+          </Text>
+        ) : (
+          <Text
+            className="font-manrope"
+            style={{
+              fontSize: 14,
+              color: MUTED,
+              marginTop: 2,
+              fontStyle: "italic",
+            }}
+            numberOfLines={1}
+          >
+            say hi first
+          </Text>
+        )}
+      </View>
+      <View style={{ alignItems: "flex-end", gap: 6 }}>
+        {timestamp && (
+          <Text
+            className="font-manrope"
+            style={{
+              fontSize: 12,
+              color: entry.hasUnread ? DARK : MUTED,
+            }}
+          >
+            {formatChatTime(timestamp)}
+          </Text>
+        )}
+        {entry.hasUnread && (
+          <View
+            testID={`unread-indicator-${entry.id}`}
+            className="items-center justify-center rounded-full"
+            style={{
+              minWidth: 22,
+              height: 22,
+              paddingHorizontal: 7,
+              backgroundColor: GOLD,
+            }}
+          >
+            <Text
+              className="font-manrope-bold"
+              style={{ fontSize: 11, color: DARK, lineHeight: 14 }}
+            >
+              •
+            </Text>
+          </View>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
+function LockedRow({
+  entry,
+  onPress,
+}: {
+  entry: Extract<ChatEntry, { kind: "locked" }>;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      testID={`locked-entry-${entry.meetupId}`}
+      accessibilityLabel={`Locked chat with ${entry.partner.name}`}
+      onPress={onPress}
+      android_ripple={{ color: "rgba(0,0,0,0.04)" }}
+      style={({ pressed }) => ({
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 24,
+        paddingVertical: 14,
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Avatar name={entry.partner.name} image={entry.partner.image} locked />
+      <View style={{ flex: 1 }}>
+        <Text
+          className="font-jakarta"
+          style={{ fontSize: 17, color: MUTED }}
+          numberOfLines={1}
+        >
+          {entry.partner.name}
+        </Text>
+        <Text
+          testID={`locked-subtitle-${entry.meetupId}`}
+          className="font-manrope"
+          style={{
+            fontSize: 13,
+            color: MUTED,
+            marginTop: 2,
+            fontStyle: "italic",
+          }}
+          numberOfLines={1}
+        >
+          {lockedSubtitle(entry)}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function Divider() {
+  return (
+    <View
+      style={{
+        height: 1,
+        marginLeft: 24 + 52 + 14,
+        marginRight: 24,
+        backgroundColor: DIVIDER,
+      }}
+    />
+  );
 }
 
 export default function ChatsScreen() {
@@ -69,101 +368,70 @@ export default function ChatsScreen() {
   if (isLoading) {
     return (
       <Container isScrollable={false}>
+        <HeaderBlock openCount={0} lockedCount={0} />
         <View className="flex-1 items-center justify-center">
-          <Text className="text-muted-foreground">Loading…</Text>
+          <Text className="font-manrope" style={{ color: MUTED }}>
+            Loading…
+          </Text>
         </View>
       </Container>
     );
   }
 
+  const list = entries as ChatEntry[];
+  const openCount = list.filter((e) => e.kind === "open").length;
+  const lockedCount = list.filter((e) => e.kind === "locked").length;
+
   return (
     <Container isScrollable={false}>
       <FlatList
-        data={entries as ChatEntry[]}
+        data={list}
         keyExtractor={(item) => `${item.kind}-${item.id}`}
+        ListHeaderComponent={
+          list.length === 0 ? null : (
+            <HeaderBlock openCount={openCount} lockedCount={lockedCount} />
+          )
+        }
+        ItemSeparatorComponent={Divider}
         renderItem={({ item }) => {
           if (item.kind === "locked") {
             return (
-              <TouchableOpacity
-                testID={`locked-entry-${item.meetupId}`}
-                accessibilityLabel={`Locked chat with ${item.partner.name}`}
-                className="flex-row items-center px-4 py-3 border-b border-border"
-                onPress={() =>
-                  router.push(`/chat/locked/${item.meetupId}`)
-                }
-              >
-                <View className="w-10 h-10 rounded-full bg-muted items-center justify-center mr-3 overflow-hidden">
-                  {item.partner.image ? (
-                    <Image
-                      source={{ uri: item.partner.image }}
-                      className="w-10 h-10 rounded-full"
-                    />
-                  ) : (
-                    <Ionicons name="lock-closed" size={18} color="#6b7280" />
-                  )}
-                </View>
-                <View className="flex-1">
-                  <Text className="text-foreground font-semibold">
-                    {item.partner.name}
-                  </Text>
-                  <Text
-                    testID={`locked-subtitle-${item.meetupId}`}
-                    className="text-muted-foreground text-xs mt-0.5"
-                  >
-                    {lockedSubtitle(item)}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+              <LockedRow
+                entry={item}
+                onPress={() => router.push(`/chat/locked/${item.meetupId}`)}
+              />
             );
           }
-
           return (
-            <TouchableOpacity
-              testID={`conversation-entry-${item.id}`}
-              className="flex-row items-center px-4 py-3 border-b border-border"
+            <OpenRow
+              entry={item}
               onPress={() => router.push(`/chat/${item.id}`)}
-            >
-              <View className="w-10 h-10 rounded-full bg-muted items-center justify-center mr-3 overflow-hidden">
-                {item.partner?.image ? (
-                  <Image
-                    source={{ uri: item.partner.image }}
-                    className="w-10 h-10 rounded-full"
-                  />
-                ) : (
-                  <Ionicons name="person" size={18} color="#6b7280" />
-                )}
-              </View>
-              <View className="flex-1">
-                <Text className="text-foreground font-semibold">
-                  {item.partner?.name ?? "Unknown"}
-                </Text>
-                {item.lastMessage && (
-                  <Text
-                    numberOfLines={1}
-                    className="text-muted-foreground text-xs mt-0.5"
-                  >
-                    {item.lastMessage.content}
-                  </Text>
-                )}
-              </View>
-              {item.hasUnread && (
-                <View
-                  testID={`unread-indicator-${item.id}`}
-                  className="w-2.5 h-2.5 rounded-full bg-primary"
-                />
-              )}
-            </TouchableOpacity>
+            />
           );
         }}
+        contentContainerStyle={{ paddingBottom: 32 }}
         ListEmptyComponent={
           <View
             testID="empty-inbox"
-            className="flex-1 items-center justify-center p-6 mt-24"
+            className="flex-1 items-center px-8"
+            style={{ paddingTop: 96 }}
           >
-            <Text className="text-foreground text-xl font-bold mb-2">
+            <View
+              className="items-center justify-center rounded-full mb-6"
+              style={{ width: 72, height: 72, backgroundColor: CARD }}
+            >
+              <Text style={{ fontSize: 32 }}>☕</Text>
+            </View>
+            <Text
+              className="font-jakarta text-center mb-2"
+              style={{ fontSize: 24, color: DARK }}
+            >
               No conversations yet
             </Text>
-            <Text className="text-muted-foreground text-center">
+            <Text
+              className="font-manrope text-center"
+              style={{ fontSize: 14, color: MUTED, lineHeight: 20 }}
+            >
               When you confirm a meetup with a match, their chat will appear here — locked until you both meet and opt in.
             </Text>
           </View>
