@@ -108,7 +108,7 @@ export function FlagUserModal({ visible, targetId, targetName, onDismiss }: Prop
           </View>
         ) : (
           <ScrollView
-            contentContainerStyle={{ paddingHorizontal: 24, paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: insets.bottom + 24 }}
             showsVerticalScrollIndicator={false}
           >
             {/* Header label */}

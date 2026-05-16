@@ -207,7 +207,7 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
     >
       <View
         className="flex-1 bg-background"
-        style={{ flex: 1, paddingTop: insets.top }}
+        style={{ flex: 1 }}
       >
         <ScrollView
           contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}

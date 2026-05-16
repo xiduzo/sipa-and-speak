@@ -42,7 +42,7 @@ function EmptyDeck({
       {/* Top — looking */}
       <View
         className="px-6"
-        style={{ flex: 6, paddingTop: insets.top + 64 }}
+        style={{ flex: 6, paddingTop: 64 }}
       >
         <View className="items-center" style={{ marginBottom: 32 }}>
           <View className="flex-row items-center" style={{ gap: 12 }}>
@@ -166,7 +166,6 @@ function EmptyDeck({
 
 export default function MatchModalScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
 
   const discoverQuery = useQuery(trpc.matching.discover.queryOptions({}));
@@ -217,7 +216,7 @@ export default function MatchModalScreen() {
         accessibilityLabel="Close"
         className="absolute items-center justify-center rounded-full"
         style={{
-          top: insets.top + 8,
+          top: 8,
           right: 16,
           width: 40,
           height: 40,

@@ -952,7 +952,7 @@ export function MeetupFlowModal({
     >
       <View
         className="flex-1 bg-background"
-        style={{ paddingTop: insets.top + 8, paddingBottom: insets.bottom }}
+        style={{ paddingTop: 8, paddingBottom: insets.bottom }}
       >
         <View className="px-6 pb-4 flex-row justify-end">
           <Pressable

@@ -12,7 +12,7 @@ export default function RespondMeetupScreen() {
   return (
     <View
       className="flex-1 bg-background"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+      style={{ paddingBottom: insets.bottom }}
     >
       <RespondContent meetupId={meetupId} onDismiss={() => router.back()} />
     </View>
