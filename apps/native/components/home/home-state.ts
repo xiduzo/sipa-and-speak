@@ -54,25 +54,44 @@ type Inputs = {
   discover: DiscoverPartner[];
 };
 
-const PRIORITY: HomeState["kind"][] = ["post", "confirmed", "waiting", "matchfound", "nomeetup"];
-
-function pickPost(confirmed: ConfirmedMeetup[]): ConfirmedMeetup | null {
-  const candidates = confirmed.filter((m) => m.isPast && !m.hasReported);
-  if (candidates.length === 0) return null;
-  return [...candidates].sort((a, b) => `${b.date}T${b.time}`.localeCompare(`${a.date}T${a.time}`))[0]!;
+function needsAction(state: HomeState): boolean {
+  switch (state.kind) {
+    case "post":
+      return true;
+    case "confirmed":
+      return state.meetup.reschedulePending && !state.meetup.rescheduleIsFromMe;
+    case "waiting":
+      return !state.proposal.isProposer;
+    case "matchfound":
+      return true;
+    case "nomeetup":
+      return false;
+  }
 }
 
-function pickConfirmed(confirmed: ConfirmedMeetup[]): ConfirmedMeetup | null {
-  const candidates = confirmed.filter((m) => !m.isPast && m.status === "confirmed");
-  if (candidates.length === 0) return null;
-  return [...candidates].sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`))[0]!;
+function buildPostList(confirmed: ConfirmedMeetup[]): HomeState[] {
+  return confirmed
+    .filter((m) => m.isPast && !m.hasReported)
+    .sort((a, b) => `${b.date}T${b.time}`.localeCompare(`${a.date}T${a.time}`))
+    .map((m) => ({ kind: "post", meetup: m }));
 }
 
-function pickWaiting(pending: PendingProposal[]): PendingProposal | null {
-  if (pending.length === 0) return null;
-  return [...pending].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-  )[0]!;
+function buildConfirmedList(confirmed: ConfirmedMeetup[]): HomeState[] {
+  return confirmed
+    .filter((m) => !m.isPast && m.status === "confirmed")
+    .sort((a, b) => {
+      const aAction = a.reschedulePending && !a.rescheduleIsFromMe ? 1 : 0;
+      const bAction = b.reschedulePending && !b.rescheduleIsFromMe ? 1 : 0;
+      if (aAction !== bAction) return bAction - aAction;
+      return `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`);
+    })
+    .map((m) => ({ kind: "confirmed", meetup: m }));
+}
+
+function buildWaitingList(pending: PendingProposal[]): HomeState[] {
+  return [...pending]
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .map((p) => ({ kind: "waiting", proposal: p }));
 }
 
 function pickMatchfound(matches: MyMatch[]): MyMatch | null {
@@ -82,34 +101,36 @@ function pickMatchfound(matches: MyMatch[]): MyMatch | null {
   )[0]!;
 }
 
-function buildState(kind: HomeState["kind"], inputs: Inputs): HomeState | null {
-  switch (kind) {
-    case "post": {
-      const m = pickPost(inputs.confirmed);
-      return m ? { kind: "post", meetup: m } : null;
-    }
-    case "confirmed": {
-      const m = pickConfirmed(inputs.confirmed);
-      return m ? { kind: "confirmed", meetup: m } : null;
-    }
-    case "waiting": {
-      const p = pickWaiting(inputs.pending);
-      return p ? { kind: "waiting", proposal: p } : null;
-    }
-    case "matchfound": {
-      const m = pickMatchfound(inputs.matches);
-      return m ? { kind: "matchfound", match: m } : null;
-    }
-    case "nomeetup":
-      return { kind: "nomeetup", matchCount: inputs.discover.length, partners: inputs.discover };
-  }
-}
+export function resolveHomeState(inputs: Inputs): { heros: HomeState[]; secondaries: HomeState[] } {
+  const posts = buildPostList(inputs.confirmed);
+  const upcomings = buildConfirmedList(inputs.confirmed);
+  const meetupHeros = [...posts, ...upcomings];
 
-export function resolveHomeState(inputs: Inputs): { hero: HomeState; secondaries: HomeState[] } {
-  const states = PRIORITY.map((k) => buildState(k, inputs)).filter((s): s is HomeState => s !== null);
-  const [hero, ...rest] = states;
+  if (meetupHeros.length > 0) {
+    const secondaries: HomeState[] = [];
+    const waiting = buildWaitingList(inputs.pending)[0];
+    if (waiting) secondaries.push(waiting);
+    const top = pickMatchfound(inputs.matches);
+    if (top) secondaries.push({ kind: "matchfound", match: top });
+    return { heros: meetupHeros, secondaries: secondaries.slice(0, 2) };
+  }
+
+  const waitingList = buildWaitingList(inputs.pending);
+  if (waitingList.length > 0) {
+    const top = pickMatchfound(inputs.matches);
+    return {
+      heros: waitingList,
+      secondaries: top ? [{ kind: "matchfound", match: top }] : [],
+    };
+  }
+
+  const top = pickMatchfound(inputs.matches);
+  if (top) return { heros: [{ kind: "matchfound", match: top }], secondaries: [] };
+
   return {
-    hero: hero ?? { kind: "nomeetup", matchCount: 0, partners: [] },
-    secondaries: rest.slice(0, 2),
+    heros: [{ kind: "nomeetup", matchCount: inputs.discover.length, partners: inputs.discover }],
+    secondaries: [],
   };
 }
+
+export { needsAction };
