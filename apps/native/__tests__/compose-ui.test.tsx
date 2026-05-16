@@ -12,9 +12,24 @@ import React from "react";
 
 // ── Router mock ───────────────────────────────────────────────────────────────
 
-jest.mock("expo-router", () => ({
-  useLocalSearchParams: () => ({ conversationId: "conv-1" }),
-  useRouter: () => ({ back: jest.fn() }),
+jest.mock("expo-router", () => {
+  const { useEffect } = require("react");
+  return {
+    useLocalSearchParams: () => ({ conversationId: "conv-1" }),
+    useRouter: () => ({ back: jest.fn() }),
+    useFocusEffect: (cb: () => void | (() => void)) => {
+      useEffect(() => {
+        const cleanup = cb();
+        return typeof cleanup === "function" ? cleanup : undefined;
+      }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    },
+  };
+});
+
+jest.mock("@/lib/auth-client", () => ({
+  authClient: {
+    useSession: () => ({ data: { user: { id: "alice" } } }),
+  },
 }));
 
 // ── tRPC / query mock ─────────────────────────────────────────────────────────
@@ -29,6 +44,12 @@ jest.mock("@/utils/trpc", () => ({
         queryOptions: (_input: unknown, _opts: unknown) => ({
           queryKey: ["chat.getMessages"],
           queryFn: async () => ({ messages: [] }),
+        }),
+      },
+      listEntries: {
+        queryOptions: () => ({
+          queryKey: ["chat.listEntries"],
+          queryFn: async () => [],
         }),
       },
       markRead: {
