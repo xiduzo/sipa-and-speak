@@ -28,7 +28,7 @@ function copyForPhase(phase: LockedPhase, partnerFirstName: string) {
     case "scheduled":
       return {
         headline: "Meet first. Message after.",
-        body: "Chat opens when you both check in at the café.",
+        body: "Chat opens after you both meet and choose to keep in touch.",
         cta: "See meetup details",
       };
     case "awaiting_attendance":
@@ -58,42 +58,8 @@ function copyForPhase(phase: LockedPhase, partnerFirstName: string) {
   }
 }
 
-function formatMeetupStrip(meetupAt: Date, venueName: string) {
-  const weekday = meetupAt
-    .toLocaleDateString([], { weekday: "short" })
-    .toUpperCase();
-  const time = meetupAt.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const diffMs = meetupAt.getTime() - Date.now();
-  const totalMin = Math.max(0, Math.round(diffMs / 60_000));
-  const days = Math.floor(totalMin / (60 * 24));
-  const hours = Math.floor((totalMin % (60 * 24)) / 60);
-  const countdown =
-    diffMs <= 0
-      ? "now"
-      : days > 0
-        ? `in ${days}d ${hours}h`
-        : `in ${hours}h`;
-  return { weekday, venueName: venueName.toUpperCase(), countdown, time };
-}
-
-function headerSubtitle(phase: LockedPhase, meetupAt: Date): string {
-  if (phase === "scheduled") {
-    const diffDays = (meetupAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-    const time = meetupAt.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    if (diffDays < 1) return `locked · unlocks today ${time}`;
-    if (diffDays < 2) return `locked · unlocks tomorrow ${time}`;
-    if (diffDays < 7) {
-      const wd = meetupAt.toLocaleDateString([], { weekday: "long" });
-      return `locked · unlocks ${wd}`;
-    }
-    return "locked";
-  }
+function headerSubtitle(phase: LockedPhase): string {
+  if (phase === "scheduled") return "locked · meet first";
   if (phase === "awaiting_attendance") return "locked · awaiting attendance";
   if (phase === "awaiting_my_optin") return "locked · rate to unlock";
   if (phase === "awaiting_partner_optin") return "locked · waiting on partner";
@@ -159,11 +125,9 @@ export default function LockedChatScreen() {
     );
   }
 
-  const meetupAt = new Date(entry.meetupAt);
   const partnerFirst = entry.partner.name.split(" ")[0] ?? entry.partner.name;
   const copy = copyForPhase(entry.phase, partnerFirst);
-  const strip = formatMeetupStrip(meetupAt, entry.venue.name);
-  const subtitle = headerSubtitle(entry.phase, meetupAt);
+  const subtitle = headerSubtitle(entry.phase);
 
   function handleCta() {
     if (entry?.phase === "declined") {
@@ -230,25 +194,6 @@ export default function LockedChatScreen() {
             <Text className="text-foreground/80 text-sm mt-1">{copy.body}</Text>
           </View>
         </View>
-
-        {entry.phase !== "declined" && (
-          <View
-            testID="meetup-strip"
-            className="bg-background rounded-2xl px-4 py-3 mb-4 flex-row items-center justify-between"
-          >
-            <View>
-              <Text className="text-muted-foreground text-[10px] font-bold tracking-wider">
-                {strip.weekday} · {strip.venueName}
-              </Text>
-              <Text className="text-foreground text-sm font-semibold mt-0.5">
-                {strip.countdown}
-              </Text>
-            </View>
-            <Text className="text-foreground text-3xl font-bold tracking-tight">
-              {strip.time}
-            </Text>
-          </View>
-        )}
 
         {entry.phase === "awaiting_my_optin" ? (
           <View className="gap-2">
