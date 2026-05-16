@@ -1,14 +1,194 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Button, Spinner } from "heroui-native";
+import { Spinner } from "heroui-native";
 import { useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
 import { MeetupFlowModal, type MeetupFlowMode } from "@/components/meetup-flow-modal";
+import { CARD, CARD_BLUE, GOLD } from "@/components/home/tokens";
+import { formatDayTime } from "@/components/home/format";
 import { trpc, queryClient } from "@/utils/trpc";
 
-const DARK = "#2C1810";
+const DARK = "#1A1A1A";
 const MUTED = "#8A7570";
+const OUTLINE = "#1A1A1A";
+
+type Tone = "gold" | "mint" | "muted" | "rose";
+
+const TONE_BG: Record<Tone, string> = {
+  gold: GOLD,
+  mint: CARD_BLUE,
+  muted: CARD,
+  rose: "#F1D9D2",
+};
+
+function StatusPill({ label, tone, testID }: { label: string; tone: Tone; testID?: string }) {
+  return (
+    <View
+      testID={testID}
+      className="rounded-full"
+      style={{
+        backgroundColor: TONE_BG[tone],
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+      }}
+    >
+      <Text
+        className="font-manrope-semi"
+        style={{
+          fontSize: 10,
+          letterSpacing: 1.6,
+          color: DARK,
+        }}
+      >
+        {label.toUpperCase()}
+      </Text>
+    </View>
+  );
+}
+
+function PrimaryPill({
+  label,
+  onPress,
+  disabled,
+  testID,
+  flex,
+}: {
+  label: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  testID?: string;
+  flex?: boolean;
+}) {
+  return (
+    <Pressable
+      testID={testID}
+      onPress={onPress}
+      disabled={disabled}
+      className={`items-center justify-center rounded-full ${flex ? "flex-1" : ""}`}
+      style={{
+        height: 46,
+        paddingHorizontal: 22,
+        backgroundColor: GOLD,
+        opacity: disabled ? 0.55 : 1,
+      }}
+    >
+      <Text className="font-manrope-bold" style={{ fontSize: 14, color: DARK }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function SecondaryPill({
+  label,
+  onPress,
+  disabled,
+  testID,
+  flex,
+  destructive,
+}: {
+  label: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  testID?: string;
+  flex?: boolean;
+  destructive?: boolean;
+}) {
+  return (
+    <Pressable
+      testID={testID}
+      onPress={onPress}
+      disabled={disabled}
+      className={`items-center justify-center rounded-full ${flex ? "flex-1" : ""}`}
+      style={{
+        height: 46,
+        paddingHorizontal: 22,
+        borderWidth: 1.5,
+        borderColor: destructive ? "#B36B5E" : OUTLINE,
+        opacity: disabled ? 0.55 : 1,
+      }}
+    >
+      <Text
+        className="font-manrope-bold"
+        style={{ fontSize: 14, color: destructive ? "#7A3B30" : DARK }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function CardShell({
+  children,
+  testID,
+}: {
+  children: React.ReactNode;
+  testID?: string;
+}) {
+  return (
+    <View
+      testID={testID}
+      className="rounded-3xl mb-3"
+      style={{
+        backgroundColor: "#FFFFFF",
+        padding: 18,
+      }}
+    >
+      {children}
+    </View>
+  );
+}
+
+function CardHeader({
+  partnerName,
+  dateTimeLabel,
+  venueName,
+  rawDateTime,
+  pill,
+}: {
+  partnerName: string;
+  dateTimeLabel: string;
+  venueName: string;
+  rawDateTime: string;
+  pill: React.ReactNode;
+}) {
+  return (
+    <View className="mb-4">
+      <View className="flex-row items-start justify-between mb-1.5" style={{ gap: 12 }}>
+        <Text
+          testID="meetup-partner"
+          className="font-jakarta flex-1"
+          style={{ fontSize: 20, color: DARK }}
+        >
+          With {partnerName}
+        </Text>
+        {pill}
+      </View>
+      <View className="flex-row items-center" style={{ gap: 6 }}>
+        <Text
+          testID="meetup-datetime"
+          className="font-manrope-semi"
+          style={{ fontSize: 13, color: DARK }}
+          accessibilityLabel={rawDateTime}
+        >
+          {dateTimeLabel}
+        </Text>
+        <Text className="font-manrope" style={{ fontSize: 13, color: MUTED }}>
+          ·
+        </Text>
+        <Text
+          testID="meetup-venue"
+          className="font-manrope flex-1"
+          style={{ fontSize: 13, color: MUTED }}
+          numberOfLines={1}
+        >
+          {venueName}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 export default function ConfirmedMeetupsScreen() {
   const meetupsQuery = useQuery(trpc.meetup.getConfirmed.queryOptions());
@@ -48,15 +228,32 @@ export default function ConfirmedMeetupsScreen() {
   const meetups = meetupsQuery.data ?? [];
   const pending = pendingQuery.data ?? [];
 
-  if (meetups.length === 0 && pending.length === 0 && !meetupsQuery.isFetching && !pendingQuery.isFetching) {
+  if (
+    meetups.length === 0 &&
+    pending.length === 0 &&
+    !meetupsQuery.isFetching &&
+    !pendingQuery.isFetching
+  ) {
     return (
       <Container isScrollable={false}>
-        <View testID="no-meetups-state" className="flex-1 items-center justify-center p-6">
-          <Text className="text-foreground text-lg font-manrope-bold text-center mb-2">
+        <View testID="no-meetups-state" className="flex-1 items-center justify-center px-8">
+          <View
+            className="items-center justify-center rounded-full mb-6"
+            style={{ width: 72, height: 72, backgroundColor: CARD }}
+          >
+            <Text style={{ fontSize: 32 }}>☕</Text>
+          </View>
+          <Text
+            className="font-jakarta text-center mb-2"
+            style={{ fontSize: 24, color: DARK }}
+          >
             No meetups yet
           </Text>
-          <Text className="font-manrope text-center" style={{ color: MUTED }}>
-            Propose a meetup to a match to get started.
+          <Text
+            className="font-manrope text-center"
+            style={{ fontSize: 14, color: MUTED, lineHeight: 20 }}
+          >
+            Propose a meetup to a match to get your coffee book started.
           </Text>
         </View>
       </Container>
@@ -64,151 +261,218 @@ export default function ConfirmedMeetupsScreen() {
   }
 
   function handleCancel(meetupId: string) {
-    Alert.alert(
-      "Cancel meetup",
-      "Are you sure you want to cancel this meetup?",
-      [
-        { text: "Keep it", style: "cancel" },
-        {
-          text: "Cancel meetup",
-          style: "destructive",
-          onPress: () => cancelMutation.mutate({ meetupId }),
-        },
-      ],
-    );
+    Alert.alert("Cancel meetup", "Are you sure you want to cancel this meetup?", [
+      { text: "Keep it", style: "cancel" },
+      {
+        text: "Cancel meetup",
+        style: "destructive",
+        onPress: () => cancelMutation.mutate({ meetupId }),
+      },
+    ]);
   }
 
   return (
     <Container>
       <MeetupFlowModal mode={meetupModal} onDismiss={() => setMeetupModal(null)} />
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <Text className="text-foreground text-2xl font-manrope-bold mb-6">Meetups</Text>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 }}>
+        {/* Header */}
+        <View className="mb-6">
+          <Text
+            className="font-manrope-semi tracking-widest text-brand-muted-foreground"
+            style={{ fontSize: 12 }}
+          >
+            YOUR COFFEE BOOK
+          </Text>
+          <Text
+            className="font-jakarta"
+            style={{ fontSize: 32, color: DARK, marginTop: 2 }}
+          >
+            Meetups
+          </Text>
+        </View>
 
+        {/* Pending proposals */}
         {pending.length > 0 && (
           <View testID="pending-proposals-section" className="mb-6">
-            <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-3" style={{ color: MUTED }}>Pending proposals</Text>
-            {pending.map((p) => (
-              <View
-                key={p.id}
-                testID="pending-proposal-card"
-                className="bg-card border border-border rounded-2xl p-4 mb-3"
-              >
-                <Text className="font-manrope-semi text-base mb-1" style={{ color: DARK }}>
-                  With {p.partner.name}
-                </Text>
-                <Text className="font-manrope text-sm mb-0.5" style={{ color: MUTED }}>{p.venue.name}</Text>
-                <Text className="font-manrope text-sm mb-3" style={{ color: MUTED }}>{p.date} at {p.time}</Text>
-                {p.isProposer ? (
-                  <Text testID="awaiting-response-label" className="font-manrope text-xs text-center" style={{ color: MUTED }}>
-                    Awaiting response from {p.partner.name}
-                  </Text>
-                ) : (
-                  <Button
-                    testID="respond-to-proposal-btn"
-                    variant="primary"
-                    onPress={() => setMeetupModal({ type: "respond", meetupId: p.id })}
-                  >
-                    <Button.Label>Respond to proposal</Button.Label>
-                  </Button>
-                )}
-              </View>
-            ))}
+            <Text
+              className="font-manrope-semi tracking-widest text-brand-muted-foreground mb-3"
+              style={{ fontSize: 11 }}
+            >
+              PENDING
+            </Text>
+
+            {pending.map((p) => {
+              const isOutgoing = p.isProposer;
+
+              return (
+                <CardShell key={p.id} testID="pending-proposal-card">
+                  <CardHeader
+                    partnerName={p.partner.name}
+                    dateTimeLabel={formatDayTime(p.date, p.time)}
+                    venueName={p.venue.name}
+                    rawDateTime={`${p.date} at ${p.time}`}
+                    pill={
+                      <StatusPill
+                        label={isOutgoing ? "Waiting" : "Their turn"}
+                        tone={isOutgoing ? "muted" : "mint"}
+                      />
+                    }
+                  />
+
+                  {isOutgoing ? (
+                    <Text
+                      testID="awaiting-response-label"
+                      className="font-manrope text-center"
+                      style={{ fontSize: 12, color: MUTED, fontStyle: "italic" }}
+                    >
+                      Awaiting response from {p.partner.name}
+                    </Text>
+                  ) : (
+                    <PrimaryPill
+                      testID="respond-to-proposal-btn"
+                      label="Respond  →"
+                      onPress={() => setMeetupModal({ type: "respond", meetupId: p.id })}
+                    />
+                  )}
+                </CardShell>
+              );
+            })}
           </View>
         )}
 
-        {meetups.map((m) => (
-          <View
-            key={m.meetupId}
-            testID="meetup-card"
-            className="bg-card border border-border rounded-2xl p-4 mb-4"
-          >
-            <Text testID="meetup-partner" className="font-manrope-semi text-base mb-1" style={{ color: DARK }}>
-              With {m.partner.name}
-            </Text>
-            <Text testID="meetup-venue" className="font-manrope text-sm mb-0.5" style={{ color: MUTED }}>
-              {m.venue.name}
-            </Text>
-            <Text testID="meetup-datetime" className="font-manrope text-sm mb-4" style={{ color: MUTED }}>
-              {m.date} at {m.time}
+        {/* Confirmed meetups */}
+        {meetups.length > 0 && (
+          <View>
+            <Text
+              className="font-manrope-semi tracking-widest text-brand-muted-foreground mb-3"
+              style={{ fontSize: 11 }}
+            >
+              SCHEDULED
             </Text>
 
-            {!m.isPast && (
-              <View className="flex flex-col gap-2">
-                {/* #79 — Cancel action hidden when meetup is in the past */}
-                <Button
-                  testID="cancel-meetup-btn"
-                  variant="ghost"
-                  onPress={() => handleCancel(m.meetupId)}
-                  isDisabled={cancelMutation.isPending}
-                >
-                  <Button.Label>Cancel meetup</Button.Label>
-                </Button>
+            {meetups.map((m) => {
+              const partnerProposedReschedule = m.reschedulePending && !m.rescheduleIsFromMe;
 
-                {/* #86 — Reschedule action */}
-                <Button
-                  testID="reschedule-meetup-btn"
-                  variant="outline"
-                  onPress={() =>
-                    setMeetupModal({
-                      type: "reschedule",
-                      meetupId: m.meetupId,
-                      currentVenueId: m.venue.id,
-                      currentDate: m.date,
-                      currentTime: m.time,
-                    })
-                  }
-                  isDisabled={m.reschedulePending}
-                >
-                  <Button.Label>
-                    {m.reschedulePending && m.rescheduleIsFromMe
-                      ? "Reschedule pending…"
-                      : m.reschedulePending
-                        ? "Partner proposed reschedule"
-                        : "Reschedule"}
-                  </Button.Label>
-                </Button>
-              </View>
-            )}
+              let pillLabel: string;
+              let pillTone: Tone;
+              if (m.isPast && m.hasReported) {
+                pillLabel = m.myAttendance ? "Met up" : "Missed";
+                pillTone = m.myAttendance ? "mint" : "muted";
+              } else if (m.isPast) {
+                pillLabel = "Just now";
+                pillTone = "mint";
+              } else if (partnerProposedReschedule) {
+                pillLabel = "New time";
+                pillTone = "mint";
+              } else if (m.reschedulePending) {
+                pillLabel = "Pending";
+                pillTone = "muted";
+              } else {
+                pillLabel = "Confirmed";
+                pillTone = "gold";
+              }
 
-            {/* #95 — Attendance prompt shown after meetup time passes */}
-            {m.isPast && !m.hasReported && (
-              <View testID="attendance-prompt" className="mt-2">
-                <Text className="font-manrope-semi text-sm text-center mb-3" style={{ color: DARK }}>
-                  Did your meetup take place?
-                </Text>
-                <View className="flex flex-row gap-2">
-                  <Button
-                    testID="attendance-yes-btn"
-                    onPress={() =>
-                      reportAttendanceMutation.mutate({ meetupId: m.meetupId, attended: true })
-                    }
-                    isDisabled={reportAttendanceMutation.isPending}
-                    className="flex-1"
-                  >
-                    <Button.Label>We met up</Button.Label>
-                  </Button>
-                  <Button
-                    testID="attendance-no-btn"
-                    variant="outline"
-                    onPress={() =>
-                      reportAttendanceMutation.mutate({ meetupId: m.meetupId, attended: false })
-                    }
-                    isDisabled={reportAttendanceMutation.isPending}
-                    className="flex-1"
-                  >
-                    <Button.Label>We didn't meet</Button.Label>
-                  </Button>
-                </View>
-              </View>
-            )}
+              const rescheduleLabel = m.reschedulePending
+                ? m.rescheduleIsFromMe
+                  ? "Reschedule pending…"
+                  : "Answer"
+                : "Reschedule";
 
-            {m.isPast && m.hasReported && (
-              <Text testID="attendance-reported-label" className="font-manrope text-xs text-center mt-2" style={{ color: MUTED }}>
-                {m.myAttendance ? "You reported attending this meetup" : "You reported not attending this meetup"}
-              </Text>
-            )}
+              return (
+                <CardShell key={m.meetupId} testID="meetup-card">
+                  <CardHeader
+                    partnerName={m.partner.name}
+                    dateTimeLabel={formatDayTime(m.date, m.time)}
+                    venueName={m.venue.name}
+                    rawDateTime={`${m.date} at ${m.time}`}
+                    pill={<StatusPill label={pillLabel} tone={pillTone} />}
+                  />
+
+                  {/* Future meetup actions */}
+                  {!m.isPast && (
+                    <View className="flex-row" style={{ gap: 10 }}>
+                      <PrimaryPill
+                        testID="reschedule-meetup-btn"
+                        label={rescheduleLabel}
+                        disabled={m.rescheduleIsFromMe && m.reschedulePending}
+                        onPress={() =>
+                          setMeetupModal({
+                            type: "reschedule",
+                            meetupId: m.meetupId,
+                            currentVenueId: m.venue.id,
+                            currentDate: m.date,
+                            currentTime: m.time,
+                          })
+                        }
+                        flex
+                      />
+                      <SecondaryPill
+                        testID="cancel-meetup-btn"
+                        label="Cancel"
+                        onPress={() => handleCancel(m.meetupId)}
+                        disabled={cancelMutation.isPending}
+                        destructive
+                        flex
+                      />
+                    </View>
+                  )}
+
+                  {/* Past — attendance prompt */}
+                  {m.isPast && !m.hasReported && (
+                    <View testID="attendance-prompt">
+                      <Text
+                        testID="meetup-past-label"
+                        className="font-manrope-semi mb-3"
+                        style={{ fontSize: 13, color: DARK }}
+                      >
+                        Did your meetup take place?
+                      </Text>
+                      <View className="flex-row" style={{ gap: 10 }}>
+                        <PrimaryPill
+                          testID="attendance-yes-btn"
+                          label="We met up"
+                          disabled={reportAttendanceMutation.isPending}
+                          onPress={() =>
+                            reportAttendanceMutation.mutate({
+                              meetupId: m.meetupId,
+                              attended: true,
+                            })
+                          }
+                          flex
+                        />
+                        <SecondaryPill
+                          testID="attendance-no-btn"
+                          label="We didn't"
+                          disabled={reportAttendanceMutation.isPending}
+                          onPress={() =>
+                            reportAttendanceMutation.mutate({
+                              meetupId: m.meetupId,
+                              attended: false,
+                            })
+                          }
+                          flex
+                        />
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Past — already reported */}
+                  {m.isPast && m.hasReported && (
+                    <Text
+                      testID="attendance-reported-label"
+                      className="font-manrope"
+                      style={{ fontSize: 12, color: MUTED }}
+                    >
+                      {m.myAttendance
+                        ? `You reported attending this meetup`
+                        : `You reported not attending this meetup`}
+                    </Text>
+                  )}
+                </CardShell>
+              );
+            })}
           </View>
-        ))}
+        )}
       </ScrollView>
     </Container>
   );
