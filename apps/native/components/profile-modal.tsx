@@ -59,7 +59,6 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
   const [nameInput, setNameInput] = useState("");
   const [surnameInput, setSurnameInput] = useState("");
   const [imageUri, setImageUri] = useState<string | undefined>();
-  const [identityInitialized, setIdentityInitialized] = useState(false);
   const [addingType, setAddingType] = useState<"spoken" | "learning" | null>(
     null,
   );
@@ -67,6 +66,14 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSaveRef = useRef(false);
+  const nameFocusedRef = useRef(false);
+  const surnameFocusedRef = useRef(false);
+  const lastHydratedRef = useRef<{
+    name: string | null;
+    surname: string | null;
+    image: string | null;
+  }>({ name: null, surname: null, image: null });
 
   useEffect(() => {
     if (__DEV__) return;
@@ -90,19 +97,38 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
   }
 
   useEffect(() => {
-    if (identityInitialized || !profileQuery.data) return;
+    if (!profileQuery.data) return;
     const identity = profileQuery.data.identity;
-    if (identity?.name || identity?.surname) {
-      setNameInput(identity.name ?? "");
-      setSurnameInput(identity.surname ?? "");
+    const serverName = identity?.name ?? null;
+    const serverSurname = identity?.surname ?? null;
+    const serverImage = identity?.image ?? null;
+    const last = lastHydratedRef.current;
+    const isPending = pendingSaveRef.current;
+
+    if (serverName !== last.name && !nameFocusedRef.current && !isPending) {
+      setNameInput(serverName ?? "");
+      last.name = serverName;
     }
-    setImageUri(identity?.image ?? undefined);
-    setIdentityInitialized(true);
-  }, [profileQuery.data, identityInitialized]);
+    if (
+      serverSurname !== last.surname &&
+      !surnameFocusedRef.current &&
+      !isPending
+    ) {
+      setSurnameInput(serverSurname ?? "");
+      last.surname = serverSurname;
+    }
+    if (serverImage !== last.image && !isPending) {
+      setImageUri(serverImage ?? undefined);
+      last.image = serverImage;
+    }
+  }, [profileQuery.data]);
 
   const setIdentityMutation = useMutation({
     ...trpc.profile.setIdentityProfile.mutationOptions(),
     onSuccess: () => queryClient.invalidateQueries(),
+    onSettled: () => {
+      pendingSaveRef.current = false;
+    },
     onError: (e) => {
       toast.show({
         variant: "danger",
@@ -136,11 +162,18 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
     const n = name.trim();
     const s = surname.trim();
     if (!n || !s) return;
+    pendingSaveRef.current = true;
+    lastHydratedRef.current = {
+      name: n,
+      surname: s,
+      image: image ?? null,
+    };
     setIdentityMutation.mutate({ name: n, surname: s, imageUrl: image });
   }
 
   function scheduleIdentitySave(name: string, surname: string) {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    pendingSaveRef.current = true;
     saveTimeoutRef.current = setTimeout(() => {
       saveIdentity(name, surname, imageUri);
     }, 1200);
@@ -243,9 +276,13 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
                       setNameInput(v);
                       scheduleIdentitySave(v, surnameInput);
                     }}
-                    onBlur={() =>
-                      saveIdentity(nameInput, surnameInput, imageUri)
-                    }
+                    onFocus={() => {
+                      nameFocusedRef.current = true;
+                    }}
+                    onBlur={() => {
+                      nameFocusedRef.current = false;
+                      saveIdentity(nameInput, surnameInput, imageUri);
+                    }}
                     placeholder="Anna"
                     placeholderTextColor={BORDER}
                     autoCapitalize="words"
@@ -266,9 +303,13 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
                       setSurnameInput(v);
                       scheduleIdentitySave(nameInput, v);
                     }}
-                    onBlur={() =>
-                      saveIdentity(nameInput, surnameInput, imageUri)
-                    }
+                    onFocus={() => {
+                      surnameFocusedRef.current = true;
+                    }}
+                    onBlur={() => {
+                      surnameFocusedRef.current = false;
+                      saveIdentity(nameInput, surnameInput, imageUri);
+                    }}
                     placeholder="de Vries"
                     placeholderTextColor={BORDER}
                     autoCapitalize="words"
