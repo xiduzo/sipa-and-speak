@@ -13,6 +13,7 @@ import { HeroWaiting } from "@/components/home/hero-waiting";
 import { HeroConfirmed } from "@/components/home/hero-confirmed";
 import { HeroPost } from "@/components/home/hero-post";
 import { SecondaryCard } from "@/components/home/secondary-card";
+import { HeroCarousel } from "@/components/home/hero-carousel";
 import { resolveHomeState, type HomeState } from "@/components/home/home-state";
 import { GOLD } from "@/components/home/tokens";
 
@@ -42,7 +43,7 @@ export default function HomeScreen() {
     },
   }));
 
-  const { hero, secondaries } = resolveHomeState({
+  const { heros, secondaries } = resolveHomeState({
     confirmed: confirmedQuery.data ?? [],
     pending: (pendingQuery.data ?? []).map((p) => ({
       id: p.id,
@@ -83,7 +84,7 @@ export default function HomeScreen() {
     }
   }
 
-  function renderHero() {
+  function renderHero(hero: HomeState) {
     switch (hero.kind) {
       case "post":
         return (
@@ -188,7 +189,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {renderHero()}
+        <HeroCarousel heros={heros} renderHero={renderHero} />
 
         {secondaries.length > 0 && (
           <View className="mt-8">
