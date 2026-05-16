@@ -1,11 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AppState, FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AppState,
+  FlatList,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { authClient } from "@/lib/auth-client";
-import { Container } from "@/components/container";
 import { trpc } from "@/utils/trpc";
 
 function formatTime(date: Date | string): string {
@@ -13,7 +24,56 @@ function formatTime(date: Date | string): string {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function startOfDay(d: Date): number {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x.getTime();
+}
+
+function formatDayLabel(date: Date): string {
+  const today = startOfDay(new Date());
+  const day = startOfDay(date);
+  const diffDays = Math.round((today - day) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "TODAY";
+  if (diffDays === 1) return "YESTERDAY";
+  if (diffDays < 7)
+    return date.toLocaleDateString([], { weekday: "long" }).toUpperCase();
+  return date
+    .toLocaleDateString([], { month: "short", day: "numeric" })
+    .toUpperCase();
+}
+
+type Message = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  createdAt: Date | string;
+  isUnread: boolean;
+};
+
+type Row =
+  | { kind: "divider"; id: string; label: string }
+  | { kind: "message"; id: string; message: Message };
+
+function buildRows(messages: Message[]): Row[] {
+  const rows: Row[] = [];
+  let lastDay: number | null = null;
+  for (const m of messages) {
+    const d = typeof m.createdAt === "string" ? new Date(m.createdAt) : m.createdAt;
+    const day = startOfDay(d);
+    if (day !== lastDay) {
+      rows.push({ kind: "divider", id: `div-${day}`, label: formatDayLabel(d) });
+      lastDay = day;
+    }
+    rows.push({ kind: "message", id: m.id, message: m });
+  }
+  return rows;
+}
+
 export default function ChatScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const { data: session } = authClient.useSession();
   const currentUserId = session?.user.id;
@@ -24,13 +84,8 @@ export default function ChatScreen() {
   const listRef = useRef<FlatList>(null);
   const queryClient = useQueryClient();
 
-  const markRead = useMutation(
-    trpc.chat.markRead.mutationOptions(),
-  );
-
-  const setPresence = useMutation(
-    trpc.messaging.setPresence.mutationOptions(),
-  );
+  const markRead = useMutation(trpc.chat.markRead.mutationOptions());
+  const setPresence = useMutation(trpc.messaging.setPresence.mutationOptions());
 
   useFocusEffect(
     useCallback(() => {
@@ -38,13 +93,11 @@ export default function ChatScreen() {
         { conversationId },
         {
           onSuccess: () => {
-            // Invalidate getMessages so isUnread indicators refresh
             void queryClient.invalidateQueries({ queryKey: ["chat.getMessages"] });
           },
         },
       );
 
-      // #153 — Signal active presence so push notifications are suppressed while viewing
       setPresence.mutate({ conversationId, active: true });
 
       const appStateSub = AppState.addEventListener("change", (nextState) => {
@@ -69,7 +122,17 @@ export default function ChatScreen() {
     ),
   );
 
-  const messages = data?.messages ?? [];
+  const { data: entries } = useQuery(trpc.chat.listEntries.queryOptions());
+  const partner = useMemo(() => {
+    const entry = entries?.find(
+      (e) => e.kind === "open" && e.id === conversationId,
+    );
+    if (entry && entry.kind === "open") return entry.partner;
+    return null;
+  }, [entries, conversationId]);
+
+  const messages = (data?.messages ?? []) as Message[];
+  const rows = useMemo(() => buildRows(messages), [messages]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -103,90 +166,169 @@ export default function ChatScreen() {
   }
 
   const isPending = sendMessage.isPending;
+  const partnerInitial = (partner?.name?.trim()?.[0] ?? "?").toUpperCase();
 
   return (
-    <Container isScrollable={false}>
-      <FlatList
-        ref={listRef}
-        testID="message-list"
-        data={messages}
-        keyExtractor={(item) => item.id}
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
-        ListEmptyComponent={
-          <View testID="empty-conversation-state" className="flex-1 items-center justify-center py-16 px-8">
-            <Text className="text-muted-foreground text-center text-base">
-              No messages yet. Say hi to start the conversation!
+    <View className="flex-1 bg-brand-background" style={{ paddingTop: insets.top }}>
+      <View className="flex-row items-center px-4 py-3 gap-3">
+        <TouchableOpacity
+          testID="chat-back-btn"
+          accessibilityLabel="Back"
+          onPress={() => router.back()}
+          hitSlop={12}
+        >
+          <Ionicons name="arrow-back" size={24} color="#2C1810" />
+        </TouchableOpacity>
+        <View className="w-11 h-11 rounded-full bg-brand-muted items-center justify-center overflow-hidden">
+          {partner?.image ? (
+            <Image
+              source={{ uri: partner.image }}
+              className="w-11 h-11 rounded-full"
+            />
+          ) : (
+            <Text className="text-brand-foreground font-manrope-bold text-lg">
+              {partnerInitial}
+            </Text>
+          )}
+        </View>
+        <View className="flex-1">
+          <Text className="text-brand-foreground font-manrope-bold text-base">
+            {partner?.name ?? "Chat"}
+          </Text>
+          <View className="flex-row items-center gap-1.5 mt-0.5">
+            <View className="w-1.5 h-1.5 rounded-full bg-brand-green" />
+            <Text className="text-brand-muted-foreground font-manrope text-xs">
+              open chat
             </Text>
           </View>
-        }
-        renderItem={({ item }) => {
-          const isMine = item.senderId === currentUserId;
-          return (
+        </View>
+        <TouchableOpacity
+          testID="chat-info-btn"
+          accessibilityLabel="Conversation info"
+          hitSlop={12}
+        >
+          <Ionicons name="information-circle-outline" size={24} color="#6F605B" />
+        </TouchableOpacity>
+      </View>
+
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 8 : 0}
+      >
+        <FlatList
+          ref={listRef}
+          testID="message-list"
+          data={rows}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingVertical: 8 }}
+          onContentSizeChange={() =>
+            listRef.current?.scrollToEnd({ animated: false })
+          }
+          ListEmptyComponent={
             <View
-              testID="message-bubble"
-              className={`mx-4 my-1 max-w-[80%] rounded-2xl px-3 py-2 ${isMine ? "self-end bg-primary" : item.isUnread ? "self-start bg-muted border-l-2 border-primary" : "self-start bg-muted"}`}
+              testID="empty-conversation-state"
+              className="flex-1 items-center justify-center py-16 px-8"
             >
-              {!isMine && (
-                <Text testID="message-sender" className="text-xs text-muted-foreground mb-1">
-                  Match
-                </Text>
-              )}
-              <Text
-                className={`${isMine ? "text-primary-foreground" : "text-foreground"} ${item.isUnread && !isMine ? "font-semibold" : ""}`}
-              >
-                {item.content}
+              <Text className="text-brand-muted-foreground font-manrope text-center text-base">
+                No messages yet. Say hi to start the conversation!
               </Text>
-              <View className="flex-row items-center justify-end gap-1 mt-1">
-                {item.isUnread && !isMine && (
-                  <View
-                    testID="unread-indicator"
-                    className="w-2 h-2 rounded-full bg-primary"
-                  />
+            </View>
+          }
+          renderItem={({ item }) => {
+            if (item.kind === "divider") {
+              return (
+                <View className="items-center my-3">
+                  <Text className="text-brand-muted-foreground font-manrope-semi tracking-widest text-[11px]">
+                    {item.label}
+                  </Text>
+                </View>
+              );
+            }
+            const msg = item.message;
+            const isMine = msg.senderId === currentUserId;
+            return (
+              <View
+                testID="message-bubble"
+                className={`mx-4 my-1 max-w-[78%] rounded-3xl px-4 py-2.5 ${
+                  isMine
+                    ? "self-end bg-brand-gold"
+                    : "self-start bg-brand-muted"
+                }`}
+              >
+                {!isMine && (
+                  <Text
+                    testID="message-sender"
+                    className="text-brand-muted-foreground font-manrope text-[11px] mb-0.5"
+                  >
+                    {partner?.name ?? "Match"}
+                  </Text>
                 )}
                 <Text
-                  testID="message-timestamp"
-                  className={`text-xs ${isMine ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+                  className={`font-manrope text-brand-foreground ${
+                    msg.isUnread && !isMine ? "font-manrope-semi" : ""
+                  }`}
                 >
-                  {formatTime(item.createdAt)}
+                  {msg.content}
                 </Text>
+                <View className="flex-row items-center justify-end gap-1 mt-0.5">
+                  {msg.isUnread && !isMine && (
+                    <View
+                      testID="unread-indicator"
+                      className="w-1.5 h-1.5 rounded-full bg-brand-primary"
+                    />
+                  )}
+                  <Text
+                    testID="message-timestamp"
+                    className="text-brand-foreground/50 font-manrope text-[10px]"
+                  >
+                    {formatTime(msg.createdAt)}
+                  </Text>
+                </View>
               </View>
-            </View>
-          );
-        }}
-      />
+            );
+          }}
+        />
 
-      <View className="border-t border-border px-4 py-3 gap-2">
-        {showEmptyHint && (
-          <Text testID="empty-hint" className="text-danger text-sm">
-            Message cannot be empty.
-          </Text>
-        )}
-        {sendError && (
-          <Text className="text-danger text-sm">{sendError}</Text>
-        )}
-        <View className="flex-row items-end gap-2">
-          <TextInput
-            testID="message-input"
-            className="flex-1 border border-border rounded-xl px-3 py-2 text-foreground bg-background"
-            placeholder="Type a message…"
-            placeholderTextColor="gray"
-            multiline
-            value={content}
-            onChangeText={handleChangeText}
-            editable={!isPending}
-            accessibilityLabel="Message input"
-          />
-          <TouchableOpacity
-            testID="send-btn"
-            onPress={handleSend}
-            disabled={isPending}
-            accessibilityState={{ disabled: isPending }}
-            className="bg-primary rounded-xl px-4 py-2 justify-center"
-          >
-            <Text className="text-primary-foreground font-semibold">Send</Text>
-          </TouchableOpacity>
+        <View
+          className="px-4 pt-2 gap-2"
+          style={{ paddingBottom: insets.bottom + 8 }}
+        >
+          {showEmptyHint && (
+            <Text testID="empty-hint" className="text-red-500 font-manrope text-sm">
+              Message cannot be empty.
+            </Text>
+          )}
+          {sendError && (
+            <Text className="text-red-500 font-manrope text-sm">{sendError}</Text>
+          )}
+          <View className="flex-row items-center gap-2">
+            <View className="flex-1 rounded-full bg-white border border-brand-border px-5 py-1">
+              <TextInput
+                testID="message-input"
+                className="text-brand-foreground font-manrope text-base py-2"
+                placeholder="Type a message…"
+                placeholderTextColor="#6F605B"
+                multiline
+                value={content}
+                onChangeText={handleChangeText}
+                editable={!isPending}
+                accessibilityLabel="Message input"
+              />
+            </View>
+            <TouchableOpacity
+              testID="send-btn"
+              onPress={handleSend}
+              disabled={isPending}
+              accessibilityState={{ disabled: isPending }}
+              accessibilityLabel="Send message"
+              className="w-12 h-12 rounded-full bg-brand-gold items-center justify-center"
+            >
+              <Ionicons name="arrow-up" size={22} color="#2C1810" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </Container>
+      </KeyboardAvoidingView>
+    </View>
   );
 }

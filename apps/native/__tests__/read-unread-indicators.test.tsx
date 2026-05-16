@@ -65,6 +65,12 @@ jest.mock("@/utils/trpc", () => ({
           }),
         }),
       },
+      listEntries: {
+        queryOptions: () => ({
+          queryKey: ["chat.listEntries"],
+          queryFn: async () => [],
+        }),
+      },
       markRead: {
         mutationOptions: () => ({ mutationFn: jest.fn().mockResolvedValue({}) }),
       },
