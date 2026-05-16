@@ -30,6 +30,7 @@ export interface MatchCardCandidate {
   learningLanguages: string[];
   interests: string[];
   score: number;
+  compatibleLanguages?: string[];
 }
 
 interface MatchCardProps {
@@ -38,19 +39,6 @@ interface MatchCardProps {
   onAccept: () => void;
   onDecline: () => void;
   onBack?: () => void;
-}
-
-function pickTheirNative(spokenLanguages: SpokenLanguage[]): {
-  language: string;
-  proficiency: string;
-} {
-  const native = spokenLanguages.find((l) => l.proficiency === "native");
-  if (native) return { language: native.language, proficiency: "native" };
-  const first = spokenLanguages[0];
-  return {
-    language: first?.language ?? "—",
-    proficiency: first?.proficiency ?? "fluent",
-  };
 }
 
 export function MatchCard({
@@ -65,10 +53,10 @@ export function MatchCard({
     ...trpc.matching.sendMatchRequest.mutationOptions(),
   });
 
-  const their = pickTheirNative(candidate.spokenLanguages);
-  const theirNativeName = their.language ? getNativeName(their.language) : "—";
   const matchPct = Math.round(candidate.score * 100);
   const initial = (candidate.name?.charAt(0) ?? "?").toUpperCase();
+  const compatible = new Set(candidate.compatibleLanguages ?? []);
+  const partnerLabel = (candidate.name ?? "They").toUpperCase();
 
   function handleAccept() {
     sendRequestMutation.mutate(
@@ -95,129 +83,197 @@ export function MatchCard({
       {/* Top — partner */}
       <View
         testID="match-card-partner"
-        className="px-6 pb-6"
+        className="px-6 pb-5"
         style={{ backgroundColor: ROSE, flex: 6, paddingTop: insets.top + 24 }}
       >
-        <View className="flex-1 justify-between">
-          <View>
-            <Text
-              className="text-white font-manrope-semi tracking-widest"
-              style={{ fontSize: 12, opacity: 0.9 }}
-            >
-              SHE SPEAKS
-            </Text>
-            <Text
-              className="text-white font-jakarta"
-              style={{ fontSize: 56, lineHeight: 60, marginTop: 4 }}
-            >
-              {theirNativeName}
-            </Text>
-            <Text
-              className="text-white font-manrope-md italic"
+        <View className="flex-row items-center gap-3 mb-4">
+          {candidate.image ? (
+            <Image
+              testID="match-card-photo"
+              source={{ uri: candidate.image }}
               style={{
-                fontSize: 26,
-                opacity: 0.95,
-                borderBottomWidth: 3,
-                borderColor: GOLD,
-                borderStyle: "dashed",
-                alignSelf: "flex-start",
-                paddingBottom: 4,
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                borderWidth: 2,
+                borderColor: "rgba(255,255,255,0.85)",
+              }}
+            />
+          ) : (
+            <View
+              testID="match-card-photo-placeholder"
+              className="items-center justify-center"
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                borderWidth: 2,
+                borderColor: "rgba(255,255,255,0.85)",
+                backgroundColor: "rgba(255,255,255,0.12)",
               }}
             >
-              {their.proficiency}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center gap-3">
-            {candidate.image ? (
-              <Image
-                testID="match-card-photo"
-                source={{ uri: candidate.image }}
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: 36,
-                  borderWidth: 2,
-                  borderColor: "rgba(255,255,255,0.85)",
-                }}
-              />
-            ) : (
-              <View
-                testID="match-card-photo-placeholder"
-                className="items-center justify-center"
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: 36,
-                  borderWidth: 2,
-                  borderColor: "rgba(255,255,255,0.85)",
-                  backgroundColor: "rgba(255,255,255,0.12)",
-                }}
-              >
-                <Text
-                  className="text-white font-jakarta"
-                  style={{ fontSize: 28 }}
-                >
-                  {initial}
-                </Text>
-              </View>
-            )}
-            <View className="flex-1">
               <Text
-                className="text-white font-manrope-bold"
-                style={{ fontSize: 18 }}
+                className="text-white font-jakarta"
+                style={{ fontSize: 26 }}
               >
-                {candidate.name}
-                {candidate.age != null ? `, ${candidate.age}` : ""}
+                {initial}
               </Text>
-              {candidate.university && (
-                <Text
-                  className="text-white font-manrope"
-                  style={{ fontSize: 13, opacity: 0.85, marginTop: 2 }}
-                >
-                  {candidate.university}
-                </Text>
-              )}
             </View>
+          )}
+          <View className="flex-1">
+            <Text
+              className="text-white font-jakarta"
+              style={{ fontSize: 26, lineHeight: 30 }}
+            >
+              {candidate.name}
+              {candidate.age != null ? `, ${candidate.age}` : ""}
+            </Text>
+            {candidate.university && (
+              <Text
+                className="text-white font-manrope"
+                style={{ fontSize: 13, opacity: 0.85, marginTop: 2 }}
+              >
+                {candidate.university}
+              </Text>
+            )}
           </View>
         </View>
+
+        <Text
+          testID="partner-speaks-label"
+          className="text-white font-manrope-semi tracking-widest"
+          style={{ fontSize: 11, opacity: 0.9 }}
+        >
+          {partnerLabel} SPEAKS
+        </Text>
+        <View
+          className="flex-row flex-wrap mt-2"
+          style={{ gap: 6 }}
+          testID="partner-spoken-languages"
+        >
+          {candidate.spokenLanguages.length === 0 ? (
+            <Text className="text-white font-manrope" style={{ opacity: 0.8 }}>—</Text>
+          ) : (
+            candidate.spokenLanguages.map((l) => {
+              const isMatch = compatible.has(l.language);
+              return (
+                <View
+                  key={l.language}
+                  testID={isMatch ? "partner-spoken-match-chip" : "partner-spoken-chip"}
+                  className="px-3 py-1 rounded-full"
+                  style={{
+                    backgroundColor: isMatch ? GOLD : "rgba(255,255,255,0.18)",
+                  }}
+                >
+                  <Text
+                    className="font-manrope-semi"
+                    style={{
+                      fontSize: 13,
+                      color: isMatch ? "#2C1810" : "#FFFFFF",
+                    }}
+                  >
+                    {getLanguageFlag(l.language)} {l.language}
+                    {l.proficiency ? ` · ${l.proficiency}` : ""}
+                  </Text>
+                </View>
+              );
+            })
+          )}
+        </View>
+
+        {candidate.learningLanguages.length > 0 && (
+          <>
+            <Text
+              testID="partner-learning-label"
+              className="text-white font-manrope-semi tracking-widest mt-3"
+              style={{ fontSize: 11, opacity: 0.9 }}
+            >
+              {partnerLabel} IS LEARNING
+            </Text>
+            <View
+              className="flex-row flex-wrap mt-2"
+              style={{ gap: 6 }}
+              testID="partner-learning-languages"
+            >
+              {candidate.learningLanguages.map((lang) => {
+                const isMatch = compatible.has(lang);
+                return (
+                  <View
+                    key={lang}
+                    testID={isMatch ? "partner-learning-match-chip" : "partner-learning-chip"}
+                    className="px-3 py-1 rounded-full"
+                    style={{
+                      backgroundColor: isMatch ? GOLD : "transparent",
+                      borderWidth: 1.5,
+                      borderColor: isMatch ? GOLD : "rgba(255,255,255,0.55)",
+                      borderStyle: isMatch ? "solid" : "dashed",
+                    }}
+                  >
+                    <Text
+                      className="font-manrope-semi"
+                      style={{
+                        fontSize: 13,
+                        color: isMatch ? "#2C1810" : "#FFFFFF",
+                      }}
+                    >
+                      {getLanguageFlag(lang)} {lang}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
       </View>
 
-      {/* Swap band */}
+      {/* Swap band — matching languages */}
       <View
-        className="flex-row items-center justify-center gap-3 py-3 px-4"
+        className="px-4 py-3"
         style={{ backgroundColor: "#FFFFFF" }}
+        testID="match-overlap-band"
       >
-        <Text className="font-manrope-bold" style={{ fontSize: 16 }}>
-          {getLanguageFlag(their.language)} {getLanguageCode(their.language)}
-        </Text>
-        <View
-          className="items-center justify-center"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: GOLD,
-          }}
-        >
-          <Text className="font-manrope-bold" style={{ fontSize: 16 }}>
-            ⇄
+        <View className="flex-row items-center justify-between">
+          <Text
+            className="font-manrope-semi tracking-widest text-brand-muted-foreground"
+            style={{ fontSize: 11 }}
+          >
+            MATCHING IN
           </Text>
+          <View
+            testID="match-percent"
+            className="px-3 py-0.5 rounded-full"
+            style={{ backgroundColor: GOLD }}
+          >
+            <Text className="font-manrope-bold" style={{ fontSize: 12 }}>
+              {matchPct}%
+            </Text>
+          </View>
         </View>
-        <Text
-          className="font-manrope-bold text-brand-foreground"
-          style={{ fontSize: 16 }}
-        >
-          {getLanguageCode(yourLanguage)} {getLanguageFlag(yourLanguage)}
-        </Text>
         <View
-          testID="match-percent"
-          className="ml-2 px-3 py-1 rounded-full"
-          style={{ backgroundColor: GOLD }}
+          className="flex-row flex-wrap mt-2"
+          style={{ gap: 6 }}
+          testID="match-overlap-languages"
         >
-          <Text className="font-manrope-bold" style={{ fontSize: 13 }}>
-            {matchPct}%
-          </Text>
+          {compatible.size === 0 ? (
+            <Text
+              className="font-manrope text-brand-muted-foreground"
+              style={{ fontSize: 13 }}
+            >
+              No overlapping languages — review carefully.
+            </Text>
+          ) : (
+            Array.from(compatible).map((lang) => (
+              <View
+                key={lang}
+                className="flex-row items-center px-3 py-1 rounded-full"
+                style={{ backgroundColor: GOLD, gap: 4 }}
+              >
+                <Text className="font-manrope-bold" style={{ fontSize: 13 }}>
+                  {getLanguageFlag(lang)} {getLanguageCode(lang)}
+                </Text>
+              </View>
+            ))
+          )}
         </View>
       </View>
 
