@@ -199,14 +199,28 @@ export default function HomeScreen() {
             >
               ALSO FOR YOU
             </Text>
-            <View className="flex-row gap-3 mt-3">
-              {secondaries.map((s) => (
-                <SecondaryCard
-                  key={s.kind}
-                  state={s}
-                  onPress={() => handleSecondaryPress(s)}
-                />
-              ))}
+            <View className="mt-3" style={{ gap: 12 }}>
+              {Array.from({ length: Math.ceil(secondaries.length / 2) }).map(
+                (_, rowIndex) => {
+                  const rowCards = secondaries.slice(rowIndex * 2, rowIndex * 2 + 2);
+                  return (
+                    <View
+                      key={`row-${rowIndex}`}
+                      className="flex-row"
+                      style={{ gap: 12 }}
+                    >
+                      {rowCards.map((s) => (
+                        <SecondaryCard
+                          key={s.kind}
+                          state={s}
+                          onPress={() => handleSecondaryPress(s)}
+                        />
+                      ))}
+                      {rowCards.length === 1 && <View style={{ flex: 1 }} />}
+                    </View>
+                  );
+                },
+              )}
             </View>
           </View>
         )}

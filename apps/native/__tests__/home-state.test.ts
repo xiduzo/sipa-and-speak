@@ -166,7 +166,7 @@ describe("resolveHomeState carousel", () => {
     if (heros[0]?.kind === "matchfound") expect(heros[0].match.matchId).toBe("newer");
   });
 
-  it("returns up to 2 secondaries below the meetup carousel", () => {
+  it("always appends Discover (nomeetup) as the last secondary", () => {
     const { heros, secondaries } = resolveHomeState({
       confirmed: [confirmed({ isPast: true, hasReported: false })],
       pending: [pending({})],
@@ -174,7 +174,21 @@ describe("resolveHomeState carousel", () => {
       discover: [{ spokenLanguages: [] }],
     });
     expect(heros[0]?.kind).toBe("post");
-    expect(secondaries.map((s) => s.kind)).toEqual(["waiting", "matchfound"]);
+    expect(secondaries.map((s) => s.kind)).toEqual(["waiting", "matchfound", "nomeetup"]);
+  });
+
+  it("matchfound hero keeps Discover as secondary", () => {
+    const { secondaries } = resolveHomeState({ ...empty, matches: [match({})] });
+    expect(secondaries.map((s) => s.kind)).toEqual(["nomeetup"]);
+  });
+
+  it("waiting hero shows matchfound + Discover secondaries", () => {
+    const { secondaries } = resolveHomeState({
+      ...empty,
+      pending: [pending({})],
+      matches: [match({})],
+    });
+    expect(secondaries.map((s) => s.kind)).toEqual(["matchfound", "nomeetup"]);
   });
 });
 

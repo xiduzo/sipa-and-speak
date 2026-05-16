@@ -106,16 +106,20 @@ export function resolveHomeState(inputs: Inputs): { heros: HomeState[]; secondar
   const upcomings = buildConfirmedList(inputs.confirmed);
   const meetupHeros = [...posts, ...upcomings];
 
+  const discoverCard: HomeState = {
+    kind: "nomeetup",
+    matchCount: inputs.discover.length,
+    partners: inputs.discover,
+  };
+
   if (meetupHeros.length > 0) {
     const secondaries: HomeState[] = [];
     const waiting = buildWaitingList(inputs.pending)[0];
     if (waiting) secondaries.push(waiting);
     const top = pickMatchfound(inputs.matches);
     if (top) secondaries.push({ kind: "matchfound", match: top });
-    if (secondaries.length < 2) {
-      secondaries.push({ kind: "nomeetup", matchCount: inputs.discover.length, partners: inputs.discover });
-    }
-    return { heros: meetupHeros, secondaries: secondaries.slice(0, 2) };
+    secondaries.push(discoverCard);
+    return { heros: meetupHeros, secondaries };
   }
 
   const waitingList = buildWaitingList(inputs.pending);
@@ -123,22 +127,20 @@ export function resolveHomeState(inputs: Inputs): { heros: HomeState[]; secondar
     const secondaries: HomeState[] = [];
     const top = pickMatchfound(inputs.matches);
     if (top) secondaries.push({ kind: "matchfound", match: top });
-    if (secondaries.length < 2) {
-      secondaries.push({ kind: "nomeetup", matchCount: inputs.discover.length, partners: inputs.discover });
-    }
-    return { heros: waitingList, secondaries: secondaries.slice(0, 2) };
+    secondaries.push(discoverCard);
+    return { heros: waitingList, secondaries };
   }
 
   const top = pickMatchfound(inputs.matches);
   if (top) {
     return {
       heros: [{ kind: "matchfound", match: top }],
-      secondaries: [{ kind: "nomeetup", matchCount: inputs.discover.length, partners: inputs.discover }],
+      secondaries: [discoverCard],
     };
   }
 
   return {
-    heros: [{ kind: "nomeetup", matchCount: inputs.discover.length, partners: inputs.discover }],
+    heros: [discoverCard],
     secondaries: [],
   };
 }
