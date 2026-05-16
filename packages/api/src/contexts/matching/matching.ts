@@ -16,7 +16,6 @@ export const matchingRouter = router({
   discover: protectedProcedure
     .input(
       z.object({
-        filter: z.enum(["near_you", "language"]).optional(),
         filterLanguage: z.string().optional(),
         cursor: z.string().optional(),
         limit: z.number().int().min(1).max(50).default(20),
@@ -25,20 +24,10 @@ export const matchingRouter = router({
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      // Fetch current user's profile, languages, and interests
-      const myProfile = await db.query.languageProfile.findFirst({
-        where: eq(languageProfile.userId, userId),
-      });
-
       const myLanguages = await db
         .select()
         .from(userLanguage)
         .where(eq(userLanguage.userId, userId));
-
-      const myInterests = await db
-        .select()
-        .from(userInterest)
-        .where(eq(userInterest.userId, userId));
 
       const mySpoken = myLanguages
         .filter((l) => l.type === "spoken")
@@ -46,7 +35,6 @@ export const matchingRouter = router({
       const myLearning = myLanguages
         .filter((l) => l.type === "learning")
         .map((l) => l.language);
-      const myInterestNames = myInterests.map((i) => i.interest);
 
       // #125 — Build exclusion list: candidates with an active request in either direction
       const activeRequests = await db
@@ -135,8 +123,6 @@ export const matchingRouter = router({
             bio: profile.bio,
             university: profile.university,
             age: profile.age,
-            latitude: profile.latitude,
-            longitude: profile.longitude,
             spokenLanguages: langs
               .filter((l) => l.type === "spoken")
               .map((l) => ({ language: l.language, proficiency: l.proficiency })),
@@ -148,15 +134,9 @@ export const matchingRouter = router({
         });
 
       const scored = scoreCandidates(
-        {
-          spoken: mySpoken,
-          learning: myLearning,
-          interests: myInterestNames,
-          latitude: myProfile?.latitude ?? null,
-          longitude: myProfile?.longitude ?? null,
-        },
+        { spoken: mySpoken, learning: myLearning },
         candidates,
-        input.filter ? { mode: input.filter, language: input.filterLanguage } : undefined,
+        input.filterLanguage ? { language: input.filterLanguage } : undefined,
       );
 
       // Cursor-based pagination (cursor = index offset as string)

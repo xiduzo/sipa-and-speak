@@ -66,8 +66,7 @@ const defaultPartner = {
   bio: null,
   university: null,
   age: null,
-  distance: null,
-  score: 0.8,
+  score: 1,
 };
 
 const defaultIncomingRequest = {
