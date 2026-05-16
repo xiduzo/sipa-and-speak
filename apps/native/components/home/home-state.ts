@@ -112,20 +112,30 @@ export function resolveHomeState(inputs: Inputs): { heros: HomeState[]; secondar
     if (waiting) secondaries.push(waiting);
     const top = pickMatchfound(inputs.matches);
     if (top) secondaries.push({ kind: "matchfound", match: top });
+    if (secondaries.length < 2) {
+      secondaries.push({ kind: "nomeetup", matchCount: inputs.discover.length, partners: inputs.discover });
+    }
     return { heros: meetupHeros, secondaries: secondaries.slice(0, 2) };
   }
 
   const waitingList = buildWaitingList(inputs.pending);
   if (waitingList.length > 0) {
+    const secondaries: HomeState[] = [];
     const top = pickMatchfound(inputs.matches);
-    return {
-      heros: waitingList,
-      secondaries: top ? [{ kind: "matchfound", match: top }] : [],
-    };
+    if (top) secondaries.push({ kind: "matchfound", match: top });
+    if (secondaries.length < 2) {
+      secondaries.push({ kind: "nomeetup", matchCount: inputs.discover.length, partners: inputs.discover });
+    }
+    return { heros: waitingList, secondaries: secondaries.slice(0, 2) };
   }
 
   const top = pickMatchfound(inputs.matches);
-  if (top) return { heros: [{ kind: "matchfound", match: top }], secondaries: [] };
+  if (top) {
+    return {
+      heros: [{ kind: "matchfound", match: top }],
+      secondaries: [{ kind: "nomeetup", matchCount: inputs.discover.length, partners: inputs.discover }],
+    };
+  }
 
   return {
     heros: [{ kind: "nomeetup", matchCount: inputs.discover.length, partners: inputs.discover }],
