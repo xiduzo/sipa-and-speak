@@ -9,8 +9,7 @@ import {
 function confirmed(partial: Partial<ConfirmedMeetup>): ConfirmedMeetup {
   return {
     meetupId: "m-1",
-    date: "2099-01-01",
-    time: "10:00",
+    scheduledAt: new Date("2099-01-01T10:00:00Z"),
     status: "confirmed",
     isPast: false,
     venue: { id: "v-1", name: "V", description: null, photoUrl: null },
@@ -31,8 +30,7 @@ function pending(partial: Partial<PendingProposal>): PendingProposal {
     isProposer: true,
     partner: { id: "u-1", name: "Marta", image: null },
     venue: { id: "v-1", name: "V", photoUrl: null },
-    date: "2099-01-01",
-    time: "10:00",
+    scheduledAt: new Date("2099-01-01T10:00:00Z"),
     createdAt: "2026-04-28T10:00:00Z",
     ...partial,
   };
@@ -105,8 +103,8 @@ describe("resolveHomeState carousel", () => {
   });
 
   it("upcoming confirmed are ordered chronologically", () => {
-    const a = confirmed({ meetupId: "later", date: "2099-06-01", time: "10:00" });
-    const b = confirmed({ meetupId: "sooner", date: "2099-01-01", time: "10:00" });
+    const a = confirmed({ meetupId: "later", scheduledAt: new Date("2099-06-01T10:00:00Z") });
+    const b = confirmed({ meetupId: "sooner", scheduledAt: new Date("2099-01-01T10:00:00Z") });
     const { heros } = resolveHomeState({ ...empty, confirmed: [a, b] });
     const ids = heros.map((h) => (h.kind === "confirmed" ? h.meetup.meetupId : null));
     expect(ids).toEqual(["sooner", "later"]);
@@ -115,13 +113,11 @@ describe("resolveHomeState carousel", () => {
   it("partner-proposed reschedule jumps to front of upcoming carousel", () => {
     const earlier = confirmed({
       meetupId: "earlier",
-      date: "2099-01-01",
-      time: "09:00",
+      scheduledAt: new Date("2099-01-01T09:00:00Z"),
     });
     const laterWithAction = confirmed({
       meetupId: "later",
-      date: "2099-01-01",
-      time: "10:00",
+      scheduledAt: new Date("2099-01-01T10:00:00Z"),
       reschedulePending: true,
       rescheduleIsFromMe: false,
     });
@@ -134,11 +130,10 @@ describe("resolveHomeState carousel", () => {
   });
 
   it("self-initiated reschedule does not jump the queue", () => {
-    const earlier = confirmed({ meetupId: "earlier", date: "2099-01-01", time: "09:00" });
+    const earlier = confirmed({ meetupId: "earlier", scheduledAt: new Date("2099-01-01T09:00:00Z") });
     const laterMine = confirmed({
       meetupId: "later",
-      date: "2099-01-01",
-      time: "10:00",
+      scheduledAt: new Date("2099-01-01T10:00:00Z"),
       reschedulePending: true,
       rescheduleIsFromMe: true,
     });

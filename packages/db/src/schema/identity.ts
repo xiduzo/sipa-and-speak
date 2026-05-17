@@ -26,8 +26,8 @@ export const languageProfile = pgTable("language_profile", {
   latitude: doublePrecision("latitude"),
   longitude: doublePrecision("longitude"),
   onboardingComplete: boolean("onboarding_complete").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
@@ -109,8 +109,8 @@ export const userDeviceToken = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     token: text("token").notNull(),
     platform: text("platform", { enum: ["ios", "android", "web"] }).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),

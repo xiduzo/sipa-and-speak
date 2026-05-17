@@ -7,6 +7,9 @@
  * The aggregate owns no I/O: the router is responsible for loading the
  * snapshot from Drizzle, calling the relevant method, persisting the result,
  * and emitting events.
+ *
+ * Time is stored and reasoned about as UTC `Date` instants (`scheduledAt`).
+ * Wall-clock + timezone display lives at the edges (native / web).
  */
 
 export type MeetupStatus =
@@ -22,14 +25,12 @@ export type MeetupSnapshot = {
   proposerId: string;
   receiverId: string;
   venueId: string;
-  date: string;
-  time: string;
+  scheduledAt: Date;
   status: MeetupStatus;
   round: number;
   rescheduleProposerId: string | null;
   rescheduleVenueId: string | null;
-  rescheduleDate: string | null;
-  rescheduleTime: string | null;
+  rescheduleScheduledAt: Date | null;
 };
 
 export type AttendanceReportSnapshot = {
@@ -73,10 +74,6 @@ export class MeetupRuleError extends Error {
 
 const MAX_ROUND = 5;
 
-function isInPast(date: string, time: string, now: Date): boolean {
-  return new Date(`${date}T${time}:00`) <= now;
-}
-
 function ensureParticipant(s: MeetupSnapshot, actorId: string): void {
   if (s.proposerId !== actorId && s.receiverId !== actorId) {
     throw new MeetupRuleError("FORBIDDEN", "You are not a participant in this meetup");
@@ -96,8 +93,7 @@ export const Meetup = {
     isMatched: boolean;
     hasDuplicatePending: boolean;
     venue: VenueSnapshot | null;
-    date: string;
-    time: string;
+    scheduledAt: Date;
     now: Date;
   }): { row: Omit<MeetupSnapshot, "id">; events: DomainEventToEmit[] } {
     if (args.proposerId === args.receiverId) {
@@ -130,7 +126,7 @@ export const Meetup = {
         "This location is no longer available. Please choose another.",
       );
     }
-    if (isInPast(args.date, args.time, args.now)) {
+    if (args.scheduledAt <= args.now) {
       throw new MeetupRuleError(
         "BAD_REQUEST",
         "The proposed date and time must be in the future",
@@ -141,14 +137,12 @@ export const Meetup = {
       proposerId: args.proposerId,
       receiverId: args.receiverId,
       venueId: args.venue.id,
-      date: args.date,
-      time: args.time,
+      scheduledAt: args.scheduledAt,
       status: "pending" as MeetupStatus,
       round: 1,
       rescheduleProposerId: null,
       rescheduleVenueId: null,
-      rescheduleDate: null,
-      rescheduleTime: null,
+      rescheduleScheduledAt: null,
     };
 
     const events: DomainEventToEmit[] = [
@@ -158,8 +152,7 @@ export const Meetup = {
           proposerId: args.proposerId,
           receiverId: args.receiverId,
           venueName: args.venue.name,
-          date: args.date,
-          time: args.time,
+          scheduledAt: args.scheduledAt,
           proposedAt: args.now,
         },
       },
@@ -198,8 +191,7 @@ export const Meetup = {
           proposerId: state.proposerId,
           receiverId: state.receiverId,
           venueName: args.venueName,
-          date: state.date,
-          time: state.time,
+          scheduledAt: state.scheduledAt,
           confirmedAt: args.now,
         },
       },
@@ -245,8 +237,7 @@ export const Meetup = {
     args: {
       actorId: string;
       venue: VenueSnapshot | null;
-      date: string;
-      time: string;
+      scheduledAt: Date;
       now: Date;
     },
   ): { state: MeetupSnapshot; events: DomainEventToEmit[] } {
@@ -276,15 +267,14 @@ export const Meetup = {
     }
     if (
       state.venueId === args.venue.id &&
-      state.date === args.date &&
-      state.time === args.time
+      state.scheduledAt.getTime() === args.scheduledAt.getTime()
     ) {
       throw new MeetupRuleError(
         "BAD_REQUEST",
         "Counter-proposal must differ from the current proposal in at least one detail",
       );
     }
-    if (isInPast(args.date, args.time, args.now)) {
+    if (args.scheduledAt <= args.now) {
       throw new MeetupRuleError(
         "BAD_REQUEST",
         "The proposed date and time must be in the future",
@@ -298,8 +288,7 @@ export const Meetup = {
       proposerId: newProposerId,
       receiverId: newReceiverId,
       venueId: args.venue.id,
-      date: args.date,
-      time: args.time,
+      scheduledAt: args.scheduledAt,
       round: state.round + 1,
     };
 
@@ -311,8 +300,7 @@ export const Meetup = {
           newProposerId,
           newReceiverId,
           venueName: args.venue.name,
-          date: args.date,
-          time: args.time,
+          scheduledAt: args.scheduledAt,
           round: next.round,
           counterProposedAt: args.now,
         },
@@ -330,7 +318,7 @@ export const Meetup = {
     if (state.status !== "confirmed") {
       throw new MeetupRuleError("BAD_REQUEST", "Only confirmed meetups can be cancelled");
     }
-    if (isInPast(state.date, state.time, args.now)) {
+    if (state.scheduledAt <= args.now) {
       throw new MeetupRuleError(
         "BAD_REQUEST",
         "This meetup has already taken place and cannot be cancelled",
@@ -361,8 +349,7 @@ export const Meetup = {
     args: {
       actorId: string;
       venue: VenueSnapshot | null;
-      date: string;
-      time: string;
+      scheduledAt: Date;
       now: Date;
     },
   ): { state: MeetupSnapshot; events: DomainEventToEmit[] } {
@@ -373,13 +360,13 @@ export const Meetup = {
         "Only confirmed meetups can be rescheduled",
       );
     }
-    if (isInPast(state.date, state.time, args.now)) {
+    if (state.scheduledAt <= args.now) {
       throw new MeetupRuleError(
         "BAD_REQUEST",
         "This meetup has already taken place and cannot be rescheduled",
       );
     }
-    if (isInPast(args.date, args.time, args.now)) {
+    if (args.scheduledAt <= args.now) {
       throw new MeetupRuleError(
         "BAD_REQUEST",
         "The rescheduled date and time must be in the future",
@@ -396,8 +383,7 @@ export const Meetup = {
     }
     if (
       state.venueId === args.venue.id &&
-      state.date === args.date &&
-      state.time === args.time
+      state.scheduledAt.getTime() === args.scheduledAt.getTime()
     ) {
       throw new MeetupRuleError(
         "BAD_REQUEST",
@@ -415,8 +401,7 @@ export const Meetup = {
       ...state,
       rescheduleProposerId: args.actorId,
       rescheduleVenueId: args.venue.id,
-      rescheduleDate: args.date,
-      rescheduleTime: args.time,
+      rescheduleScheduledAt: args.scheduledAt,
     };
     const receiverId =
       state.proposerId === args.actorId ? state.receiverId : state.proposerId;
@@ -430,8 +415,7 @@ export const Meetup = {
           receiverId,
           venueId: args.venue.id,
           venueName: args.venue.name,
-          date: args.date,
-          time: args.time,
+          scheduledAt: args.scheduledAt,
           proposedAt: args.now,
         },
       },
@@ -467,12 +451,10 @@ export const Meetup = {
     const next: MeetupSnapshot = {
       ...state,
       venueId: state.rescheduleVenueId!,
-      date: state.rescheduleDate!,
-      time: state.rescheduleTime!,
+      scheduledAt: state.rescheduleScheduledAt!,
       rescheduleProposerId: null,
       rescheduleVenueId: null,
-      rescheduleDate: null,
-      rescheduleTime: null,
+      rescheduleScheduledAt: null,
     };
 
     const events: DomainEventToEmit[] = [
@@ -483,8 +465,7 @@ export const Meetup = {
           proposerId: state.proposerId,
           receiverId: state.receiverId,
           venueName: args.rescheduleVenueName,
-          newDate: next.date,
-          newTime: next.time,
+          newScheduledAt: next.scheduledAt,
           rescheduledAt: args.now,
         },
       },
@@ -521,8 +502,7 @@ export const Meetup = {
       ...state,
       rescheduleProposerId: null,
       rescheduleVenueId: null,
-      rescheduleDate: null,
-      rescheduleTime: null,
+      rescheduleScheduledAt: null,
     };
 
     const events: DomainEventToEmit[] = [
@@ -533,8 +513,7 @@ export const Meetup = {
           proposerId: state.proposerId,
           receiverId: state.receiverId,
           venueName: args.venueName,
-          originalDate: state.date,
-          originalTime: state.time,
+          originalScheduledAt: state.scheduledAt,
           declinedAt: args.now,
         },
       },
@@ -574,7 +553,7 @@ export const Meetup = {
         "Only confirmed meetups can receive attendance reports",
       );
     }
-    if (!isInPast(state.date, state.time, args.now)) {
+    if (state.scheduledAt > args.now) {
       throw new MeetupRuleError(
         "BAD_REQUEST",
         "You can only report attendance after the meetup's scheduled time has passed",

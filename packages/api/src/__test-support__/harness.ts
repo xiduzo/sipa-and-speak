@@ -54,8 +54,20 @@ function applyMigrations(mem: IMemoryDb): void {
   const entries = [...journal.entries].sort((a, b) => a.idx - b.idx);
 
   for (const entry of entries) {
-    const file = `${entry.tag}.sql`;
-    const sql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
+    // Prefer a `.pgmem.sql` sister file when present — used to encode
+    // pg-mem-compatible equivalents of migrations whose real SQL relies on
+    // PG features pg-mem can't parse (e.g. `AT TIME ZONE`).
+    const pgmemFile = `${entry.tag}.pgmem.sql`;
+    const realFile = `${entry.tag}.sql`;
+    let file = realFile;
+    let sql: string;
+    try {
+      sql = readFileSync(join(MIGRATIONS_DIR, pgmemFile), "utf8");
+      file = pgmemFile;
+    } catch {
+      sql = readFileSync(join(MIGRATIONS_DIR, realFile), "utf8");
+    }
+
     for (const stmt of sql.split("--> statement-breakpoint")) {
       const trimmed = stmt.trim();
       if (!trimmed) continue;

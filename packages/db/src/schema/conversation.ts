@@ -26,7 +26,7 @@ export const conversation = pgTable(
     // Trust & Moderation can suspend; only "open" conversations accept messages.
     // Permanently removed Students cause conversations to be "closed" (read-only, history preserved).
     status: text("status", { enum: ["open", "suspended", "closed"] }).notNull().default("open"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("conversation_user1_idx").on(table.user1Id),
@@ -48,7 +48,7 @@ export const message = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("message_conversationId_idx").on(table.conversationId),
@@ -68,7 +68,7 @@ export const messageReadStatus = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    lastReadAt: timestamp("last_read_at").defaultNow().notNull(),
+    lastReadAt: timestamp("last_read_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("message_read_conversationId_userId_idx").on(
@@ -92,10 +92,10 @@ export const messagingOptIn = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     response: text("response", { enum: ["accept", "decline"] }).notNull(),
-    respondedAt: timestamp("responded_at").defaultNow().notNull(),
+    respondedAt: timestamp("responded_at", { withTimezone: true }).defaultNow().notNull(),
     // Set when this acceptance triggered a nudge push to the pending partner;
     // prevents duplicate nudges.
-    nudgeSentAt: timestamp("nudge_sent_at"),
+    nudgeSentAt: timestamp("nudge_sent_at", { withTimezone: true }),
   },
   (table) => [
     unique("messaging_opt_in_meetup_student_unique").on(table.meetupId, table.studentId),
@@ -114,7 +114,7 @@ export const conversationPresence = pgTable(
     conversationId: text("conversation_id")
       .notNull()
       .references(() => conversation.id, { onDelete: "cascade" }),
-    activeUntil: timestamp("active_until").notNull(),
+    activeUntil: timestamp("active_until", { withTimezone: true }).notNull(),
   },
   (table) => [
     unique("conversation_presence_student_conv_unique").on(table.studentId, table.conversationId),

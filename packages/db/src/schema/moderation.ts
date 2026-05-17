@@ -21,7 +21,7 @@ export const studentComment = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("student_comment_targetId_idx").on(table.targetId),
@@ -36,7 +36,7 @@ export const blockedEmail = pgTable(
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
     email: text("email").notNull().unique(),
-    blockedAt: timestamp("blocked_at").defaultNow().notNull(),
+    blockedAt: timestamp("blocked_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [uniqueIndex("blocked_email_email_idx").on(table.email)],
 );
@@ -60,8 +60,8 @@ export const userFlag = pgTable(
     // Resolution metadata (null until flag is resolved)
     outcome: text("outcome"),          // warned | suspended | removed
     moderatorId: text("moderator_id").references(() => user.id, { onDelete: "set null" }),
-    resolvedAt: timestamp("resolved_at"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("user_flag_reporter_idx").on(table.reporterId),

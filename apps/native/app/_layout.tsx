@@ -252,8 +252,7 @@ function Layout() {
                 <MeetupConfirmedModal
                   visible
                   venueName={meetupAlert.venueName}
-                  date={meetupAlert.date}
-                  time={meetupAlert.time}
+                  scheduledAt={new Date(`${meetupAlert.date}T${meetupAlert.time}:00`)}
                   onDismiss={dismissMeetupAlert}
                 />
               )}

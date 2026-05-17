@@ -237,11 +237,13 @@ async function seed() {
   ]).onConflictDoNothing();
 
   // ── 8. Meetups ────────────────────────────────────────────────────────────
+  // Wall-clock times are intended as Europe/Amsterdam (CET/CEST); we encode
+  // the equivalent UTC instants explicitly so seed is stable across environments.
   await db.insert(meetup).values([
-    { id: IDS.MEETUP_TEST_CARLOS, proposerId: TEST_ID,    receiverId: IDS.CARLOS, venueId: venueA, date: "2026-04-22", time: "14:00", status: "pending",   round: 1, createdAt: new Date("2026-04-13"), updatedAt: new Date("2026-04-13") },
-    { id: IDS.MEETUP_TEST_YUKI,   proposerId: TEST_ID,    receiverId: IDS.YUKI,   venueId: venueB, date: "2026-03-15", time: "10:30", status: "completed", round: 1, createdAt: new Date("2026-03-10"), updatedAt: new Date("2026-03-15") },
-    { id: IDS.MEETUP_TEST_FATIMA, proposerId: IDS.FATIMA, receiverId: TEST_ID,    venueId: venueA, date: "2026-03-28", time: "15:30", status: "completed", round: 2, createdAt: new Date("2026-03-20"), updatedAt: new Date("2026-03-28") },
-    { id: IDS.MEETUP_TEST_MARCO,  proposerId: IDS.MARCO,  receiverId: TEST_ID,    venueId: venueA, date: "2026-04-20", time: "13:00", status: "confirmed", round: 1, createdAt: new Date("2026-04-07"), updatedAt: new Date("2026-04-08") },
+    { id: IDS.MEETUP_TEST_CARLOS, proposerId: TEST_ID,    receiverId: IDS.CARLOS, venueId: venueA, scheduledAt: new Date("2026-04-22T12:00:00Z"), status: "pending",   round: 1, createdAt: new Date("2026-04-13"), updatedAt: new Date("2026-04-13") },
+    { id: IDS.MEETUP_TEST_YUKI,   proposerId: TEST_ID,    receiverId: IDS.YUKI,   venueId: venueB, scheduledAt: new Date("2026-03-15T09:30:00Z"), status: "completed", round: 1, createdAt: new Date("2026-03-10"), updatedAt: new Date("2026-03-15") },
+    { id: IDS.MEETUP_TEST_FATIMA, proposerId: IDS.FATIMA, receiverId: TEST_ID,    venueId: venueA, scheduledAt: new Date("2026-03-28T13:30:00Z"), status: "completed", round: 2, createdAt: new Date("2026-03-20"), updatedAt: new Date("2026-03-28") },
+    { id: IDS.MEETUP_TEST_MARCO,  proposerId: IDS.MARCO,  receiverId: TEST_ID,    venueId: venueA, scheduledAt: new Date("2026-04-20T11:00:00Z"), status: "confirmed", round: 1, createdAt: new Date("2026-04-07"), updatedAt: new Date("2026-04-08") },
   ]).onConflictDoNothing();
 
   // ── 9. Attendance reports ─────────────────────────────────────────────────

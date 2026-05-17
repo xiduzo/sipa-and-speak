@@ -15,32 +15,26 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { differenceInCalendarDays, format, startOfDay as dfStartOfDay } from "date-fns";
 
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 
 function formatTime(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return format(d, "HH:mm");
 }
 
 function startOfDay(d: Date): number {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x.getTime();
+  return dfStartOfDay(d).getTime();
 }
 
 function formatDayLabel(date: Date): string {
-  const today = startOfDay(new Date());
-  const day = startOfDay(date);
-  const diffDays = Math.round((today - day) / (1000 * 60 * 60 * 24));
+  const diffDays = differenceInCalendarDays(new Date(), date);
   if (diffDays === 0) return "TODAY";
   if (diffDays === 1) return "YESTERDAY";
-  if (diffDays < 7)
-    return date.toLocaleDateString([], { weekday: "long" }).toUpperCase();
-  return date
-    .toLocaleDateString([], { month: "short", day: "numeric" })
-    .toUpperCase();
+  if (diffDays < 7) return format(date, "EEEE").toUpperCase();
+  return format(date, "MMM d").toUpperCase();
 }
 
 type Message = {

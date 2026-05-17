@@ -24,8 +24,8 @@ export const matchRequest = pgTable(
     })
       .notNull()
       .default("pending"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -53,7 +53,7 @@ export const studentMatch = pgTable(
       .references(() => matchRequest.id, { onDelete: "cascade" }),
     // Connected state: set to "connected" when both Students confirm attendance
     status: text("status", { enum: ["matched", "connected"] }).notNull().default("matched"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     index("student_match_studentA_idx").on(table.studentAId),

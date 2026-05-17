@@ -26,6 +26,8 @@
     "@sentry/react-native": "^8.10.0",
     "@sip-and-speak/api": "workspace:*",
     "@sip-and-speak/env": "workspace:*",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "@tanstack/react-form": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",

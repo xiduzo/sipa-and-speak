@@ -127,6 +127,13 @@
       "when": 1777394269625,
       "tag": "0017_fuzzy_angel",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1778972299815,
+      "tag": "0018_timezone_migration",
+      "breakpoints": true
     }
   ]
 }

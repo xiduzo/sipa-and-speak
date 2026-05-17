@@ -16,8 +16,8 @@ import { matchRequest, studentMatch } from "@sip-and-speak/db/schema/matching";
 import { appRouter } from "../../../routers";
 import { resetDb, buildSessionContext, captureEvents } from "../../../__test-support__/harness";
 
-const FUTURE_DATE = "2099-09-01";
-const FUTURE_TIME = "18:00";
+const FUTURE_AT = new Date("2099-09-01T18:00:00Z");
+const FUTURE_AT_ALT = new Date("2099-09-01T19:30:00Z");
 
 async function seedMatchedPair(): Promise<{ a: string; b: string; venueId: string }> {
   const a = "u-A";
@@ -61,24 +61,23 @@ describe("meetup integration — propose", () => {
     const created = await caller.meetup.propose({
       partnerId: b,
       venueId,
-      date: FUTURE_DATE,
-      time: FUTURE_TIME,
+      scheduledAt: FUTURE_AT.toISOString(),
     });
 
     capture.stop();
 
-    expect(created.status).toBe("pending");
-    expect(created.proposerId).toBe(a);
-    expect(created.receiverId).toBe(b);
-    expect(created.round).toBe(1);
+    expect(created!.status).toBe("pending");
+    expect(created!.proposerId).toBe(a);
+    expect(created!.receiverId).toBe(b);
+    expect(created!.round).toBe(1);
 
-    const rows = await db.select().from(meetup).where(eq(meetup.id, created.id));
+    const rows = await db.select().from(meetup).where(eq(meetup.id, created!.id));
     expect(rows).toHaveLength(1);
 
     const proposed = capture.events.filter((e) => e.name === "MeetupProposed");
     expect(proposed).toHaveLength(1);
     const payload = proposed[0]!.payload as { meetupId: string; proposerId: string };
-    expect(payload.meetupId).toBe(created.id);
+    expect(payload.meetupId).toBe(created!.id);
     expect(payload.proposerId).toBe(a);
   });
 
@@ -89,8 +88,7 @@ describe("meetup integration — propose", () => {
       caller.meetup.propose({
         partnerId: a,
         venueId: "any",
-        date: FUTURE_DATE,
-        time: FUTURE_TIME,
+        scheduledAt: FUTURE_AT.toISOString(),
       }),
     ).rejects.toThrow(/yourself/);
   });
@@ -109,8 +107,7 @@ describe("meetup integration — propose", () => {
       caller.meetup.propose({
         partnerId: "u-Y",
         venueId: v!.id,
-        date: FUTURE_DATE,
-        time: FUTURE_TIME,
+        scheduledAt: FUTURE_AT.toISOString(),
       }),
     ).rejects.toThrow(/matched partner/);
   });
@@ -127,13 +124,12 @@ describe("meetup integration — accept/decline lifecycle", () => {
     const created = await proposeCaller.meetup.propose({
       partnerId: b,
       venueId,
-      date: FUTURE_DATE,
-      time: FUTURE_TIME,
+      scheduledAt: FUTURE_AT.toISOString(),
     });
 
     const capture = captureEvents();
     const receiverCaller = appRouter.createCaller(buildSessionContext(b));
-    const updated = await receiverCaller.meetup.acceptProposal({ meetupId: created.id });
+    const updated = await receiverCaller.meetup.acceptProposal({ meetupId: created!.id });
     capture.stop();
 
     expect(updated!.status).toBe("confirmed");
@@ -144,12 +140,12 @@ describe("meetup integration — accept/decline lifecycle", () => {
     const { a, b, venueId } = await seedMatchedPair();
     const created = await appRouter
       .createCaller(buildSessionContext(a))
-      .meetup.propose({ partnerId: b, venueId, date: FUTURE_DATE, time: FUTURE_TIME });
+      .meetup.propose({ partnerId: b, venueId, scheduledAt: FUTURE_AT.toISOString() });
 
     const capture = captureEvents();
     const updated = await appRouter
       .createCaller(buildSessionContext(b))
-      .meetup.declineProposal({ meetupId: created.id });
+      .meetup.declineProposal({ meetupId: created!.id });
     capture.stop();
 
     expect(updated!.status).toBe("declined");
@@ -160,12 +156,12 @@ describe("meetup integration — accept/decline lifecycle", () => {
     const { a, b, venueId } = await seedMatchedPair();
     const created = await appRouter
       .createCaller(buildSessionContext(a))
-      .meetup.propose({ partnerId: b, venueId, date: FUTURE_DATE, time: FUTURE_TIME });
+      .meetup.propose({ partnerId: b, venueId, scheduledAt: FUTURE_AT.toISOString() });
 
     await expect(
       appRouter
         .createCaller(buildSessionContext(a))
-        .meetup.acceptProposal({ meetupId: created.id }),
+        .meetup.acceptProposal({ meetupId: created!.id }),
     ).rejects.toThrow(/responder/);
   });
 });
@@ -179,7 +175,7 @@ describe("meetup integration — counter-propose", () => {
     const { a, b, venueId } = await seedMatchedPair();
     const created = await appRouter
       .createCaller(buildSessionContext(a))
-      .meetup.propose({ partnerId: b, venueId, date: FUTURE_DATE, time: FUTURE_TIME });
+      .meetup.propose({ partnerId: b, venueId, scheduledAt: FUTURE_AT.toISOString() });
 
     // Second venue for the counter
     const [v2] = await db
@@ -191,10 +187,9 @@ describe("meetup integration — counter-propose", () => {
     const counter = await appRouter
       .createCaller(buildSessionContext(b))
       .meetup.counterPropose({
-        meetupId: created.id,
+        meetupId: created!.id,
         venueId: v2!.id,
-        date: FUTURE_DATE,
-        time: "19:30",
+        scheduledAt: FUTURE_AT_ALT.toISOString(),
       });
     capture.stop();
 
@@ -202,7 +197,7 @@ describe("meetup integration — counter-propose", () => {
     expect(counter!.receiverId).toBe(a);
     expect(counter!.round).toBe(2);
     expect(counter!.venueId).toBe(v2!.id);
-    expect(counter!.time).toBe("19:30");
+    expect(counter!.scheduledAt.getTime()).toBe(FUTURE_AT_ALT.getTime());
     expect(capture.events.map((e) => e.name)).toContain("MeetupCounterProposed");
   });
 });

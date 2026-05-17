@@ -1,7 +1,6 @@
 export type ConfirmedMeetup = {
   meetupId: string;
-  date: string;
-  time: string;
+  scheduledAt: Date | string;
   status: string;
   isPast: boolean;
   venue: { id: string; name: string; description: string | null; photoUrl: string | null };
@@ -23,8 +22,7 @@ export type PendingProposal = {
   isProposer: boolean;
   partner: { id: string; name: string; image: string | null };
   venue: { id: string; name: string; photoUrl: string | null };
-  date: string;
-  time: string;
+  scheduledAt: Date | string;
   createdAt: Date | string;
 };
 
@@ -54,6 +52,10 @@ type Inputs = {
   discover: DiscoverPartner[];
 };
 
+function instant(d: Date | string): number {
+  return (d instanceof Date ? d : new Date(d)).getTime();
+}
+
 function needsAction(state: HomeState): boolean {
   switch (state.kind) {
     case "post":
@@ -72,7 +74,7 @@ function needsAction(state: HomeState): boolean {
 function buildPostList(confirmed: ConfirmedMeetup[]): HomeState[] {
   return confirmed
     .filter((m) => m.isPast && !m.hasReported)
-    .sort((a, b) => `${b.date}T${b.time}`.localeCompare(`${a.date}T${a.time}`))
+    .sort((a, b) => instant(b.scheduledAt) - instant(a.scheduledAt))
     .map((m) => ({ kind: "post", meetup: m }));
 }
 
@@ -83,14 +85,14 @@ function buildConfirmedList(confirmed: ConfirmedMeetup[]): HomeState[] {
       const aAction = a.reschedulePending && !a.rescheduleIsFromMe ? 1 : 0;
       const bAction = b.reschedulePending && !b.rescheduleIsFromMe ? 1 : 0;
       if (aAction !== bAction) return bAction - aAction;
-      return `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`);
+      return instant(a.scheduledAt) - instant(b.scheduledAt);
     })
     .map((m) => ({ kind: "confirmed", meetup: m }));
 }
 
 function buildWaitingList(pending: PendingProposal[]): HomeState[] {
   return [...pending]
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .sort((a, b) => instant(a.createdAt) - instant(b.createdAt))
     .map((p) => ({ kind: "waiting", proposal: p }));
 }
 

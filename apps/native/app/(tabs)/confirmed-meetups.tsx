@@ -271,32 +271,51 @@ export default function ConfirmedMeetupsScreen() {
     ]);
   }
 
+  const scheduledCount = meetups.length;
+  const pendingCount = pending.length;
+
   return (
-    <Container>
+    <Container isScrollable={false}>
       <MeetupFlowModal mode={meetupModal} onDismiss={() => setMeetupModal(null)} />
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
-        <View className="mb-6">
-          <Text
-            className="font-manrope-semi tracking-widest text-brand-muted-foreground"
-            style={{ fontSize: 12 }}
-          >
-            YOUR COFFEE BOOK
-          </Text>
+        <View style={{ paddingHorizontal: 24, paddingTop: 12, paddingBottom: 18 }}>
           <Text
             className="font-jakarta"
-            style={{ fontSize: 32, color: DARK, marginTop: 2 }}
+            style={{ fontSize: 42, lineHeight: 46, color: DARK, letterSpacing: -0.5 }}
           >
             Meetups
           </Text>
+          <View className="flex-row items-center" style={{ gap: 8, marginTop: 4 }}>
+            <Text className="font-manrope" style={{ fontSize: 14, color: MUTED }}>
+              {scheduledCount} scheduled
+            </Text>
+            {pendingCount > 0 && (
+              <>
+                <Text className="font-manrope" style={{ fontSize: 14, color: MUTED }}>
+                  ·
+                </Text>
+                <Text
+                  className="font-manrope-semi"
+                  style={{ fontSize: 14, color: GOLD }}
+                >
+                  {pendingCount} pending
+                </Text>
+              </>
+            )}
+          </View>
         </View>
 
         {/* Pending proposals */}
         {pending.length > 0 && (
-          <View testID="pending-proposals-section" className="mb-6">
+          <View testID="pending-proposals-section" style={{ paddingHorizontal: 20, marginBottom: 24 }}>
             <Text
               className="font-manrope-semi tracking-widest text-brand-muted-foreground mb-3"
-              style={{ fontSize: 11 }}
+              style={{ fontSize: 11, letterSpacing: 2, color: MUTED, paddingHorizontal: 4 }}
             >
               PENDING
             </Text>
@@ -308,9 +327,9 @@ export default function ConfirmedMeetupsScreen() {
                 <CardShell key={p.id} testID="pending-proposal-card">
                   <CardHeader
                     partnerName={p.partner.name}
-                    dateTimeLabel={formatDayTime(p.date, p.time)}
+                    dateTimeLabel={formatDayTime(p.scheduledAt)}
                     venueName={p.venue.name}
-                    rawDateTime={`${p.date} at ${p.time}`}
+                    rawDateTime={new Date(p.scheduledAt).toISOString()}
                     pill={
                       <StatusPill
                         label={isOutgoing ? "Waiting" : "Their turn"}
@@ -342,10 +361,10 @@ export default function ConfirmedMeetupsScreen() {
 
         {/* Confirmed meetups */}
         {meetups.length > 0 && (
-          <View>
+          <View style={{ paddingHorizontal: 20 }}>
             <Text
               className="font-manrope-semi tracking-widest text-brand-muted-foreground mb-3"
-              style={{ fontSize: 11 }}
+              style={{ fontSize: 11, letterSpacing: 2, color: MUTED, paddingHorizontal: 4 }}
             >
               SCHEDULED
             </Text>
@@ -382,9 +401,9 @@ export default function ConfirmedMeetupsScreen() {
                 <CardShell key={m.meetupId} testID="meetup-card">
                   <CardHeader
                     partnerName={m.partner.name}
-                    dateTimeLabel={formatDayTime(m.date, m.time)}
+                    dateTimeLabel={formatDayTime(m.scheduledAt)}
                     venueName={m.venue.name}
-                    rawDateTime={`${m.date} at ${m.time}`}
+                    rawDateTime={new Date(m.scheduledAt).toISOString()}
                     pill={<StatusPill label={pillLabel} tone={pillTone} />}
                   />
 
@@ -400,8 +419,7 @@ export default function ConfirmedMeetupsScreen() {
                             type: "reschedule",
                             meetupId: m.meetupId,
                             currentVenueId: m.venue.id,
-                            currentDate: m.date,
-                            currentTime: m.time,
+                            currentScheduledAt: m.scheduledAt,
                           })
                         }
                         flex

@@ -50,8 +50,7 @@ export default function HomeScreen() {
       isProposer: p.isProposer,
       partner: p.partner,
       venue: { id: p.venue.id, name: p.venue.name, photoUrl: p.venue.photoUrl },
-      date: p.date,
-      time: p.time,
+      scheduledAt: p.scheduledAt,
       createdAt: p.createdAt,
     })),
     matches: matchesQuery.data ?? [],
@@ -104,8 +103,7 @@ export default function HomeScreen() {
                 type: "reschedule",
                 meetupId: hero.meetup.meetupId,
                 currentVenueId: hero.meetup.venue.id,
-                currentDate: hero.meetup.date,
-                currentTime: hero.meetup.time,
+                currentScheduledAt: hero.meetup.scheduledAt,
               })
             }
             onAcceptReschedule={() =>

@@ -397,7 +397,7 @@ export const chatRouter = router({
     const lockedEntries = lockedMeetups
       .filter((row) => !conversationByMeetup.has(row.meetup.id))
       .map((row) => {
-        const meetupAt = new Date(`${row.meetup.date}T${row.meetup.time}:00`);
+        const meetupAt = row.meetup.scheduledAt;
         const optIn = optInByMeetup.get(row.meetup.id) ?? { mine: null, partner: null };
         const phase = deriveLockedPhase({
           meetupStatus: row.meetup.status as "confirmed" | "completed" | "not_attended",

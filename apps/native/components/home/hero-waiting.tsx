@@ -11,7 +11,7 @@ type Props = {
 
 export function HeroWaiting({ proposal, onRespond }: Props) {
   const initial = (proposal.partner.name || "?").charAt(0).toUpperCase();
-  const dayTime = formatDayTime(proposal.date, proposal.time);
+  const dayTime = formatDayTime(proposal.scheduledAt);
   const relative = formatRelativeTime(proposal.createdAt);
 
   if (proposal.isProposer) {

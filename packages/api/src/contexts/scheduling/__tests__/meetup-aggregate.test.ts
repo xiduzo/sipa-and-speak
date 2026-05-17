@@ -8,10 +8,11 @@ import {
 } from "../meetup-aggregate";
 
 const NOW = new Date("2030-06-01T10:00:00Z");
-const FUTURE_DATE = "2030-12-01";
-const FUTURE_TIME = "18:00";
-const PAST_DATE = "2020-01-01";
-const PAST_TIME = "10:00";
+const FUTURE_AT = new Date("2030-12-01T18:00:00Z");
+const FUTURE_AT_ALT = new Date("2030-12-01T19:00:00Z");
+const FUTURE_AT_ALT2 = new Date("2030-12-01T20:00:00Z");
+const FUTURE_AT_ALT3 = new Date("2030-12-01T21:00:00Z");
+const PAST_AT = new Date("2020-01-01T10:00:00Z");
 
 const activeVenue: VenueSnapshot = { id: "v-1", name: "Cafe One", isActive: true };
 const inactiveVenue: VenueSnapshot = { id: "v-2", name: "Closed Cafe", isActive: false };
@@ -22,14 +23,12 @@ function pending(overrides: Partial<MeetupSnapshot> = {}): MeetupSnapshot {
     proposerId: "u-A",
     receiverId: "u-B",
     venueId: "v-1",
-    date: FUTURE_DATE,
-    time: FUTURE_TIME,
+    scheduledAt: FUTURE_AT,
     status: "pending",
     round: 1,
     rescheduleProposerId: null,
     rescheduleVenueId: null,
-    rescheduleDate: null,
-    rescheduleTime: null,
+    rescheduleScheduledAt: null,
     ...overrides,
   };
 }
@@ -45,8 +44,7 @@ describe("Meetup.propose", () => {
     isMatched: true,
     hasDuplicatePending: false,
     venue: activeVenue,
-    date: FUTURE_DATE,
-    time: FUTURE_TIME,
+    scheduledAt: FUTURE_AT,
     now: NOW,
   };
 
@@ -96,7 +94,7 @@ describe("Meetup.propose", () => {
 
   it("rejects past date/time", () => {
     expect(() =>
-      Meetup.propose({ ...baseArgs, date: PAST_DATE, time: PAST_TIME }),
+      Meetup.propose({ ...baseArgs, scheduledAt: PAST_AT }),
     ).toThrow(/future/);
   });
 });
@@ -166,8 +164,7 @@ describe("Meetup.counterPropose", () => {
     const { state, events } = Meetup.counterPropose(pending(), {
       actorId: "u-B",
       venue: { id: "v-3", name: "Cafe Three", isActive: true },
-      date: FUTURE_DATE,
-      time: "19:00",
+      scheduledAt: FUTURE_AT_ALT,
       now: NOW,
     });
     expect(state.proposerId).toBe("u-B");
@@ -181,8 +178,7 @@ describe("Meetup.counterPropose", () => {
       Meetup.counterPropose(pending({ round: 5 }), {
         actorId: "u-B",
         venue: activeVenue,
-        date: FUTURE_DATE,
-        time: "19:00",
+        scheduledAt: FUTURE_AT_ALT,
         now: NOW,
       }),
     ).toThrow(/Maximum counter-proposal rounds/);
@@ -193,8 +189,7 @@ describe("Meetup.counterPropose", () => {
       Meetup.counterPropose(pending(), {
         actorId: "u-B",
         venue: activeVenue,
-        date: FUTURE_DATE,
-        time: FUTURE_TIME,
+        scheduledAt: FUTURE_AT,
         now: NOW,
       }),
     ).toThrow(/at least one detail/);
@@ -217,7 +212,7 @@ describe("Meetup.cancel", () => {
 
   it("rejects when meetup is in the past", () => {
     expect(() =>
-      Meetup.cancel(confirmed({ date: PAST_DATE, time: PAST_TIME }), {
+      Meetup.cancel(confirmed({ scheduledAt: PAST_AT }), {
         actorId: "u-A",
         now: NOW,
       }),
@@ -230,13 +225,12 @@ describe("Meetup.proposeReschedule + accept + decline", () => {
     const { state, events } = Meetup.proposeReschedule(confirmed(), {
       actorId: "u-A",
       venue: { id: "v-9", name: "Other Cafe", isActive: true },
-      date: FUTURE_DATE,
-      time: "20:00",
+      scheduledAt: FUTURE_AT_ALT2,
       now: NOW,
     });
     expect(state.rescheduleProposerId).toBe("u-A");
     expect(state.rescheduleVenueId).toBe("v-9");
-    expect(state.date).toBe(FUTURE_DATE); // original date preserved
+    expect(state.scheduledAt).toEqual(FUTURE_AT); // original scheduledAt preserved
     expect(events[0]!.name).toBe("MeetupRescheduleProposed");
   });
 
@@ -244,15 +238,13 @@ describe("Meetup.proposeReschedule + accept + decline", () => {
     const stateWithReschedule = confirmed({
       rescheduleProposerId: "u-A",
       rescheduleVenueId: "v-9",
-      rescheduleDate: FUTURE_DATE,
-      rescheduleTime: "20:00",
+      rescheduleScheduledAt: FUTURE_AT_ALT2,
     });
     expect(() =>
       Meetup.proposeReschedule(stateWithReschedule, {
         actorId: "u-B",
         venue: activeVenue,
-        date: FUTURE_DATE,
-        time: "21:00",
+        scheduledAt: FUTURE_AT_ALT3,
         now: NOW,
       }),
     ).toThrow(/already pending/);
@@ -262,8 +254,7 @@ describe("Meetup.proposeReschedule + accept + decline", () => {
     const stateWithReschedule = confirmed({
       rescheduleProposerId: "u-A",
       rescheduleVenueId: "v-9",
-      rescheduleDate: FUTURE_DATE,
-      rescheduleTime: "20:00",
+      rescheduleScheduledAt: FUTURE_AT_ALT2,
     });
     const { state, events } = Meetup.acceptReschedule(stateWithReschedule, {
       actorId: "u-B",
@@ -271,7 +262,7 @@ describe("Meetup.proposeReschedule + accept + decline", () => {
       now: NOW,
     });
     expect(state.venueId).toBe("v-9");
-    expect(state.time).toBe("20:00");
+    expect(state.scheduledAt).toEqual(FUTURE_AT_ALT2);
     expect(state.rescheduleProposerId).toBeNull();
     expect(events[0]!.name).toBe("MeetupRescheduled");
   });
@@ -280,8 +271,7 @@ describe("Meetup.proposeReschedule + accept + decline", () => {
     const stateWithReschedule = confirmed({
       rescheduleProposerId: "u-A",
       rescheduleVenueId: "v-9",
-      rescheduleDate: FUTURE_DATE,
-      rescheduleTime: "20:00",
+      rescheduleScheduledAt: FUTURE_AT_ALT2,
     });
     expect(() =>
       Meetup.acceptReschedule(stateWithReschedule, {
@@ -296,8 +286,7 @@ describe("Meetup.proposeReschedule + accept + decline", () => {
     const stateWithReschedule = confirmed({
       rescheduleProposerId: "u-A",
       rescheduleVenueId: "v-9",
-      rescheduleDate: FUTURE_DATE,
-      rescheduleTime: "20:00",
+      rescheduleScheduledAt: FUTURE_AT_ALT2,
     });
     const { state, events } = Meetup.declineReschedule(stateWithReschedule, {
       actorId: "u-B",
@@ -311,7 +300,7 @@ describe("Meetup.proposeReschedule + accept + decline", () => {
 });
 
 describe("Meetup.reportAttendance", () => {
-  const pastConfirmed = confirmed({ date: PAST_DATE, time: PAST_TIME });
+  const pastConfirmed = confirmed({ scheduledAt: PAST_AT });
 
   it("first report stays pending — no outcome yet", () => {
     const result = Meetup.reportAttendance(pastConfirmed, {

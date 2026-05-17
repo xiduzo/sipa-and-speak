@@ -4,11 +4,11 @@
  */
 
 /**
- * Returns true if the meetup's scheduled date/time has already passed.
+ * Returns true if the meetup's scheduled instant has already passed.
  * Uses server clock as the authoritative source.
  */
-export function isMeetupInThePast(date: string, time: string): boolean {
-  return new Date(`${date}T${time}:00`) <= new Date();
+export function isMeetupInThePast(scheduledAt: Date, now: Date = new Date()): boolean {
+  return scheduledAt <= now;
 }
 
 /**
@@ -16,13 +16,12 @@ export function isMeetupInThePast(date: string, time: string): boolean {
  * currently confirmed meetup — i.e. the Student proposed a no-op.
  */
 export function isRescheduleNoOp(
-  current: { venueId: string; date: string; time: string },
-  proposed: { venueId: string; date: string; time: string },
+  current: { venueId: string; scheduledAt: Date },
+  proposed: { venueId: string; scheduledAt: Date },
 ): boolean {
   return (
     current.venueId === proposed.venueId &&
-    current.date === proposed.date &&
-    current.time === proposed.time
+    current.scheduledAt.getTime() === proposed.scheduledAt.getTime()
   );
 }
 

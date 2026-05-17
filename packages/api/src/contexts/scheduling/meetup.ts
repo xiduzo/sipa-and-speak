@@ -1,5 +1,5 @@
 import type { EventEmitter } from "events";
-import { and, eq, or, sql, count } from "drizzle-orm";
+import { and, eq, or, sql, count, gte, lt, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
@@ -17,13 +17,30 @@ import {
   type VenueSnapshot,
 } from "./meetup-aggregate";
 
-/** All bookable half-hour slots from 08:00 to 20:00 */
-const ALL_SLOTS = Array.from({ length: 25 }, (_, i) => {
-  const totalMinutes = 8 * 60 + i * 30;
-  const h = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
-  const m = String(totalMinutes % 60).padStart(2, "0");
-  return `${h}:${m}`;
-});
+/**
+ * Format a UTC Date as wall-clock parts in the given IANA timezone.
+ * Used to enrich domain events with display-friendly date/time strings for
+ * push notification builders. Uses Intl (no external dep).
+ */
+function wallClockIn(date: Date, tz: string): { date: string; time: string } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+  return {
+    date: `${map.year}-${map.month}-${map.day}`,
+    time: `${map.hour}:${map.minute}`,
+  };
+}
+
+/** Canonical zone for push notification body strings. */
+const NOTIFICATION_ZONE = "Europe/Amsterdam";
 
 /** Convert aggregate rule violations into the right tRPC error code. */
 function toTrpcError(err: unknown): never {
@@ -36,11 +53,35 @@ function toTrpcError(err: unknown): never {
 /**
  * Replay aggregate events through the global domain-events emitter. We dodge
  * the per-event generic by routing through the base `EventEmitter.emit`.
+ *
+ * For events that carry `scheduledAt` (Date), we also enrich the payload with
+ * `date`/`time` strings formatted in the canonical zone so notification
+ * builders can keep using string interpolation without timezone work.
  */
+function enrichPayload(payload: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...payload };
+  if (out.scheduledAt instanceof Date) {
+    const wc = wallClockIn(out.scheduledAt, NOTIFICATION_ZONE);
+    out.date = wc.date;
+    out.time = wc.time;
+  }
+  if (out.newScheduledAt instanceof Date) {
+    const wc = wallClockIn(out.newScheduledAt, NOTIFICATION_ZONE);
+    out.newDate = wc.date;
+    out.newTime = wc.time;
+  }
+  if (out.originalScheduledAt instanceof Date) {
+    const wc = wallClockIn(out.originalScheduledAt, NOTIFICATION_ZONE);
+    out.originalDate = wc.date;
+    out.originalTime = wc.time;
+  }
+  return out;
+}
+
 function emit(events: DomainEventToEmit[], extraPayload: Record<string, unknown> = {}): void {
   const emitter = domainEvents as unknown as EventEmitter;
   for (const e of events) {
-    emitter.emit(e.name, { ...e.payload, ...extraPayload });
+    emitter.emit(e.name, enrichPayload({ ...e.payload, ...extraPayload }));
   }
 }
 
@@ -58,6 +99,10 @@ async function loadMeetupSnapshot(meetupId: string): Promise<MeetupSnapshot | nu
   const [row] = await db.select().from(meetup).where(eq(meetup.id, meetupId)).limit(1);
   return row ?? null;
 }
+
+const scheduledAtInput = z
+  .union([z.iso.datetime(), z.date()])
+  .transform((v) => (v instanceof Date ? v : new Date(v)));
 
 export const meetupRouter = router({
   canPropose: protectedProcedure
@@ -97,8 +142,7 @@ export const meetupRouter = router({
       z.object({
         partnerId: z.string(),
         venueId: z.string(),
-        date: z.string(),
-        time: z.string(),
+        scheduledAt: scheduledAtInput,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -141,8 +185,7 @@ export const meetupRouter = router({
           isMatched: matchRows.length > 0,
           hasDuplicatePending: pendingRows.length > 0,
           venue: venueRow,
-          date: input.date,
-          time: input.time,
+          scheduledAt: input.scheduledAt,
           now: new Date(),
         });
       } catch (err) {
@@ -183,8 +226,7 @@ export const meetupRouter = router({
           .from(meetup)
           .where(
             and(
-              eq(meetup.date, existing.date),
-              eq(meetup.time, existing.time),
+              eq(meetup.scheduledAt, existing.scheduledAt),
               eq(meetup.status, "confirmed"),
               or(
                 eq(meetup.proposerId, userId),
@@ -299,8 +341,7 @@ export const meetupRouter = router({
       z.object({
         meetupId: z.string(),
         venueId: z.string(),
-        date: z.string(),
-        time: z.string(),
+        scheduledAt: scheduledAtInput,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -316,8 +357,7 @@ export const meetupRouter = router({
         decision = Meetup.counterPropose(existing, {
           actorId: userId,
           venue: newVenue,
-          date: input.date,
-          time: input.time,
+          scheduledAt: input.scheduledAt,
           now: new Date(),
         });
       } catch (err) {
@@ -331,8 +371,7 @@ export const meetupRouter = router({
           proposerId: next.proposerId,
           receiverId: next.receiverId,
           venueId: next.venueId,
-          date: next.date,
-          time: next.time,
+          scheduledAt: next.scheduledAt,
           round: next.round,
         })
         .where(eq(meetup.id, existing.id))
@@ -409,23 +448,32 @@ export const meetupRouter = router({
       });
     }),
 
+  /**
+   * Returns confirmed-meetup instants (as UTC `Date`s) that fall inside the
+   * `[startIso, endIso)` range and involve either the current user or the
+   * partner. The client builds candidate slot UTC instants itself (using its
+   * device timezone) and filters those that match any returned blockedAt.
+   */
   getAvailableSlots: protectedProcedure
     .input(
       z.object({
         partnerId: z.string(),
-        date: z.string(),
+        startIso: z.iso.datetime(),
+        endIso: z.iso.datetime(),
       }),
     )
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+      const start = new Date(input.startIso);
+      const end = new Date(input.endIso);
 
-      // Get confirmed meetups for both users on this date
-      const confirmedMeetups = await db
-        .select({ time: meetup.time })
+      const rows = await db
+        .select({ scheduledAt: meetup.scheduledAt })
         .from(meetup)
         .where(
           and(
-            eq(meetup.date, input.date),
+            gte(meetup.scheduledAt, start),
+            lt(meetup.scheduledAt, end),
             eq(meetup.status, "confirmed"),
             or(
               eq(meetup.proposerId, userId),
@@ -436,9 +484,7 @@ export const meetupRouter = router({
           ),
         );
 
-      const busyTimes = new Set(confirmedMeetups.map((m) => m.time));
-
-      return ALL_SLOTS.filter((slot) => !busyTimes.has(slot));
+      return rows.map((r) => r.scheduledAt);
     }),
 
   // #73 — Get the pending incoming proposal for me (where I am the current receiverId)
@@ -474,8 +520,7 @@ export const meetupRouter = router({
       round: row.meetup.round,
       canCounterPropose: row.meetup.round < 5,
       venue: row.venue,
-      date: row.meetup.date,
-      time: row.meetup.time,
+      scheduledAt: row.meetup.scheduledAt,
       proposer: row.proposer,
     };
   }),
@@ -554,7 +599,7 @@ export const meetupRouter = router({
             or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
           ),
         )
-        .orderBy(meetup.date, meetup.time),
+        .orderBy(meetup.scheduledAt),
       // #97 — Fetch this user's attendance reports
       db
         .select({
@@ -569,26 +614,25 @@ export const meetupRouter = router({
     ]);
 
     const myReportMap = new Map(myReports.map((r) => [r.meetupId, r]));
+    const now = new Date();
 
     return rows.map((row) => {
       const myReport = myReportMap.get(row.meetup.id);
       const messaging = messagingState.get(row.meetup.id) ?? { mine: null, partner: null, conversationId: null };
       return {
         meetupId: row.meetup.id,
-        date: row.meetup.date,
-        time: row.meetup.time,
+        scheduledAt: row.meetup.scheduledAt,
         status: row.meetup.status,
-        isPast: new Date(`${row.meetup.date}T${row.meetup.time}:00`) <= new Date(),
+        isPast: row.meetup.scheduledAt <= now,
         venue: row.venue,
         partner: row.partner,
         // #86 — Reschedule proposal state
         reschedulePending: row.meetup.rescheduleProposerId !== null,
         rescheduleIsFromMe: row.meetup.rescheduleProposerId === userId,
-        reschedule: row.meetup.rescheduleProposerId !== null
+        reschedule: row.meetup.rescheduleProposerId !== null && row.meetup.rescheduleScheduledAt
           ? {
               venueId: row.meetup.rescheduleVenueId!,
-              date: row.meetup.rescheduleDate!,
-              time: row.meetup.rescheduleTime!,
+              scheduledAt: row.meetup.rescheduleScheduledAt,
             }
           : null,
         // #97 — Attendance report state
@@ -611,8 +655,7 @@ export const meetupRouter = router({
       z.object({
         meetupId: z.string(),
         venueId: z.string(),
-        date: z.string(),
-        time: z.string(),
+        scheduledAt: scheduledAtInput,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -628,8 +671,7 @@ export const meetupRouter = router({
         decision = Meetup.proposeReschedule(existing, {
           actorId: userId,
           venue: venueRow,
-          date: input.date,
-          time: input.time,
+          scheduledAt: input.scheduledAt,
           now: new Date(),
         });
       } catch (err) {
@@ -642,8 +684,7 @@ export const meetupRouter = router({
         .set({
           rescheduleProposerId: next.rescheduleProposerId,
           rescheduleVenueId: next.rescheduleVenueId,
-          rescheduleDate: next.rescheduleDate,
-          rescheduleTime: next.rescheduleTime,
+          rescheduleScheduledAt: next.rescheduleScheduledAt,
         })
         .where(eq(meetup.id, existing.id))
         .returning();
@@ -687,12 +728,10 @@ export const meetupRouter = router({
         .update(meetup)
         .set({
           venueId: next.venueId,
-          date: next.date,
-          time: next.time,
+          scheduledAt: next.scheduledAt,
           rescheduleProposerId: null,
           rescheduleVenueId: null,
-          rescheduleDate: null,
-          rescheduleTime: null,
+          rescheduleScheduledAt: null,
         })
         .where(
           and(eq(meetup.id, existing.id), sql`${meetup.rescheduleProposerId} IS NOT NULL`),
@@ -741,8 +780,7 @@ export const meetupRouter = router({
         .set({
           rescheduleProposerId: null,
           rescheduleVenueId: null,
-          rescheduleDate: null,
-          rescheduleTime: null,
+          rescheduleScheduledAt: null,
         })
         .where(
           and(eq(meetup.id, existing.id), sql`${meetup.rescheduleProposerId} IS NOT NULL`),
@@ -871,3 +909,8 @@ export const meetupRouter = router({
       return created;
     }),
 });
+
+// Re-export for tests that want to assert on the helper.
+export { wallClockIn as __wallClockInForTests };
+// Suppress unused-import warning if `inArray` was tree-shaken.
+void inArray;

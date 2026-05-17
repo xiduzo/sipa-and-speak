@@ -1,7 +1,7 @@
 import { Image, Linking, Platform, Pressable, Text, View } from "react-native";
 
 import { GOLD } from "./tokens";
-import { formatDayFull } from "./format";
+import { formatDayFull, formatTime } from "./format";
 import type { ConfirmedMeetup } from "./home-state";
 
 type Props = {
@@ -22,7 +22,8 @@ function openDirections(venueName: string) {
 
 export function HeroConfirmed({ meetup, onReschedule, onAcceptReschedule }: Props) {
   const initial = (meetup.partner.name || "?").charAt(0).toUpperCase();
-  const dayName = formatDayFull(meetup.date).toUpperCase();
+  const dayName = formatDayFull(meetup.scheduledAt).toUpperCase();
+  const timeLabel = formatTime(meetup.scheduledAt);
 
   const rescheduleLabel = meetup.reschedulePending
     ? meetup.rescheduleIsFromMe
@@ -84,7 +85,7 @@ export function HeroConfirmed({ meetup, onReschedule, onAcceptReschedule }: Prop
             className="text-brand-foreground font-jakarta"
             style={{ fontSize: 56, lineHeight: 60 }}
           >
-            {meetup.time}
+            {timeLabel}
           </Text>
           <Text
             className="text-brand-foreground font-manrope-bold"

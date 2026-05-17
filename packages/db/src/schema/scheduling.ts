@@ -25,8 +25,8 @@ export const venue = pgTable(
     longitude: doublePrecision("longitude").notNull(),
     tags: text("tags").array().notNull().default([]),
     isActive: boolean("is_active").default(true).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -49,8 +49,7 @@ export const meetup = pgTable(
     venueId: text("venue_id")
       .notNull()
       .references(() => venue.id),
-    date: text("date").notNull(),
-    time: text("time").notNull(),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
     status: text("status", {
       enum: ["pending", "confirmed", "declined", "cancelled", "completed", "not_attended"],
     })
@@ -59,10 +58,9 @@ export const meetup = pgTable(
     round: integer("round").default(1).notNull(),
     rescheduleProposerId: text("reschedule_proposer_id").references(() => user.id, { onDelete: "set null" }),
     rescheduleVenueId: text("reschedule_venue_id").references(() => venue.id, { onDelete: "set null" }),
-    rescheduleDate: text("reschedule_date"),
-    rescheduleTime: text("reschedule_time"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
+    rescheduleScheduledAt: timestamp("reschedule_scheduled_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
@@ -70,7 +68,7 @@ export const meetup = pgTable(
   (table) => [
     index("meetup_proposerId_idx").on(table.proposerId),
     index("meetup_receiverId_idx").on(table.receiverId),
-    index("meetup_date_idx").on(table.date),
+    index("meetup_scheduledAt_idx").on(table.scheduledAt),
   ],
 );
 
@@ -89,7 +87,7 @@ export const attendanceReport = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     attended: boolean("attended").notNull(),
     rating: integer("rating"),
-    reportedAt: timestamp("reported_at").defaultNow().notNull(),
+    reportedAt: timestamp("reported_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     unique("attendance_report_meetup_student_unique").on(table.meetupId, table.studentId),

@@ -1,5 +1,6 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { Spinner } from "heroui-native";
 import { useMemo, useState } from "react";
 import {
@@ -16,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MeetupConfirmedModal } from "@/components/meetup-confirmed-modal";
+import { formatDayTime, formatTime } from "@/components/home/format";
 import { trpc, queryClient } from "@/utils/trpc";
 
 const GOLD = "#F2C94C";
@@ -26,14 +28,38 @@ const MUTED = "#8A7570";
 export type MeetupFlowMode =
   | { type: "propose"; partnerId: string; partnerName: string }
   | { type: "respond"; meetupId?: string }
-  | { type: "reschedule"; meetupId: string; currentVenueId: string; currentDate: string; currentTime: string };
+  | { type: "reschedule"; meetupId: string; currentVenueId: string; currentScheduledAt: Date | string };
 
 // ── shared helpers ────────────────────────────────────────────────────────────
+
+/** All bookable half-hour slots from 08:00 to 20:00 (wall-clock in device tz). */
+const ALL_SLOTS = Array.from({ length: 25 }, (_, i) => {
+  const totalMinutes = 8 * 60 + i * 30;
+  const h = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+  const m = String(totalMinutes % 60).padStart(2, "0");
+  return `${h}:${m}`;
+});
 
 type Suggestion = { date: string; time: string; weekday: string; hint?: string };
 
 function toIsoDate(d: Date): string {
-  return d.toLocaleDateString("sv-SE");
+  return format(d, "yyyy-MM-dd");
+}
+
+/** Combine a YYYY-MM-DD date + HH:MM time as a Date in the device timezone. */
+function combineLocal(date: string, time: string): Date {
+  return new Date(`${date}T${time}:00`);
+}
+
+/** UTC bounds [start, end) covering one local day for the given YYYY-MM-DD. */
+function dayBoundsIso(date: string): { startIso: string; endIso: string } {
+  const start = combineLocal(date, "00:00");
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { startIso: start.toISOString(), endIso: end.toISOString() };
+}
+
+function timeFromDate(d: Date): string {
+  return format(d, "HH:mm");
 }
 
 function buildSuggestions(): Suggestion[] {
@@ -48,7 +74,7 @@ function buildSuggestions(): Suggestion[] {
     return {
       date: toIsoDate(d),
       time: times[i] ?? "10:30",
-      weekday: d.toLocaleDateString(undefined, { weekday: "long" }),
+      weekday: format(d, "EEEE"),
       hint: hints[i],
     };
   });
@@ -167,6 +193,13 @@ function VenuePicker({
   );
 }
 
+/** Given a list of blocked UTC instants (Date|string), return the HH:MM slots
+ *  on `date` (local) that don't collide. Used to render the slot picker. */
+function freeSlotsFor(date: string, blocked: Array<Date | string>): string[] {
+  const blockedMs = new Set(blocked.map((b) => new Date(b).getTime()));
+  return ALL_SLOTS.filter((slot) => !blockedMs.has(combineLocal(date, slot).getTime()));
+}
+
 // ── propose content ───────────────────────────────────────────────────────────
 
 export function ProposeContent({
@@ -189,19 +222,21 @@ export function ProposeContent({
   const suggestions = useMemo(buildSuggestions, []);
   const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
   const slotChecks = useQueries({
-    queries: suggestions.map((s) =>
-      trpc.meetup.getAvailableSlots.queryOptions(
-        { partnerId, date: s.date },
+    queries: suggestions.map((s) => {
+      const { startIso, endIso } = dayBoundsIso(s.date);
+      return trpc.meetup.getAvailableSlots.queryOptions(
+        { partnerId, startIso, endIso },
         { enabled: !!partnerId },
-      ),
-    ),
+      );
+    }),
   });
 
   const customDateIso = customDate ? toIsoDate(customDate) : "";
+  const customBounds = customDateIso ? dayBoundsIso(customDateIso) : null;
   const customSlotsQuery = useQuery(
     trpc.meetup.getAvailableSlots.queryOptions(
-      { partnerId, date: customDateIso },
-      { enabled: !!partnerId && !!customDateIso },
+      { partnerId, startIso: customBounds?.startIso ?? "", endIso: customBounds?.endIso ?? "" },
+      { enabled: !!partnerId && !!customBounds },
     ),
   );
 
@@ -220,30 +255,30 @@ export function ProposeContent({
     }),
   );
 
-  function pickedDateTime(): { date: string; time: string } | null {
+  function pickedScheduledAt(): Date | null {
     if (customMode) {
       if (!customDateIso || !customTime.match(/^\d{2}:\d{2}$/)) return null;
-      return { date: customDateIso, time: customTime };
+      return combineLocal(customDateIso, customTime);
     }
     if (selectedSuggestionIdx === null) return null;
     const s = suggestions[selectedSuggestionIdx];
-    return s ? { date: s.date, time: s.time } : null;
+    return s ? combineLocal(s.date, s.time) : null;
   }
 
   function handleSubmit() {
     setError(null);
     if (!selectedVenueId) { setError("Please pick a venue"); return; }
-    const dt = pickedDateTime();
+    const dt = pickedScheduledAt();
     if (!dt) {
       setError(customMode ? "Please pick a date and time (HH:MM)" : "Please pick a suggested time");
       return;
     }
-    const proposed = new Date(`${dt.date}T${dt.time}:00`);
-    if (proposed <= new Date()) { setError("The selected date and time must be in the future"); return; }
-    proposeMutation.mutate({ partnerId, venueId: selectedVenueId, ...dt });
+    if (dt <= new Date()) { setError("The selected date and time must be in the future"); return; }
+    proposeMutation.mutate({ partnerId, venueId: selectedVenueId, scheduledAt: dt.toISOString() });
   }
 
   const venues = venuesQuery.data ?? [];
+  const customFreeSlots = customDateIso ? freeSlotsFor(customDateIso, customSlotsQuery.data ?? []) : [];
 
   return (
     <ScrollView
@@ -281,8 +316,9 @@ export function ProposeContent({
       </Text>
       <View className="gap-3 mb-3">
         {suggestions.map((s, idx) => {
-          const slots = slotChecks[idx]?.data;
-          const isFree = !!slots && slots.includes(s.time);
+          const blocked = slotChecks[idx]?.data ?? [];
+          const free = freeSlotsFor(s.date, blocked);
+          const isFree = free.includes(s.time);
           const selected = !customMode && selectedSuggestionIdx === idx;
           const subtitle = isFree
             ? s.hint ? `Both free · ${s.hint}` : "Both free"
@@ -342,14 +378,7 @@ export function ProposeContent({
               className="font-manrope-bold mt-0.5"
               style={{ fontSize: 16, color: customDate ? undefined : MUTED }}
             >
-              {customDate
-                ? customDate.toLocaleDateString(undefined, {
-                    weekday: "short",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
-                : "Select a date"}
+              {customDate ? format(customDate, "EEE, MMMM d, yyyy") : "Select a date"}
             </Text>
           </Pressable>
           {showDatePicker && (
@@ -378,7 +407,7 @@ export function ProposeContent({
             </Text>
             {customDateIso && customSlotsQuery.data ? (
               <View className="flex flex-row flex-wrap gap-2 mt-1">
-                {customSlotsQuery.data.map((slot) => (
+                {customFreeSlots.map((slot) => (
                   <TouchableOpacity
                     key={slot}
                     testID="time-slot"
@@ -440,14 +469,19 @@ export function RespondContent({
   const [time, setTime] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<{ venueName: string; date: string; time: string } | null>(null);
+  const [confirmed, setConfirmed] = useState<{ venueName: string; scheduledAt: Date | string } | null>(null);
 
   const proposalQuery = useQuery(trpc.meetup.getPendingIncoming.queryOptions());
   const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
+  const counterBounds = date ? dayBoundsIso(date) : null;
   const slotsQuery = useQuery(
     trpc.meetup.getAvailableSlots.queryOptions(
-      { partnerId: proposalQuery.data?.proposer.id ?? "", date },
-      { enabled: !!proposalQuery.data?.proposer.id && !!date },
+      {
+        partnerId: proposalQuery.data?.proposer.id ?? "",
+        startIso: counterBounds?.startIso ?? "",
+        endIso: counterBounds?.endIso ?? "",
+      },
+      { enabled: !!proposalQuery.data?.proposer.id && !!counterBounds },
     ),
   );
 
@@ -466,7 +500,7 @@ export function RespondContent({
       onSuccess: () => {
         invalidateQueries();
         if (proposal) {
-          setConfirmed({ venueName: proposal.venue.name, date: proposal.date, time: proposal.time });
+          setConfirmed({ venueName: proposal.venue.name, scheduledAt: proposal.scheduledAt });
         } else {
           onDismiss();
         }
@@ -510,8 +544,7 @@ export function RespondContent({
       <MeetupConfirmedModal
         visible
         venueName={confirmed.venueName}
-        date={confirmed.date}
-        time={confirmed.time}
+        scheduledAt={confirmed.scheduledAt}
         onDismiss={() => { setConfirmed(null); onDismiss(); }}
       />
     );
@@ -566,10 +599,16 @@ export function RespondContent({
     if (!selectedVenueId) { setError("Please select a location"); return; }
     if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) { setError("Enter a date in YYYY-MM-DD format"); return; }
     if (!time.match(/^\d{2}:\d{2}$/)) { setError("Enter a time in HH:MM format"); return; }
-    const proposed = new Date(`${date}T${time}:00`);
+    const proposed = combineLocal(date, time);
     if (proposed <= new Date()) { setError("Date and time must be in the future"); return; }
-    counterMutation.mutate({ meetupId: activeMeetupId!, venueId: selectedVenueId, date, time });
+    counterMutation.mutate({
+      meetupId: activeMeetupId!,
+      venueId: selectedVenueId,
+      scheduledAt: proposed.toISOString(),
+    });
   }
+
+  const counterFreeSlots = date ? freeSlotsFor(date, slotsQuery.data ?? []) : [];
 
   if (counterMode) {
     return (
@@ -599,9 +638,7 @@ export function RespondContent({
           onPress={() => setShowDatePicker(true)}
         >
           <Text className="text-foreground font-manrope">
-            {date
-              ? new Date(date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
-              : "Select a date"}
+            {date ? format(new Date(date), "MMMM d, yyyy") : "Select a date"}
           </Text>
         </TouchableOpacity>
         {showDatePicker && (
@@ -614,10 +651,7 @@ export function RespondContent({
             onChange={(_event, picked) => {
               setShowDatePicker(Platform.OS === "ios");
               if (picked) {
-                const y = picked.getFullYear();
-                const m = String(picked.getMonth() + 1).padStart(2, "0");
-                const d = String(picked.getDate()).padStart(2, "0");
-                setDate(`${y}-${m}-${d}`);
+                setDate(toIsoDate(picked));
                 setError(null);
               }
             }}
@@ -629,7 +663,7 @@ export function RespondContent({
         </Text>
         {date && slotsQuery.data ? (
           <View className="flex flex-row flex-wrap gap-2 mb-6">
-            {slotsQuery.data.map((slot) => (
+            {counterFreeSlots.map((slot) => (
               <TouchableOpacity
                 key={slot}
                 testID="time-slot"
@@ -674,6 +708,8 @@ export function RespondContent({
     );
   }
 
+  const proposalScheduled = new Date(proposal.scheduledAt);
+
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32 }}>
       <Text className="text-foreground text-2xl font-manrope-bold mb-1">Meetup proposal</Text>
@@ -696,15 +732,9 @@ export function RespondContent({
             </Text>
           </View>
           <View className="flex-row items-center gap-2">
-            <Text className="text-muted-foreground font-manrope text-sm w-20">Date</Text>
-            <Text testID="proposal-date" className="text-foreground font-manrope-semi flex-1">
-              {proposal.date}
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-2">
-            <Text className="text-muted-foreground font-manrope text-sm w-20">Time</Text>
-            <Text testID="proposal-time" className="text-foreground font-manrope-semi flex-1">
-              {proposal.time}
+            <Text className="text-muted-foreground font-manrope text-sm w-20">When</Text>
+            <Text testID="proposal-datetime" className="text-foreground font-manrope-semi flex-1">
+              {formatDayTime(proposalScheduled)}
             </Text>
           </View>
         </View>
@@ -724,8 +754,8 @@ export function RespondContent({
             testID="counter-propose-btn"
             onPress={() => {
               setSelectedVenueId(proposal.venue.id);
-              setDate(proposal.date);
-              setTime(proposal.time);
+              setDate(toIsoDate(proposalScheduled));
+              setTime(timeFromDate(proposalScheduled));
               setCounterMode(true);
             }}
             disabled={isPending}
@@ -755,19 +785,18 @@ export function RespondContent({
 function RescheduleContent({
   meetupId,
   currentVenueId,
-  currentDate,
-  currentTime,
+  currentScheduledAt,
   onDismiss,
 }: {
   meetupId: string;
   currentVenueId: string;
-  currentDate: string;
-  currentTime: string;
+  currentScheduledAt: Date | string;
   onDismiss: () => void;
 }) {
+  const initial = new Date(currentScheduledAt);
   const [venueId, setVenueId] = useState(currentVenueId);
-  const [date, setDate] = useState(currentDate);
-  const [time, setTime] = useState(currentTime);
+  const [date, setDate] = useState(toIsoDate(initial));
+  const [time, setTime] = useState(timeFromDate(initial));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -793,9 +822,9 @@ function RescheduleContent({
     if (!venueId) { setError("Please select a location"); return; }
     if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) { setError("Enter a date in YYYY-MM-DD format"); return; }
     if (!time.match(/^\d{2}:\d{2}$/)) { setError("Enter a time in HH:MM format"); return; }
-    const proposed = new Date(`${date}T${time}:00`);
+    const proposed = combineLocal(date, time);
     if (proposed <= new Date()) { setError("Date and time must be in the future"); return; }
-    rescheduleMutation.mutate({ meetupId, venueId, date, time });
+    rescheduleMutation.mutate({ meetupId, venueId, scheduledAt: proposed.toISOString() });
   }
 
   return (
@@ -860,14 +889,7 @@ function RescheduleContent({
         onPress={() => setShowDatePicker(true)}
       >
         <Text className="font-manrope text-foreground">
-          {date
-            ? new Date(date).toLocaleDateString(undefined, {
-                weekday: "short",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
-            : "Select a date"}
+          {date ? format(new Date(date), "EEE, MMMM d, yyyy") : "Select a date"}
         </Text>
       </TouchableOpacity>
       {showDatePicker && (
@@ -880,10 +902,7 @@ function RescheduleContent({
           onChange={(_event, picked) => {
             setShowDatePicker(Platform.OS === "ios");
             if (picked) {
-              const y = picked.getFullYear();
-              const m = String(picked.getMonth() + 1).padStart(2, "0");
-              const d = String(picked.getDate()).padStart(2, "0");
-              setDate(`${y}-${m}-${d}`);
+              setDate(toIsoDate(picked));
             }
           }}
         />
@@ -898,7 +917,7 @@ function RescheduleContent({
         style={{ backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: MUTED_BORDER }}
         onPress={() => setShowTimePicker(true)}
       >
-        <Text className="font-manrope text-foreground">{time || "Select a time"}</Text>
+        <Text className="font-manrope text-foreground">{time ? formatTime(combineLocal(date || "2000-01-01", time)) : "Select a time"}</Text>
       </TouchableOpacity>
       {showTimePicker && (
         <DateTimePicker
@@ -909,9 +928,7 @@ function RescheduleContent({
           onChange={(_event, picked) => {
             setShowTimePicker(Platform.OS === "ios");
             if (picked) {
-              const h = String(picked.getHours()).padStart(2, "0");
-              const min = String(picked.getMinutes()).padStart(2, "0");
-              setTime(`${h}:${min}`);
+              setTime(timeFromDate(picked));
             }
           }}
         />
@@ -978,8 +995,7 @@ export function MeetupFlowModal({
           <RescheduleContent
             meetupId={mode.meetupId}
             currentVenueId={mode.currentVenueId}
-            currentDate={mode.currentDate}
-            currentTime={mode.currentTime}
+            currentScheduledAt={mode.currentScheduledAt}
             onDismiss={onDismiss}
           />
         )}

@@ -2,6 +2,7 @@ import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
+import { differenceInCalendarDays, format, isSameDay, isYesterday } from "date-fns";
 
 import { trpc } from "@/utils/trpc";
 import { Container } from "@/components/container";
@@ -41,20 +42,11 @@ function initials(name: string): string {
 function formatChatTime(input: string | Date): string {
   const at = input instanceof Date ? input : new Date(input);
   const now = new Date();
-  const diffMs = now.getTime() - at.getTime();
-  if (diffMs < 60_000) return "just now";
-
-  const sameDay = at.toDateString() === now.toDateString();
-  if (sameDay) {
-    return at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (at.toDateString() === yesterday.toDateString()) return "Yesterday";
-
-  const diffDays = diffMs / 86_400_000;
-  if (diffDays < 7) return at.toLocaleDateString([], { weekday: "short" });
-  return at.toLocaleDateString([], { month: "short", day: "numeric" });
+  if (now.getTime() - at.getTime() < 60_000) return "just now";
+  if (isSameDay(at, now)) return format(at, "HH:mm");
+  if (isYesterday(at)) return "Yesterday";
+  if (differenceInCalendarDays(now, at) < 7) return format(at, "EEE");
+  return format(at, "MMM d");
 }
 
 type ChatEntry =
@@ -100,16 +92,12 @@ function lockedSubtitle(entry: Extract<ChatEntry, { kind: "locked" }>): string {
 
 function formatUnlock(at: Date): string {
   const now = new Date();
-  const diffMs = at.getTime() - now.getTime();
-  const diffDays = diffMs / 86_400_000;
-  const time = at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  if (diffDays < 1) return `today ${time}`;
-  if (diffDays < 2) return `tomorrow ${time}`;
-  if (diffDays < 7) {
-    const weekday = at.toLocaleDateString([], { weekday: "long" });
-    return `${weekday} ${time}`;
-  }
-  return at.toLocaleDateString([], { month: "short", day: "numeric" });
+  const days = differenceInCalendarDays(at, now);
+  const time = format(at, "HH:mm");
+  if (days <= 0) return `today ${time}`;
+  if (days === 1) return `tomorrow ${time}`;
+  if (days < 7) return `${format(at, "EEEE")} ${time}`;
+  return format(at, "MMM d");
 }
 
 function Avatar({

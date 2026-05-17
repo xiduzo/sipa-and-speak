@@ -22,7 +22,7 @@ function describe(state: HomeState): { eyebrow: string; title: string; subtitle:
       return {
         eyebrow: "UPCOMING",
         title: state.meetup.partner.name,
-        subtitle: formatDayTime(state.meetup.date, state.meetup.time),
+        subtitle: formatDayTime(state.meetup.scheduledAt),
         emoji: "📍",
       };
     case "waiting":
