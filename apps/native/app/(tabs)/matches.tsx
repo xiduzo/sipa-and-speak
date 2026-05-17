@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Image, Pressable, ScrollView, Text, View } from "react-native";
 
 import { Container } from "@/components/container";
+import { epochMs } from "@/lib/dates";
 import { trpc, queryClient } from "@/utils/trpc";
 import { CARD, GOLD } from "@/components/home/tokens";
 
@@ -183,12 +184,8 @@ export default function MatchesScreen() {
   const requests = incomingRequestsQuery.data ?? [];
 
   const now = Date.now();
-  const newMatches = matches.filter(
-    (m) => now - new Date(m.matchedAt).getTime() < NEW_WINDOW_MS,
-  );
-  const olderMatches = matches.filter(
-    (m) => now - new Date(m.matchedAt).getTime() >= NEW_WINDOW_MS,
-  );
+  const newMatches = matches.filter((m) => now - epochMs(m.matchedAt) < NEW_WINDOW_MS);
+  const olderMatches = matches.filter((m) => now - epochMs(m.matchedAt) >= NEW_WINDOW_MS);
 
   const isEmpty = matches.length === 0 && requests.length === 0;
 

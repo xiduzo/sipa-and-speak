@@ -2,8 +2,8 @@ import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
-import { differenceInCalendarDays, format, isSameDay, isYesterday } from "date-fns";
 
+import { formatChatTimestamp, formatUnlockMoment } from "@/lib/dates";
 import { trpc } from "@/utils/trpc";
 import { Container } from "@/components/container";
 import { CARD, GOLD } from "@/components/home/tokens";
@@ -40,13 +40,7 @@ function initials(name: string): string {
 }
 
 function formatChatTime(input: string | Date): string {
-  const at = input instanceof Date ? input : new Date(input);
-  const now = new Date();
-  if (now.getTime() - at.getTime() < 60_000) return "just now";
-  if (isSameDay(at, now)) return format(at, "HH:mm");
-  if (isYesterday(at)) return "Yesterday";
-  if (differenceInCalendarDays(now, at) < 7) return format(at, "EEE");
-  return format(at, "MMM d");
+  return formatChatTimestamp(input);
 }
 
 type ChatEntry =
@@ -75,10 +69,9 @@ type ChatEntry =
     };
 
 function lockedSubtitle(entry: Extract<ChatEntry, { kind: "locked" }>): string {
-  const at = new Date(entry.meetupAt);
   switch (entry.phase) {
     case "scheduled":
-      return `unlocks ${formatUnlock(at)}`;
+      return `unlocks ${formatUnlockMoment(entry.meetupAt)}`;
     case "awaiting_attendance":
       return "did you meet?";
     case "awaiting_my_optin":
@@ -88,16 +81,6 @@ function lockedSubtitle(entry: Extract<ChatEntry, { kind: "locked" }>): string {
     case "declined":
       return "chat won't open";
   }
-}
-
-function formatUnlock(at: Date): string {
-  const now = new Date();
-  const days = differenceInCalendarDays(at, now);
-  const time = format(at, "HH:mm");
-  if (days <= 0) return `today ${time}`;
-  if (days === 1) return `tomorrow ${time}`;
-  if (days < 7) return `${format(at, "EEEE")} ${time}`;
-  return format(at, "MMM d");
 }
 
 function Avatar({

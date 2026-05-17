@@ -1,6 +1,6 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { addDays, startOfDay } from "date-fns";
 import { Spinner } from "heroui-native";
 import { useMemo, useState } from "react";
 import {
@@ -17,7 +17,18 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MeetupConfirmedModal } from "@/components/meetup-confirmed-modal";
-import { formatDayTime, formatTime } from "@/components/home/format";
+import {
+  combineLocal,
+  dayBoundsIso,
+  formatDayFull,
+  formatDayTime,
+  formatLongDate,
+  formatLongDayDate,
+  formatTime,
+  isFuture,
+  toDate,
+  toIsoDate,
+} from "@/lib/dates";
 import { trpc, queryClient } from "@/utils/trpc";
 
 const GOLD = "#F2C94C";
@@ -42,39 +53,21 @@ const ALL_SLOTS = Array.from({ length: 25 }, (_, i) => {
 
 type Suggestion = { date: string; time: string; weekday: string; hint?: string };
 
-function toIsoDate(d: Date): string {
-  return format(d, "yyyy-MM-dd");
-}
-
-/** Combine a YYYY-MM-DD date + HH:MM time as a Date in the device timezone. */
-function combineLocal(date: string, time: string): Date {
-  return new Date(`${date}T${time}:00`);
-}
-
-/** UTC bounds [start, end) covering one local day for the given YYYY-MM-DD. */
-function dayBoundsIso(date: string): { startIso: string; endIso: string } {
-  const start = combineLocal(date, "00:00");
-  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-  return { startIso: start.toISOString(), endIso: end.toISOString() };
-}
-
 function timeFromDate(d: Date): string {
-  return format(d, "HH:mm");
+  return formatTime(d);
 }
 
 function buildSuggestions(): Suggestion[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = startOfDay(new Date());
   const offsets = [1, 2, 4];
   const times = ["10:30", "14:00", "15:00"];
   const hints = ["your usual coffee slot", undefined, undefined];
   return offsets.map((off, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() + off);
+    const d = addDays(today, off);
     return {
       date: toIsoDate(d),
       time: times[i] ?? "10:30",
-      weekday: format(d, "EEEE"),
+      weekday: formatDayFull(d),
       hint: hints[i],
     };
   });
@@ -196,8 +189,13 @@ function VenuePicker({
 /** Given a list of blocked UTC instants (Date|string), return the HH:MM slots
  *  on `date` (local) that don't collide. Used to render the slot picker. */
 function freeSlotsFor(date: string, blocked: Array<Date | string>): string[] {
-  const blockedMs = new Set(blocked.map((b) => new Date(b).getTime()));
-  return ALL_SLOTS.filter((slot) => !blockedMs.has(combineLocal(date, slot).getTime()));
+  const blockedMs = new Set(
+    blocked.map((b) => toDate(b)?.getTime()).filter((n): n is number => typeof n === "number"),
+  );
+  return ALL_SLOTS.filter((slot) => {
+    const at = combineLocal(date, slot);
+    return at !== null && !blockedMs.has(at.getTime());
+  });
 }
 
 // ── propose content ───────────────────────────────────────────────────────────
@@ -223,10 +221,10 @@ export function ProposeContent({
   const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
   const slotChecks = useQueries({
     queries: suggestions.map((s) => {
-      const { startIso, endIso } = dayBoundsIso(s.date);
+      const bounds = dayBoundsIso(s.date);
       return trpc.meetup.getAvailableSlots.queryOptions(
-        { partnerId, startIso, endIso },
-        { enabled: !!partnerId },
+        { partnerId, startIso: bounds?.startIso ?? "", endIso: bounds?.endIso ?? "" },
+        { enabled: !!partnerId && !!bounds },
       );
     }),
   });
@@ -273,7 +271,7 @@ export function ProposeContent({
       setError(customMode ? "Please pick a date and time (HH:MM)" : "Please pick a suggested time");
       return;
     }
-    if (dt <= new Date()) { setError("The selected date and time must be in the future"); return; }
+    if (!isFuture(dt)) { setError("The selected date and time must be in the future"); return; }
     proposeMutation.mutate({ partnerId, venueId: selectedVenueId, scheduledAt: dt.toISOString() });
   }
 
@@ -378,7 +376,7 @@ export function ProposeContent({
               className="font-manrope-bold mt-0.5"
               style={{ fontSize: 16, color: customDate ? undefined : MUTED }}
             >
-              {customDate ? format(customDate, "EEE, MMMM d, yyyy") : "Select a date"}
+              {customDate ? formatLongDayDate(customDate) : "Select a date"}
             </Text>
           </Pressable>
           {showDatePicker && (
@@ -597,10 +595,9 @@ export function RespondContent({
   function handleCounterSubmit() {
     setError(null);
     if (!selectedVenueId) { setError("Please select a location"); return; }
-    if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) { setError("Enter a date in YYYY-MM-DD format"); return; }
-    if (!time.match(/^\d{2}:\d{2}$/)) { setError("Enter a time in HH:MM format"); return; }
     const proposed = combineLocal(date, time);
-    if (proposed <= new Date()) { setError("Date and time must be in the future"); return; }
+    if (!proposed) { setError("Enter a valid date and time"); return; }
+    if (!isFuture(proposed)) { setError("Date and time must be in the future"); return; }
     counterMutation.mutate({
       meetupId: activeMeetupId!,
       venueId: selectedVenueId,
@@ -638,13 +635,13 @@ export function RespondContent({
           onPress={() => setShowDatePicker(true)}
         >
           <Text className="text-foreground font-manrope">
-            {date ? format(new Date(date), "MMMM d, yyyy") : "Select a date"}
+            {date ? formatLongDate(date) : "Select a date"}
           </Text>
         </TouchableOpacity>
         {showDatePicker && (
           <DateTimePicker
             testID="counter-date-picker"
-            value={date ? new Date(date) : new Date()}
+            value={toDate(date) ?? new Date()}
             mode="date"
             minimumDate={new Date()}
             display={Platform.OS === "ios" ? "inline" : "default"}
@@ -708,7 +705,7 @@ export function RespondContent({
     );
   }
 
-  const proposalScheduled = new Date(proposal.scheduledAt);
+  const proposalScheduled = toDate(proposal.scheduledAt);
 
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32 }}>
@@ -753,9 +750,10 @@ export function RespondContent({
           <Pressable
             testID="counter-propose-btn"
             onPress={() => {
+              const at = proposalScheduled ?? new Date();
               setSelectedVenueId(proposal.venue.id);
-              setDate(toIsoDate(proposalScheduled));
-              setTime(timeFromDate(proposalScheduled));
+              setDate(toIsoDate(at));
+              setTime(timeFromDate(at));
               setCounterMode(true);
             }}
             disabled={isPending}
@@ -793,7 +791,7 @@ function RescheduleContent({
   currentScheduledAt: Date | string;
   onDismiss: () => void;
 }) {
-  const initial = new Date(currentScheduledAt);
+  const initial = toDate(currentScheduledAt) ?? new Date();
   const [venueId, setVenueId] = useState(currentVenueId);
   const [date, setDate] = useState(toIsoDate(initial));
   const [time, setTime] = useState(timeFromDate(initial));
@@ -820,10 +818,9 @@ function RescheduleContent({
   function handleSubmit() {
     setError(null);
     if (!venueId) { setError("Please select a location"); return; }
-    if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) { setError("Enter a date in YYYY-MM-DD format"); return; }
-    if (!time.match(/^\d{2}:\d{2}$/)) { setError("Enter a time in HH:MM format"); return; }
     const proposed = combineLocal(date, time);
-    if (proposed <= new Date()) { setError("Date and time must be in the future"); return; }
+    if (!proposed) { setError("Enter a valid date and time"); return; }
+    if (!isFuture(proposed)) { setError("Date and time must be in the future"); return; }
     rescheduleMutation.mutate({ meetupId, venueId, scheduledAt: proposed.toISOString() });
   }
 
@@ -889,13 +886,13 @@ function RescheduleContent({
         onPress={() => setShowDatePicker(true)}
       >
         <Text className="font-manrope text-foreground">
-          {date ? format(new Date(date), "EEE, MMMM d, yyyy") : "Select a date"}
+          {date ? formatLongDayDate(date) : "Select a date"}
         </Text>
       </TouchableOpacity>
       {showDatePicker && (
         <DateTimePicker
           testID="reschedule-date-picker"
-          value={date ? new Date(date) : new Date()}
+          value={toDate(date) ?? new Date()}
           mode="date"
           minimumDate={new Date()}
           display={Platform.OS === "ios" ? "inline" : "default"}

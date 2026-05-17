@@ -1,3 +1,5 @@
+import { epochMs as instant } from "@/lib/dates";
+
 export type ConfirmedMeetup = {
   meetupId: string;
   scheduledAt: Date | string;
@@ -52,10 +54,6 @@ type Inputs = {
   discover: DiscoverPartner[];
 };
 
-function instant(d: Date | string): number {
-  return (d instanceof Date ? d : new Date(d)).getTime();
-}
-
 function needsAction(state: HomeState): boolean {
   switch (state.kind) {
     case "post":
@@ -98,9 +96,7 @@ function buildWaitingList(pending: PendingProposal[]): HomeState[] {
 
 function pickMatchfound(matches: MyMatch[]): MyMatch | null {
   if (matches.length === 0) return null;
-  return [...matches].sort(
-    (a, b) => new Date(b.matchedAt).getTime() - new Date(a.matchedAt).getTime(),
-  )[0]!;
+  return [...matches].sort((a, b) => instant(b.matchedAt) - instant(a.matchedAt))[0]!;
 }
 
 export function resolveHomeState(inputs: Inputs): { heros: HomeState[]; secondaries: HomeState[] } {

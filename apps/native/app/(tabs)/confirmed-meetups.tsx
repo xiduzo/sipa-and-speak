@@ -6,7 +6,7 @@ import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { Container } from "@/components/container";
 import { MeetupFlowModal, type MeetupFlowMode } from "@/components/meetup-flow-modal";
 import { CARD, CARD_BLUE, GOLD } from "@/components/home/tokens";
-import { formatDayTime } from "@/components/home/format";
+import { formatDayTime, toDate } from "@/lib/dates";
 import { trpc, queryClient } from "@/utils/trpc";
 
 const DARK = "#1A1A1A";
@@ -329,7 +329,7 @@ export default function ConfirmedMeetupsScreen() {
                     partnerName={p.partner.name}
                     dateTimeLabel={formatDayTime(p.scheduledAt)}
                     venueName={p.venue.name}
-                    rawDateTime={new Date(p.scheduledAt).toISOString()}
+                    rawDateTime={toDate(p.scheduledAt)?.toISOString() ?? ""}
                     pill={
                       <StatusPill
                         label={isOutgoing ? "Waiting" : "Their turn"}
@@ -403,7 +403,7 @@ export default function ConfirmedMeetupsScreen() {
                     partnerName={m.partner.name}
                     dateTimeLabel={formatDayTime(m.scheduledAt)}
                     venueName={m.venue.name}
-                    rawDateTime={new Date(m.scheduledAt).toISOString()}
+                    rawDateTime={toDate(m.scheduledAt)?.toISOString() ?? ""}
                     pill={<StatusPill label={pillLabel} tone={pillTone} />}
                   />
 

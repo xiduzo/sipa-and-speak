@@ -34,6 +34,7 @@ import { MatchCelebrationModal } from "@/components/match-celebration-modal";
 import { Sentry } from "@/lib/sentry";
 import { MeetupConfirmedModal } from "@/components/meetup-confirmed-modal";
 import { OnboardingModal } from "@/components/onboarding-modal"; // edge-case: complete but no identity
+import { combineLocal } from "@/lib/dates";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -248,14 +249,17 @@ function Layout() {
                   onDismiss={dismissMatchAlert}
                 />
               )}
-              {meetupAlert && (
-                <MeetupConfirmedModal
-                  visible
-                  venueName={meetupAlert.venueName}
-                  scheduledAt={new Date(`${meetupAlert.date}T${meetupAlert.time}:00`)}
-                  onDismiss={dismissMeetupAlert}
-                />
-              )}
+              {meetupAlert && (() => {
+                const scheduledAt = combineLocal(meetupAlert.date, meetupAlert.time);
+                return scheduledAt ? (
+                  <MeetupConfirmedModal
+                    visible
+                    venueName={meetupAlert.venueName}
+                    scheduledAt={scheduledAt}
+                    onDismiss={dismissMeetupAlert}
+                  />
+                ) : null;
+              })()}
               <StackLayout />
             </HeroUINativeProvider>
           </AppThemeProvider>

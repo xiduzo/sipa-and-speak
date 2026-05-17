@@ -55,6 +55,18 @@ When spawning subagents (Agent/Task tool), the routing block is automatically in
 - Write artifacts (code, configs, PRDs) to FILES — never return them as inline text. Return only: file path + 1-line description.
 - When indexing content, use descriptive source labels so others can `ctx_search(source: "label")` later.
 
+## EAS / native commands — absolute paths only
+
+`eas` CLI resolves project via `process.cwd()`. Bash sessions in this repo may start at a different cwd than expected, so plain `cd apps/native && eas ...` can land in the wrong folder or leave session state confused.
+
+Rule: always invoke `eas` (and any other native-app command that reads `eas.json`/`app.json`) via subshell with an absolute path:
+
+```bash
+(cd /Users/sander/personal/sip-and-speak/apps/native && eas update:list --branch production)
+```
+
+Subshell scopes the cwd change, leaves session pwd untouched, and guarantees `eas` finds the project. Never rely on relative `cd apps/native`.
+
 ## ctx commands
 
 | Command | Action |

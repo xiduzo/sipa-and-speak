@@ -15,27 +15,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { differenceInCalendarDays, format, startOfDay as dfStartOfDay } from "date-fns";
 
 import { authClient } from "@/lib/auth-client";
+import { formatChatSectionLabel, formatTime, startOfDayMs } from "@/lib/dates";
 import { trpc } from "@/utils/trpc";
-
-function formatTime(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return format(d, "HH:mm");
-}
-
-function startOfDay(d: Date): number {
-  return dfStartOfDay(d).getTime();
-}
-
-function formatDayLabel(date: Date): string {
-  const diffDays = differenceInCalendarDays(new Date(), date);
-  if (diffDays === 0) return "TODAY";
-  if (diffDays === 1) return "YESTERDAY";
-  if (diffDays < 7) return format(date, "EEEE").toUpperCase();
-  return format(date, "MMM d").toUpperCase();
-}
 
 type Message = {
   id: string;
@@ -54,10 +37,13 @@ function buildRows(messages: Message[]): Row[] {
   const rows: Row[] = [];
   let lastDay: number | null = null;
   for (const m of messages) {
-    const d = typeof m.createdAt === "string" ? new Date(m.createdAt) : m.createdAt;
-    const day = startOfDay(d);
+    const day = startOfDayMs(m.createdAt);
+    if (Number.isNaN(day)) {
+      rows.push({ kind: "message", id: m.id, message: m });
+      continue;
+    }
     if (day !== lastDay) {
-      rows.push({ kind: "divider", id: `div-${day}`, label: formatDayLabel(d) });
+      rows.push({ kind: "divider", id: `div-${day}`, label: formatChatSectionLabel(m.createdAt) });
       lastDay = day;
     }
     rows.push({ kind: "message", id: m.id, message: m });
