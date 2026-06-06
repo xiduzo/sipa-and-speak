@@ -158,6 +158,22 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
       toast.show({ variant: "danger", label: "Failed to update interest." }),
   });
 
+  // #5 — permanent account deletion. On success, mirror the sign-out flow so the
+  // AuthGuard sees the lost session and routes back to /enrolment.
+  const deleteAccountMutation = useMutation({
+    ...trpc.profile.deleteAccount.mutationOptions(),
+    onSuccess: async () => {
+      queryClient.clear();
+      await authClient.signOut();
+      onDismiss();
+    },
+    onError: (e) =>
+      toast.show({
+        variant: "danger",
+        label: (e as { message?: string }).message ?? "Couldn't delete account.",
+      }),
+  });
+
   function saveIdentity(name: string, surname: string, image?: string) {
     const n = name.trim();
     const s = surname.trim();
@@ -676,6 +692,37 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
                 style={{ color: "#E57373" }}
               >
                 Sign out
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() =>
+                Alert.alert(
+                  "Delete account",
+                  "This permanently deletes your profile, matches, chats and meet-ups. This cannot be undone.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Delete account",
+                      style: "destructive",
+                      onPress: () => deleteAccountMutation.mutate(),
+                    },
+                  ],
+                )
+              }
+              disabled={deleteAccountMutation.isPending}
+              className="items-center"
+              style={{
+                paddingVertical: 12,
+                marginTop: 4,
+                opacity: deleteAccountMutation.isPending ? 0.5 : 1,
+              }}
+            >
+              <Text
+                className="font-manrope text-[13px]"
+                style={{ color: "#B0463C", textDecorationLine: "underline" }}
+              >
+                {deleteAccountMutation.isPending ? "Deleting…" : "Delete account"}
               </Text>
             </Pressable>
           </View>

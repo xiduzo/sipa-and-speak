@@ -463,10 +463,28 @@ export default function ConfirmedMeetupsScreen() {
                           label="We didn't"
                           disabled={reportAttendanceMutation.isPending}
                           onPress={() =>
-                            reportAttendanceMutation.mutate({
-                              meetupId: m.meetupId,
-                              attended: false,
-                            })
+                            reportAttendanceMutation.mutate(
+                              { meetupId: m.meetupId, attended: false },
+                              {
+                                onSuccess: () =>
+                                  Alert.alert(
+                                    "No worries",
+                                    `Want to set up another moment with ${m.partner.name}?`,
+                                    [
+                                      { text: "Not now", style: "cancel" },
+                                      {
+                                        text: "Propose again",
+                                        onPress: () =>
+                                          setMeetupModal({
+                                            type: "propose",
+                                            partnerId: m.partner.id,
+                                            partnerName: m.partner.name,
+                                          }),
+                                      },
+                                    ],
+                                  ),
+                              },
+                            )
                           }
                           flex
                         />

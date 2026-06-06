@@ -92,6 +92,13 @@ export default function HomeScreen() {
             onOpenChat={(conversationId) =>
               router.push(`/chat/${conversationId}` as never)
             }
+            onReschedule={() =>
+              setMeetupModal({
+                type: "propose",
+                partnerId: hero.meetup.partner.id,
+                partnerName: hero.meetup.partner.name,
+              })
+            }
           />
         );
       case "confirmed":

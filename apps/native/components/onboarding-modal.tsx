@@ -97,7 +97,7 @@ const STEP_TITLES = [
 
 const STEP_SUBTITLES = [
   "Pulled from TU/e. Change if you go by something else.",
-  "So your partner can spot you across the café.",
+  "So your buddy can spot you across the café.",
   "Languages you can hold a conversation in.",
   "We'll pair you with native speakers.",
   "Pick 3–7. Seeds your first match.",

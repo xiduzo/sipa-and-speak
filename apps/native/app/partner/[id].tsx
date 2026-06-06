@@ -1,12 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Spinner } from "heroui-native";
 import { useEffect, useState } from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import { Container } from "@/components/container";
 import { FlagUserModal } from "@/components/flag-user-modal";
-import { trpc } from "@/utils/trpc";
+import { queryClient, trpc } from "@/utils/trpc";
 import { interestLabel } from "@/utils/interest-labels";
 import { getLanguageFlag } from "@/utils/language-flags";
 
@@ -17,7 +17,12 @@ const MUTED = "#8A7570";
 const CARD_BG = "#EDE5DC";
 
 export default function PartnerProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // matchRequestId present = opened from an incoming request (handled inline on
+  // the Matches tab); in that context we suppress the matched-only actions.
+  const { id, matchRequestId } = useLocalSearchParams<{
+    id: string;
+    matchRequestId?: string;
+  }>();
   const router = useRouter();
 
   const [reportVisible, setReportVisible] = useState(false);
@@ -28,6 +33,31 @@ export default function PartnerProfileScreen() {
 
   const commentsQuery = useQuery(
     trpc.profile.getCandidateComments.queryOptions({ candidateUserId: id }),
+  );
+
+  // #10 — relationship status drives the footer actions (matched → propose/unmatch).
+  const statusQuery = useQuery(
+    trpc.matching.getMatchRequestStatus.queryOptions({ candidateUserId: id }),
+  );
+
+  const unmatchMutation = useMutation(
+    trpc.matching.unmatch.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(
+          trpc.matching.getMyMatches.queryOptions({ includeWithActiveMeetup: true }),
+        );
+        void queryClient.invalidateQueries(trpc.matching.getMyMatches.queryOptions());
+        void queryClient.invalidateQueries(
+          trpc.matching.getMatchRequestStatus.queryOptions({ candidateUserId: id }),
+        );
+        router.back();
+      },
+      onError: (e) =>
+        Alert.alert(
+          "Couldn't unmatch",
+          (e as { message?: string }).message ?? "Try again later.",
+        ),
+    }),
   );
 
   useEffect(() => {
@@ -63,6 +93,33 @@ export default function PartnerProfileScreen() {
 
   const profile = profileQuery.data;
   const comments = commentsQuery.data ?? [];
+
+  // Show matched-only actions only when actually matched and not in the
+  // incoming-request context.
+  const isMatched =
+    !matchRequestId && statusQuery.data?.matchRequestStatus === "accepted";
+
+  function openPropose() {
+    router.push({
+      pathname: "/propose-meetup",
+      params: { partnerId: id, partnerName: profile.name },
+    });
+  }
+
+  function confirmUnmatch() {
+    Alert.alert(
+      "Unmatch?",
+      "You'll both be removed from each other's matches and won't be suggested again. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Unmatch",
+          style: "destructive",
+          onPress: () => unmatchMutation.mutate({ partnerId: id }),
+        },
+      ],
+    );
+  }
 
   return (
     <Container isScrollable={false}>
@@ -212,6 +269,57 @@ export default function PartnerProfileScreen() {
         </View>
 
       </ScrollView>
+
+      {/* #10 — matched buddies can propose a meet-up or unmatch */}
+      {isMatched && (
+        <View
+          testID="matched-actions"
+          style={{
+            paddingHorizontal: 20,
+            paddingTop: 12,
+            paddingBottom: 8,
+            borderTopWidth: 1,
+            borderTopColor: BORDER,
+            gap: 8,
+          }}
+        >
+          <Pressable
+            testID="propose-meetup-button"
+            onPress={openPropose}
+            style={{
+              height: 52,
+              borderRadius: 26,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: GOLD,
+            }}
+          >
+            <Text
+              className="font-manrope-bold"
+              style={{ color: WARM_BROWN, fontSize: 16 }}
+            >
+              Propose a meet-up  →
+            </Text>
+          </Pressable>
+          <Pressable
+            testID="unmatch-button"
+            onPress={confirmUnmatch}
+            disabled={unmatchMutation.isPending}
+            style={{
+              alignItems: "center",
+              paddingVertical: 10,
+              opacity: unmatchMutation.isPending ? 0.5 : 1,
+            }}
+          >
+            <Text
+              className="font-manrope text-[13px]"
+              style={{ color: "#B0463C", textDecorationLine: "underline" }}
+            >
+              {unmatchMutation.isPending ? "Unmatching…" : "Unmatch"}
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       <FlagUserModal
         visible={reportVisible}

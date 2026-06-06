@@ -634,4 +634,14 @@ export const profileRouter = router({
         createdAt: c.createdAt.toISOString(),
       }));
     }),
+
+  // #5 — permanent account deletion. Every user-owned row cascades; the few
+  // audit references (authored comments, moderator/reschedule pointers) null out
+  // by design. The destructive client confirm is the guard, so no input here.
+  deleteAccount: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+    await db.delete(user).where(eq(user.id, userId));
+    console.info("[AccountDeleted]", { userId });
+    return { success: true as const };
+  }),
 });

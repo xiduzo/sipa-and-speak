@@ -187,7 +187,7 @@ function StackLayout() {
       <Stack.Screen name="enrolment" options={{ headerShown: false }} />
 
       <Stack.Screen name="partner/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="chat/[conversationId]" options={{ title: "Chat" }} />
+      <Stack.Screen name="chat/[conversationId]" options={{ headerShown: false }} />
       <Stack.Screen name="chat/locked/[meetupId]" options={{ headerShown: false }} />
       <Stack.Screen name="propose-meetup" options={{ headerShown: false, presentation: "modal" }} />
       <Stack.Screen name="respond-meetup" options={{ headerShown: false, presentation: "modal" }} />

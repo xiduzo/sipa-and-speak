@@ -31,7 +31,9 @@ export default function TabsLayout() {
   const meetupsCount = pendingProposalsNeedingResponse + attendanceNeeded + rescheduleNeeded;
 
   const chatsCount = (chatEntriesQuery.data ?? []).filter(
-    (e) => e.kind === "open" && e.hasUnread,
+    (e) =>
+      (e.kind === "open" && e.hasUnread) ||
+      (e.kind === "locked" && e.phase === "awaiting_my_optin"),
   ).length;
 
   return (

@@ -807,7 +807,7 @@ function RescheduleContent({
         void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
         Alert.alert(
           "Reschedule proposed",
-          "Your reschedule request has been sent to your partner.",
+          "Your reschedule request has been sent to your buddy.",
           [{ text: "OK", onPress: onDismiss }],
         );
       },

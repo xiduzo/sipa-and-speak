@@ -164,6 +164,9 @@ export default function MatchesScreen() {
   const incomingRequestsQuery = useQuery(
     trpc.matching.getIncomingRequests.queryOptions(),
   );
+  const outgoingRequestsQuery = useQuery(
+    trpc.matching.getOutgoingRequests.queryOptions(),
+  );
 
   const invalidateAll = () => {
     void queryClient.invalidateQueries(
@@ -171,6 +174,7 @@ export default function MatchesScreen() {
     );
     void queryClient.invalidateQueries(trpc.matching.getMyMatches.queryOptions());
     void queryClient.invalidateQueries(trpc.matching.getIncomingRequests.queryOptions());
+    void queryClient.invalidateQueries(trpc.matching.getOutgoingRequests.queryOptions());
   };
 
   const acceptMutation = useMutation(
@@ -179,15 +183,20 @@ export default function MatchesScreen() {
   const declineMutation = useMutation(
     trpc.matching.declineMatchRequest.mutationOptions({ onSuccess: invalidateAll }),
   );
+  const withdrawMutation = useMutation(
+    trpc.matching.withdrawMatchRequest.mutationOptions({ onSuccess: invalidateAll }),
+  );
 
   const matches = (matchesQuery.data ?? []) as MatchEntry[];
   const requests = incomingRequestsQuery.data ?? [];
+  const outgoing = outgoingRequestsQuery.data ?? [];
 
   const now = Date.now();
   const newMatches = matches.filter((m) => now - epochMs(m.matchedAt) < NEW_WINDOW_MS);
   const olderMatches = matches.filter((m) => now - epochMs(m.matchedAt) >= NEW_WINDOW_MS);
 
-  const isEmpty = matches.length === 0 && requests.length === 0;
+  const isEmpty =
+    matches.length === 0 && requests.length === 0 && outgoing.length === 0;
 
   const openPartner = (partnerId: string) =>
     router.push({ pathname: "/partner/[id]", params: { id: partnerId } });
@@ -229,10 +238,106 @@ export default function MatchesScreen() {
           )}
         </View>
 
-        {/* Match requests */}
+        {/* Invitations you sent — awaiting a reply (#8/#9) */}
+        {outgoing.length > 0 && (
+          <View style={{ paddingHorizontal: 24, marginBottom: 28 }}>
+            <SectionLabel>INVITATIONS SENT</SectionLabel>
+            <View style={{ gap: 12 }}>
+              {outgoing.map((req) => {
+                const pending =
+                  withdrawMutation.isPending &&
+                  withdrawMutation.variables?.matchRequestId === req.matchRequestId;
+                const tone = avatarTone(req.receiverName);
+                return (
+                  <View
+                    key={req.matchRequestId}
+                    testID="outgoing-request-card"
+                    style={{ backgroundColor: CARD, borderRadius: 18, padding: 16 }}
+                  >
+                    <Pressable
+                      onPress={() => openPartner(req.receiverId)}
+                      style={({ pressed }) => ({
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 12,
+                        opacity: pressed ? 0.7 : 1,
+                      })}
+                    >
+                      <View style={{ width: 52, height: 52 }}>
+                        <View
+                          className="items-center justify-center rounded-full"
+                          style={{ width: 52, height: 52, backgroundColor: tone }}
+                        >
+                          {req.receiverPhotoUrl ? (
+                            <Image
+                              source={{ uri: req.receiverPhotoUrl }}
+                              style={{ width: 52, height: 52, borderRadius: 26 }}
+                            />
+                          ) : (
+                            <Text
+                              className="font-jakarta"
+                              style={{ fontSize: 20, color: DARK }}
+                            >
+                              {initials(req.receiverName)}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          className="font-jakarta"
+                          style={{ fontSize: 17, color: DARK }}
+                          numberOfLines={1}
+                        >
+                          {req.receiverName}
+                        </Text>
+                        <Text
+                          className="font-manrope"
+                          style={{ fontSize: 13, color: MUTED, marginTop: 2 }}
+                          numberOfLines={1}
+                        >
+                          Waiting for a reply…
+                        </Text>
+                      </View>
+                    </Pressable>
+
+                    <View className="flex-row" style={{ gap: 10, marginTop: 14 }}>
+                      <Pressable
+                        testID="withdraw-match-request"
+                        disabled={pending}
+                        onPress={() =>
+                          withdrawMutation.mutate({ matchRequestId: req.matchRequestId })
+                        }
+                        style={({ pressed }) => ({
+                          flex: 1,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          height: 40,
+                          borderRadius: 20,
+                          borderWidth: 1,
+                          borderColor: DIVIDER,
+                          opacity: pending ? 0.5 : pressed ? 0.7 : 1,
+                        })}
+                      >
+                        <Text
+                          className="font-manrope-semi"
+                          style={{ fontSize: 14, color: MUTED }}
+                        >
+                          {pending ? "Withdrawing…" : "Withdraw"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Invitations received — accept or decline (#9 relabel) */}
         {requests.length > 0 && (
           <View style={{ paddingHorizontal: 24, marginBottom: 28 }}>
-            <SectionLabel>REQUESTS</SectionLabel>
+            <SectionLabel>INVITATIONS RECEIVED</SectionLabel>
             <View style={{ gap: 12 }}>
               {requests.map((req) => {
                 const pending =
@@ -367,6 +472,29 @@ export default function MatchesScreen() {
                 );
               })}
             </View>
+          </View>
+        )}
+
+        {/* Matches section — schedule a new moment (#9) */}
+        {matches.length > 0 && (
+          <View style={{ paddingHorizontal: 24, marginBottom: 20 }}>
+            <Pressable
+              testID="schedule-new-moment"
+              accessibilityRole="button"
+              onPress={() => router.push("/match")}
+              style={({ pressed }) => ({
+                height: 52,
+                borderRadius: 26,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: GOLD,
+                opacity: pressed ? 0.85 : 1,
+              })}
+            >
+              <Text className="font-manrope-bold" style={{ fontSize: 15, color: DARK }}>
+                Schedule a new moment  →
+              </Text>
+            </Pressable>
           </View>
         )}
 

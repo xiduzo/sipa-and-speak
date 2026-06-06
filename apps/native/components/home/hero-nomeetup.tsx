@@ -27,7 +27,7 @@ export function HeroNoMeetup({ matchCount, partners, daysIdle, onFindPartner }: 
     daysIdle && daysIdle >= 7
       ? `You haven't scheduled an S&S moment in ${daysIdle} days.`
       : matchCount > 0
-        ? "Pick a partner and break the ice."
+        ? "Pick a buddy and break the ice."
         : "No new matches just now — check back soon.";
 
   return (
@@ -90,7 +90,7 @@ export function HeroNoMeetup({ matchCount, partners, daysIdle, onFindPartner }: 
           }}
         >
           <Text className="font-manrope-bold" style={{ fontSize: 16 }}>
-            Find a partner  →
+            Find a buddy  →
           </Text>
         </Pressable>
       </View>

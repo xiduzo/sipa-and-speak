@@ -19,7 +19,7 @@ export default function ProposeMeetupScreen() {
     >
       <ProposeContent
         partnerId={partnerId ?? ""}
-        partnerName={partnerName ?? "partner"}
+        partnerName={partnerName ?? "buddy"}
         onDismiss={() => router.back()}
       />
     </View>

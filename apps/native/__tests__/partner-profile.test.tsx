@@ -10,14 +10,22 @@
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { Alert } from "react-native";
 import React from "react";
 
 // Mock expo-router (must be before any imports that use it)
 const mockBack = jest.fn();
+const mockPush = jest.fn();
 let mockSearchParams: { id: string; matchRequestId?: string } = { id: "candidate-123" };
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => mockSearchParams,
-  useRouter: () => ({ back: mockBack }),
+  useRouter: () => ({ back: mockBack, push: mockPush }),
+}));
+
+// The safety/report modal isn't under test here and pulls in heavy deps that
+// throw in jsdom — stub it so the profile screen renders.
+jest.mock("@/components/flag-user-modal", () => ({
+  FlagUserModal: () => null,
 }));
 
 // Use mock-prefixed functions so jest.mock() factory can reference them
@@ -27,6 +35,7 @@ const mockSendMatchRequest = jest.fn();
 const mockGetMatchRequestStatusFn = jest.fn();
 const mockAcceptMatchRequest = jest.fn();
 const mockDeclineMatchRequest = jest.fn();
+const mockUnmatch = jest.fn();
 const mockInvalidateQueries = jest.fn();
 
 jest.mock("@/utils/trpc", () => ({
@@ -53,6 +62,15 @@ jest.mock("@/utils/trpc", () => ({
       },
       declineMatchRequest: {
         mutationOptions: () => ({ mutationFn: mockDeclineMatchRequest }),
+      },
+      getMyMatches: {
+        queryOptions: () => ({ queryKey: ["matching.getMyMatches"] }),
+      },
+      unmatch: {
+        mutationOptions: (opts?: Record<string, unknown>) => ({
+          mutationFn: mockUnmatch,
+          ...(opts ?? {}),
+        }),
       },
     },
     profile: {
@@ -101,9 +119,11 @@ function renderScreen() {
 beforeEach(() => {
   mockSearchParams = { id: "candidate-123" };
   mockBack.mockClear();
+  mockPush.mockClear();
   mockSendMatchRequest.mockClear().mockResolvedValue({ matchRequestId: "req-1", status: "pending" });
   mockAcceptMatchRequest.mockClear().mockResolvedValue({ status: "accepted", matchedWithUserId: "requester-1" });
   mockDeclineMatchRequest.mockClear().mockResolvedValue({ status: "declined" });
+  mockUnmatch.mockClear().mockResolvedValue({ success: true });
   mockInvalidateQueries.mockClear();
   mockProfileFn.mockReset().mockResolvedValue(defaultProfile);
   mockCommentsFn.mockReset().mockResolvedValue([]);
@@ -407,5 +427,78 @@ describe("#129 — Decline action removing the request and navigating back", () 
         expect.objectContaining({ queryKey: ["matching.getIncomingRequests"] }),
       );
     });
+  });
+});
+
+// ─── #10: Matched buddy — Propose meet-up + Unmatch ────────────────────────
+
+describe("#10 — Matched buddy actions on profile", () => {
+  it("shows Propose + Unmatch when matched (status accepted)", async () => {
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted" });
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("propose-meetup-button")).toBeTruthy();
+    });
+    expect(screen.getByTestId("unmatch-button")).toBeTruthy();
+  });
+
+  it("does not show matched actions when not matched", async () => {
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "none" });
+
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("comments-section"));
+    expect(screen.queryByTestId("propose-meetup-button")).toBeNull();
+    expect(screen.queryByTestId("unmatch-button")).toBeNull();
+  });
+
+  it("hides matched actions in the incoming-request context", async () => {
+    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted" });
+
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("comments-section"));
+    expect(screen.queryByTestId("propose-meetup-button")).toBeNull();
+  });
+
+  it("Propose opens the propose-meetup screen with partner params", async () => {
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted" });
+
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("propose-meetup-button"));
+    fireEvent.press(screen.getByTestId("propose-meetup-button"));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/propose-meetup",
+      params: { partnerId: "candidate-123", partnerName: "Alice" },
+    });
+  });
+
+  it("Unmatch confirms then calls the unmatch mutation", async () => {
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted" });
+    const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => {});
+
+    renderScreen();
+
+    await waitFor(() => screen.getByTestId("unmatch-button"));
+    fireEvent.press(screen.getByTestId("unmatch-button"));
+
+    // Grab the destructive confirm handler from the Alert and invoke it.
+    const buttons = (alertSpy.mock.calls[0]?.[2] ?? []) as Array<{
+      text?: string;
+      onPress?: () => void;
+    }>;
+    const confirm = buttons.find((b) => b.text === "Unmatch");
+    confirm?.onPress?.();
+
+    await waitFor(() => expect(mockUnmatch).toHaveBeenCalled());
+    // TanStack Query v5 calls mutationFn(variables, context) — assert variables only.
+    expect(mockUnmatch.mock.calls[0]?.[0]).toEqual({ partnerId: "candidate-123" });
+
+    alertSpy.mockRestore();
   });
 });

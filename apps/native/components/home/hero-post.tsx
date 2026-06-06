@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { useState } from "react";
 
 import { trpc, queryClient } from "@/utils/trpc";
@@ -19,9 +19,11 @@ const EMOJIS: { rating: 1 | 2 | 3 | 4 | 5; glyph: string }[] = [
 type Props = {
   meetup: ConfirmedMeetup;
   onOpenChat: (conversationId: string) => void;
+  // #27 — re-open the propose flow after a "didn't meet" report.
+  onReschedule: () => void;
 };
 
-export function HeroPost({ meetup, onOpenChat }: Props) {
+export function HeroPost({ meetup, onOpenChat, onReschedule }: Props) {
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
 
   const reportMutation = useMutation(
@@ -46,7 +48,22 @@ export function HeroPost({ meetup, onOpenChat }: Props) {
   }
 
   function handleNoShow() {
-    reportMutation.mutate({ meetupId: meetup.meetupId, attended: false });
+    reportMutation.mutate(
+      { meetupId: meetup.meetupId, attended: false },
+      {
+        onSuccess: () => {
+          // #27 — offer to schedule another moment with the same buddy.
+          Alert.alert(
+            "No worries",
+            `Want to set up another moment with ${meetup.partner.name}?`,
+            [
+              { text: "Not now", style: "cancel" },
+              { text: "Propose again", onPress: onReschedule },
+            ],
+          );
+        },
+      },
+    );
   }
 
   function renderChatBanner() {

@@ -73,6 +73,9 @@ jest.mock("@/utils/trpc", () => ({
       toggleInterest: {
         mutationOptions: () => ({ mutationFn: jest.fn() }),
       },
+      deleteAccount: {
+        mutationOptions: () => ({ mutationFn: jest.fn() }),
+      },
     },
   },
   queryClient: { invalidateQueries: jest.fn(), clear: jest.fn() },

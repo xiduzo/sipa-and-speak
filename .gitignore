@@ -7,6 +7,8 @@ node_modules
 dist
 build
 *.tsbuildinfo
+jest_dy
+node-compile-cache
 
 # Environment variables
 .env

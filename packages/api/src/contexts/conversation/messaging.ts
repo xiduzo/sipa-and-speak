@@ -88,6 +88,11 @@ export const messagingRouter = router({
 
       const partnerId = existing.proposerId === studentId ? existing.receiverId : existing.proposerId;
 
+      // When this response opens the conversation (both accepted) we hand the
+      // new conversation id back so the client can route straight into the open
+      // chat instead of being stranded on the now-stale locked screen (bug A1).
+      let openedConversationId: string | null = null;
+
       if (input.response === "accept") {
         domainEvents.emit("MessagingAccepted", {
           meetupId: input.meetupId,
@@ -152,6 +157,7 @@ export const messagingRouter = router({
             .returning();
 
           if (newConversation) {
+            openedConversationId = newConversation.id;
             console.log(
               `[messaging] conversation opened conversationId=${newConversation.id} meetupId=${input.meetupId}`,
             );
@@ -168,6 +174,15 @@ export const messagingRouter = router({
               studentBName: studentBRow[0]?.name ?? "Your match",
               openedAt: newConversation.createdAt,
             });
+          } else {
+            // A concurrent accept already opened (and emitted for) the
+            // conversation. Look it up so this caller is still routed in.
+            const [existingConv] = await db
+              .select({ id: conversation.id })
+              .from(conversation)
+              .where(eq(conversation.meetupId, input.meetupId))
+              .limit(1);
+            openedConversationId = existingConv?.id ?? null;
           }
         }
       } else {
@@ -197,7 +212,7 @@ export const messagingRouter = router({
         `[messaging] opt-in response recorded meetupId=${input.meetupId} studentId=${studentId} response=${input.response}`,
       );
 
-      return { recorded: true as const };
+      return { recorded: true as const, conversationId: openedConversationId };
     }),
 
   /**

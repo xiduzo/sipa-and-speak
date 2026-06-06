@@ -62,7 +62,7 @@ function headerSubtitle(phase: LockedPhase): string {
   if (phase === "scheduled") return "locked · meet first";
   if (phase === "awaiting_attendance") return "locked · awaiting attendance";
   if (phase === "awaiting_my_optin") return "locked · rate to unlock";
-  if (phase === "awaiting_partner_optin") return "locked · waiting on partner";
+  if (phase === "awaiting_partner_optin") return "locked · waiting on buddy";
   return "won't open";
 }
 
@@ -86,6 +86,21 @@ export default function LockedChatScreen() {
 
   const optInMutation = useMutation(
     trpc.messaging.respondToOptIn.mutationOptions({
+      onSuccess: (data) => {
+        void queryClient.invalidateQueries(trpc.chat.listEntries.queryOptions());
+        void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
+        // Both opted in → the locked entry is gone and a real conversation
+        // exists. Route into it instead of stranding on "Chat not available".
+        if (data.conversationId) {
+          router.replace(`/chat/${data.conversationId}`);
+        }
+      },
+      onError: (err) => Alert.alert("Couldn't save", err.message),
+    }),
+  );
+
+  const reportAttendanceMutation = useMutation(
+    trpc.meetup.reportAttendance.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries(trpc.chat.listEntries.queryOptions());
         void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
@@ -218,6 +233,55 @@ export default function LockedChatScreen() {
               style={{ borderColor: "#2C1810", opacity: optInMutation.isPending ? 0.6 : 1 }}
             >
               <Text className="text-foreground font-semibold">No thanks</Text>
+            </TouchableOpacity>
+          </View>
+        ) : entry.phase === "awaiting_attendance" ? (
+          <View className="gap-2">
+            <TouchableOpacity
+              testID="attendance-yes"
+              disabled={reportAttendanceMutation.isPending}
+              onPress={() =>
+                reportAttendanceMutation.mutate({ meetupId: entry.meetupId, attended: true })
+              }
+              className="rounded-full py-3.5 items-center"
+              style={{ backgroundColor: "#2C1810", opacity: reportAttendanceMutation.isPending ? 0.6 : 1 }}
+            >
+              <Text className="text-background font-semibold">We met up</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              testID="attendance-no"
+              disabled={reportAttendanceMutation.isPending}
+              onPress={() =>
+                reportAttendanceMutation.mutate(
+                  { meetupId: entry.meetupId, attended: false },
+                  {
+                    onSuccess: () =>
+                      // #27 — offer to schedule another moment with the same buddy.
+                      Alert.alert(
+                        "No worries",
+                        `Want to set up another moment with ${entry.partner.name}?`,
+                        [
+                          { text: "Not now", style: "cancel" },
+                          {
+                            text: "Propose again",
+                            onPress: () =>
+                              router.push({
+                                pathname: "/propose-meetup",
+                                params: {
+                                  partnerId: entry.partner.id,
+                                  partnerName: entry.partner.name,
+                                },
+                              }),
+                          },
+                        ],
+                      ),
+                  },
+                )
+              }
+              className="rounded-full py-3.5 items-center border"
+              style={{ borderColor: "#2C1810", opacity: reportAttendanceMutation.isPending ? 0.6 : 1 }}
+            >
+              <Text className="text-foreground font-semibold">We didn't</Text>
             </TouchableOpacity>
           </View>
         ) : (

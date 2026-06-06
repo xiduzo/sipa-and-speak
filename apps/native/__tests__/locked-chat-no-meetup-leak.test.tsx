@@ -11,7 +11,7 @@ import React from "react";
 
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => ({ meetupId: "m-1" }),
-  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+  useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }),
 }));
 
 jest.mock("@expo/vector-icons", () => ({
@@ -38,6 +38,9 @@ jest.mock("@/utils/trpc", () => ({
     meetup: {
       getConfirmed: {
         queryOptions: () => ({ queryKey: ["meetup.getConfirmed"] }),
+      },
+      reportAttendance: {
+        mutationOptions: () => ({ mutationFn: jest.fn() }),
       },
     },
   },

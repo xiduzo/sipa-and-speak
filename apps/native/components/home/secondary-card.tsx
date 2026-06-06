@@ -49,7 +49,7 @@ function describe(state: HomeState): { eyebrow: string; title: string; subtitle:
     case "nomeetup":
       return {
         eyebrow: "DISCOVER",
-        title: state.matchCount > 0 ? `${state.matchCount} matches waiting` : "Browse partners",
+        title: state.matchCount > 0 ? `${state.matchCount} matches waiting` : "Browse buddies",
         subtitle: "Find someone new",
         emoji: "🔎",
       };

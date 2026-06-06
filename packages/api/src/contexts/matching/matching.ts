@@ -49,7 +49,8 @@ export const matchingRouter = router({
               eq(matchRequest.requesterId, userId),
               eq(matchRequest.receiverId, userId),
             ),
-            inArray(matchRequest.status, ["pending", "accepted"]),
+            // "voided" = an unmatch (#7) — keep that pair out of discover for good.
+            inArray(matchRequest.status, ["pending", "accepted", "voided"]),
           ),
         );
 
@@ -204,6 +205,60 @@ export const matchingRouter = router({
             .filter((l) => l.type === "spoken")
             .map((l) => l.language),
           requesterTargetedLanguages: langs
+            .filter((l) => l.type === "learning")
+            .map((l) => l.language),
+          createdAt: req.createdAt.toISOString(),
+        };
+      });
+    }),
+
+  // #8/#9 — the caller's own outstanding sent invitations (mirror of incoming).
+  getOutgoingRequests: protectedProcedure
+    .query(async ({ ctx }) => {
+      const requesterId = ctx.session.user.id;
+
+      const pendingRequests = await db
+        .select({
+          matchRequestId: matchRequest.id,
+          receiverId: matchRequest.receiverId,
+          createdAt: matchRequest.createdAt,
+        })
+        .from(matchRequest)
+        .where(
+          and(
+            eq(matchRequest.requesterId, requesterId),
+            eq(matchRequest.status, "pending"),
+          ),
+        );
+
+      if (pendingRequests.length === 0) return [];
+
+      const receiverIds = pendingRequests.map((r) => r.receiverId);
+
+      const [receiverUsers, receiverLanguages] = await Promise.all([
+        db
+          .select({ id: user.id, name: user.name, image: user.image })
+          .from(user)
+          .where(inArray(user.id, receiverIds)),
+        db
+          .select()
+          .from(userLanguage)
+          .where(inArray(userLanguage.userId, receiverIds)),
+      ]);
+
+      return pendingRequests.map((req) => {
+        const userInfo = receiverUsers.find((u) => u.id === req.receiverId);
+        const langs = receiverLanguages.filter((l) => l.userId === req.receiverId);
+
+        return {
+          matchRequestId: req.matchRequestId,
+          receiverId: req.receiverId,
+          receiverName: userInfo?.name ?? "Unknown",
+          receiverPhotoUrl: userInfo?.image ?? null,
+          receiverOfferedLanguages: langs
+            .filter((l) => l.type === "spoken")
+            .map((l) => l.language),
+          receiverTargetedLanguages: langs
             .filter((l) => l.type === "learning")
             .map((l) => l.language),
           createdAt: req.createdAt.toISOString(),
@@ -481,6 +536,82 @@ export const matchingRouter = router({
       });
 
       return { status: "declined" as const };
+    }),
+
+  // #8 — sender cancels an invitation they sent before it's answered.
+  // Hard-delete so the invite fully reverses: both users become discoverable to
+  // each other again and the sender may invite again later.
+  withdrawMatchRequest: protectedProcedure
+    .input(z.object({ matchRequestId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const requesterId = ctx.session.user.id;
+
+      const request = await db.query.matchRequest.findFirst({
+        where: eq(matchRequest.id, input.matchRequestId),
+      });
+
+      if (!request) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found." });
+      }
+      if (request.requesterId !== requesterId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only the sender may withdraw this invitation." });
+      }
+      if (request.status !== "pending") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending invitations can be withdrawn." });
+      }
+
+      await db.delete(matchRequest).where(eq(matchRequest.id, input.matchRequestId));
+
+      console.info("[MatchRequestWithdrawn]", {
+        matchRequestId: input.matchRequestId,
+        requesterId,
+        receiverId: request.receiverId,
+      });
+
+      return { success: true as const };
+    }),
+
+  // #7 — unmatch an existing buddy. Voids the underlying request (keeps the pair
+  // out of discover) and drops the match row from both users' match lists.
+  unmatch: protectedProcedure
+    .input(z.object({ partnerId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      if (userId === input.partnerId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot unmatch yourself." });
+      }
+
+      const match = await db.query.studentMatch.findFirst({
+        where: or(
+          and(
+            eq(studentMatch.studentAId, userId),
+            eq(studentMatch.studentBId, input.partnerId),
+          ),
+          and(
+            eq(studentMatch.studentAId, input.partnerId),
+            eq(studentMatch.studentBId, userId),
+          ),
+        ),
+      });
+
+      if (!match) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "You are not matched with this person." });
+      }
+
+      await db
+        .update(matchRequest)
+        .set({ status: "voided" })
+        .where(eq(matchRequest.id, match.matchRequestId));
+      await db.delete(studentMatch).where(eq(studentMatch.id, match.id));
+
+      console.info("[Unmatched]", {
+        userId,
+        partnerId: input.partnerId,
+        matchId: match.id,
+      });
+
+      return { success: true as const };
     }),
 
   getMyMatches: protectedProcedure

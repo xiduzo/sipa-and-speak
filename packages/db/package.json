@@ -22,7 +22,7 @@
     "db:stop": "docker compose stop",
     "db:down": "docker compose down",
     "db:seed:venues": "bun run src/seed/venues.ts",
-    "db:seed:tue-locations": "bun run src/seed/tue-locations.ts",
+    "db:cleanup:stray-venues": "bun run src/seed/cleanup-stray-venues.ts",
     "test": "bun test"
   },
   "dependencies": {
