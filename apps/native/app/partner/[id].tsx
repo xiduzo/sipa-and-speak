@@ -36,6 +36,8 @@ export default function PartnerProfileScreen() {
   );
 
   // #10 — relationship status drives the footer actions (matched → propose/unmatch).
+  // `isMatched` comes from the bidirectional studentMatch record, so it's true
+  // for both buddies regardless of who sent the original request.
   const statusQuery = useQuery(
     trpc.matching.getMatchRequestStatus.queryOptions({ candidateUserId: id }),
   );
@@ -97,7 +99,7 @@ export default function PartnerProfileScreen() {
   // Show matched-only actions only when actually matched and not in the
   // incoming-request context.
   const isMatched =
-    !matchRequestId && statusQuery.data?.matchRequestStatus === "accepted";
+    !matchRequestId && (statusQuery.data?.isMatched ?? false);
 
   function openPropose() {
     router.push({

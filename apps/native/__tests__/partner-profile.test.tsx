@@ -127,7 +127,7 @@ beforeEach(() => {
   mockInvalidateQueries.mockClear();
   mockProfileFn.mockReset().mockResolvedValue(defaultProfile);
   mockCommentsFn.mockReset().mockResolvedValue([]);
-  mockGetMatchRequestStatusFn.mockReset().mockResolvedValue({ matchRequestStatus: "none" });
+  mockGetMatchRequestStatusFn.mockReset().mockResolvedValue({ matchRequestStatus: "none", isMatched: false });
 });
 
 // ─── #119: Comments section ────────────────────────────────────────────────
@@ -233,7 +233,7 @@ describe("#122 — Send Request on candidate profile screen", () => {
 
 describe("#120 — Contextual Send Request action on candidate profile", () => {
   it("shows Send Request button when no request has been sent", async () => {
-    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "none" });
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "none", isMatched: false });
 
     renderScreen();
 
@@ -434,7 +434,24 @@ describe("#129 — Decline action removing the request and navigating back", () 
 
 describe("#10 — Matched buddy actions on profile", () => {
   it("shows Propose + Unmatch when matched (status accepted)", async () => {
-    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted" });
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted", isMatched: true });
+
+    renderScreen();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("propose-meetup-button")).toBeTruthy();
+    });
+    expect(screen.getByTestId("unmatch-button")).toBeTruthy();
+  });
+
+  it("shows matched actions even when the request came from the other buddy", async () => {
+    // Regression: the match is bidirectional (studentMatch). The buddy who
+    // *received* the original request has matchRequestStatus "none", yet is
+    // matched — the server reports isMatched:true and the actions must show.
+    mockGetMatchRequestStatusFn.mockResolvedValue({
+      matchRequestStatus: "none",
+      isMatched: true,
+    });
 
     renderScreen();
 
@@ -445,7 +462,7 @@ describe("#10 — Matched buddy actions on profile", () => {
   });
 
   it("does not show matched actions when not matched", async () => {
-    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "none" });
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "none", isMatched: false });
 
     renderScreen();
 
@@ -456,7 +473,7 @@ describe("#10 — Matched buddy actions on profile", () => {
 
   it("hides matched actions in the incoming-request context", async () => {
     mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
-    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted" });
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted", isMatched: true });
 
     renderScreen();
 
@@ -465,7 +482,7 @@ describe("#10 — Matched buddy actions on profile", () => {
   });
 
   it("Propose opens the propose-meetup screen with partner params", async () => {
-    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted" });
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted", isMatched: true });
 
     renderScreen();
 
@@ -479,7 +496,7 @@ describe("#10 — Matched buddy actions on profile", () => {
   });
 
   it("Unmatch confirms then calls the unmatch mutation", async () => {
-    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted" });
+    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "accepted", isMatched: true });
     const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => {});
 
     renderScreen();

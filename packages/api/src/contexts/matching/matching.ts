@@ -362,7 +362,28 @@ export const matchingRouter = router({
         status === "pending" || status === "accepted" || status === "declined"
           ? status
           : ("none" as const);
-      return { matchRequestStatus };
+
+      // A live match is bidirectional and lives in studentMatch, independent of
+      // who originally sent the request. Derive matched-state from there so the
+      // matched-only actions (propose / unmatch) show for BOTH sides of the
+      // pair — not just the side that happened to send the first "say hoi".
+      const match = await db.query.studentMatch.findFirst({
+        where: and(
+          or(
+            and(
+              eq(studentMatch.studentAId, requesterId),
+              eq(studentMatch.studentBId, input.candidateUserId),
+            ),
+            and(
+              eq(studentMatch.studentAId, input.candidateUserId),
+              eq(studentMatch.studentBId, requesterId),
+            ),
+          ),
+          inArray(studentMatch.status, ["matched", "connected"]),
+        ),
+      });
+
+      return { matchRequestStatus, isMatched: match != null };
     }),
 
   sendMatchRequest: protectedProcedure
