@@ -635,7 +635,10 @@ export const matchingRouter = router({
               eq(studentMatch.studentAId, userId),
               eq(studentMatch.studentBId, userId),
             ),
-            eq(studentMatch.status, "matched"),
+            // Both "matched" and "connected" are live matches — a "connected"
+            // pair has met and confirmed attendance (#138), so they must keep
+            // showing in the Matches tab, not vanish once you actually meet.
+            inArray(studentMatch.status, ["matched", "connected"]),
           ),
         );
 
