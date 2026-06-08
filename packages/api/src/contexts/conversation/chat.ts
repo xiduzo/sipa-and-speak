@@ -10,6 +10,7 @@ import {
   computeIsUnread,
   computeMarkReadAt,
   deriveLockedPhase,
+  keptEntryKeysByPartner,
 } from "./messaging-utils";
 import { protectedProcedure, router } from "../../index";
 
@@ -419,6 +420,11 @@ export const chatRouter = router({
         };
       });
 
+    // Collapse to one row per partner so a user met more than once isn't repeated.
+    const keptKeys = keptEntryKeysByPartner([...lockedEntries, ...openEntries]);
+    const keepEntry = (entry: { kind: "open" | "locked"; id: string }) =>
+      keptKeys.has(`${entry.kind}-${entry.id}`);
+
     // Locked entries float above open chats: pre-meet (soonest first), then post-meet awaiting,
     // then declined. Open chats below, ordered by most recent activity.
     const phaseRank: Record<string, number> = {
@@ -428,12 +434,12 @@ export const chatRouter = router({
       awaiting_partner_optin: 3,
       declined: 4,
     };
-    const sortedLocked = lockedEntries.sort((a, b) => {
+    const sortedLocked = lockedEntries.filter(keepEntry).sort((a, b) => {
       const r = (phaseRank[a.phase] ?? 99) - (phaseRank[b.phase] ?? 99);
       if (r !== 0) return r;
       return a.sortAt.getTime() - b.sortAt.getTime();
     });
-    const sortedOpen = openEntries.sort(
+    const sortedOpen = openEntries.filter(keepEntry).sort(
       (a, b) => b.sortAt.getTime() - a.sortAt.getTime(),
     );
     return [...sortedLocked, ...sortedOpen].map(({ sortAt: _omit, ...rest }) => rest);

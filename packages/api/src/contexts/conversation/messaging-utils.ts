@@ -72,6 +72,41 @@ export function checkReadAccess(
 }
 
 /**
+ * Collapses chat-list entries to one row per partner. A user met more than once would otherwise
+ * surface once per meetup/conversation; the most recently active entry (highest `sortAt`) wins,
+ * comparing open chats and locked meetup cards together. Entries with an unknown partner
+ * (`partner === null`) are always kept — there is nothing to dedupe them against.
+ *
+ * Returns the set of kept entry keys, where a key is `${kind}-${id}` (matching the frontend's
+ * list key). Callers filter their entries with `keptKeys.has(`${kind}-${id}`)`.
+ */
+export function keptEntryKeysByPartner(
+  entries: Array<{
+    kind: "open" | "locked";
+    id: string;
+    partner: { id: string } | null;
+    sortAt: Date;
+  }>,
+): Set<string> {
+  const bestByPartner = new Map<string, { key: string; sortAt: Date }>();
+  const keptKeys = new Set<string>();
+  for (const entry of entries) {
+    const key = `${entry.kind}-${entry.id}`;
+    const partnerId = entry.partner?.id;
+    if (!partnerId) {
+      keptKeys.add(key); // unknown partner — nothing to dedupe against, always kept
+      continue;
+    }
+    const current = bestByPartner.get(partnerId);
+    if (!current || entry.sortAt.getTime() > current.sortAt.getTime()) {
+      bestByPartner.set(partnerId, { key, sortAt: entry.sortAt });
+    }
+  }
+  for (const { key } of bestByPartner.values()) keptKeys.add(key);
+  return keptKeys;
+}
+
+/**
  * Phase a locked chat teaser is in. Drives copy + CTA on the chat list and locked detail screen.
  * - `scheduled`            — meetup confirmed, datetime in the future ("unlocks Friday at 10:30")
  * - `awaiting_attendance`  — meetup datetime passed, current student hasn't filed an attendance report
