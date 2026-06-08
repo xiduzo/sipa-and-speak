@@ -1,29 +1,18 @@
 /**
- * Tests for the swipe-only discover deck (#13).
- *
- * The deck advances by swipe gestures (PanResponder). Gestures can't be
- * synthesised in jsdom, so advancement is exercised through the accessibility
- * actions the card exposes for the same effect — "skip" (= swipe left) and
- * "invite" (= swipe right). These doubles as the non-gesture a11y path.
- *
- * The legacy ×/← buttons and the back affordance (#316) were removed when the
- * deck became swipe-only, so this also guards their absence.
+ * Tests for task #316 — backwards navigation in the candidate deck
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
-import { Alert } from "react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
-const mockPush = jest.fn();
 const mockCanGoBack = jest.fn(() => true);
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({
     back: mockBack,
     replace: mockReplace,
-    push: mockPush,
     canGoBack: mockCanGoBack,
   }),
 }));
@@ -99,35 +88,17 @@ function renderScreen() {
   );
 }
 
-// Gestures can't be synthesised in jsdom, so advancement is exercised through
-// the real "Say hoi" confirm flow (accept-button → "Invitation sent!" → onAccept).
-async function sayHoiAndConfirm() {
-  const alertSpy = jest.spyOn(Alert, "alert").mockImplementation(() => {});
-  fireEvent.press(screen.getByTestId("accept-button"));
-  await waitFor(() => expect(alertSpy).toHaveBeenCalled());
-  const buttons = (alertSpy.mock.calls.at(-1)?.[2] ?? []) as Array<{
-    text?: string;
-    onPress?: () => void;
-  }>;
-  const gotIt = buttons.find((b) => b.text === "Got it");
-  await act(async () => {
-    gotIt?.onPress?.();
-  });
-  alertSpy.mockRestore();
-}
-
 beforeEach(() => {
   mockBack.mockClear();
   mockReplace.mockClear();
-  mockPush.mockClear();
   mockSendMatchRequest.mockReset().mockResolvedValue({ matchRequestId: "r", status: "pending" });
   mockGetMyProfile.mockReset().mockResolvedValue({
     languages: [{ language: "English", type: "spoken", proficiency: "native" }],
   });
 });
 
-describe("#13 — swipe-only deck has no button/back affordances", () => {
-  it("renders the card without the removed ×/← buttons", async () => {
+describe("#316 — Back affordance hidden on first card", () => {
+  it("does not show the back button when viewing the first card (index 0)", async () => {
     mockDiscoverFn.mockResolvedValue({
       partners: [makePartner("u1", "Alice"), makePartner("u2", "Bob")],
     });
@@ -137,15 +108,26 @@ describe("#13 — swipe-only deck has no button/back affordances", () => {
     await waitFor(() => expect(screen.getByTestId("match-card")).toBeTruthy());
 
     expect(screen.queryByTestId("back-button")).toBeNull();
-    expect(screen.queryByTestId("decline-button")).toBeNull();
-    // The primary confirm ("Say hoi") stays.
-    expect(screen.getByTestId("accept-button")).toBeTruthy();
-    expect(screen.getByTestId("swipe-hint")).toBeTruthy();
   });
 });
 
-describe("#13 — deck advances after the confirm flow", () => {
-  it("moves to the next candidate after Say hoi + confirm", async () => {
+describe("#316 — Navigate back to previously seen candidate", () => {
+  it("shows the back button after advancing to the second card", async () => {
+    mockDiscoverFn.mockResolvedValue({
+      partners: [makePartner("u1", "Alice"), makePartner("u2", "Bob")],
+    });
+
+    renderScreen();
+
+    await waitFor(() => expect(screen.getByTestId("match-card")).toBeTruthy());
+    expect(screen.queryByTestId("back-button")).toBeNull();
+
+    fireEvent.press(screen.getByTestId("decline-button"));
+
+    await waitFor(() => expect(screen.getByTestId("back-button")).toBeTruthy());
+  });
+
+  it("tapping back returns to the previous card", async () => {
     mockDiscoverFn.mockResolvedValue({
       partners: [makePartner("u1", "Alice"), makePartner("u2", "Bob")],
     });
@@ -154,24 +136,33 @@ describe("#13 — deck advances after the confirm flow", () => {
 
     await waitFor(() => expect(screen.getByText("Alice")).toBeTruthy());
 
-    await sayHoiAndConfirm();
+    fireEvent.press(screen.getByTestId("decline-button"));
 
     await waitFor(() => expect(screen.getByText("Bob")).toBeTruthy());
-  });
 
-  it("reaches the empty state after the last candidate", async () => {
+    fireEvent.press(screen.getByTestId("back-button"));
+
+    await waitFor(() => expect(screen.getByText("Alice")).toBeTruthy());
+  });
+});
+
+describe("#316 — Forward navigation still works after going back", () => {
+  it("accept after going back advances the deck forward", async () => {
     mockDiscoverFn.mockResolvedValue({
-      partners: [makePartner("u1", "Alice")],
+      partners: [makePartner("u1", "Alice"), makePartner("u2", "Bob"), makePartner("u3", "Carol")],
     });
 
     renderScreen();
 
     await waitFor(() => expect(screen.getByText("Alice")).toBeTruthy());
 
-    await sayHoiAndConfirm();
+    fireEvent.press(screen.getByTestId("decline-button"));
+    await waitFor(() => expect(screen.getByText("Bob")).toBeTruthy());
 
-    await waitFor(() =>
-      expect(screen.getByTestId("empty-suggestion-state")).toBeTruthy(),
-    );
+    fireEvent.press(screen.getByTestId("back-button"));
+    await waitFor(() => expect(screen.getByText("Alice")).toBeTruthy());
+
+    fireEvent.press(screen.getByTestId("decline-button"));
+    await waitFor(() => expect(screen.getByText("Bob")).toBeTruthy());
   });
 });

@@ -1,16 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
-import { useEffect, useRef } from "react";
-import {
-  Alert,
-  Animated,
-  Dimensions,
-  Image,
-  PanResponder,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Image, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { trpc } from "@/utils/trpc";
@@ -25,9 +14,6 @@ const GOLD = "#F2C94C";
 const CHIP = "#C8E0E0";
 const ROSE = "#C99A8A";
 const CREAM = "#FBEFE4";
-
-const { width: SCREEN_W } = Dimensions.get("window");
-const SWIPE_THRESHOLD = SCREEN_W * 0.28;
 
 interface SpokenLanguage {
   language: string;
@@ -52,6 +38,7 @@ interface MatchCardProps {
   yourLanguage: string;
   onAccept: () => void;
   onDecline: () => void;
+  onBack?: () => void;
 }
 
 export function MatchCard({
@@ -59,13 +46,14 @@ export function MatchCard({
   yourLanguage,
   onAccept,
   onDecline,
+  onBack,
 }: MatchCardProps) {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
   const sendRequestMutation = useMutation({
     ...trpc.matching.sendMatchRequest.mutationOptions(),
   });
 
+  const matchPct = Math.round(candidate.score * 100);
   const initial = (candidate.name?.charAt(0) ?? "?").toUpperCase();
   const compatible = new Set(candidate.compatibleLanguages ?? []);
   const partnerLabel = (candidate.name ?? "They").toUpperCase();
@@ -86,129 +74,12 @@ export function MatchCard({
     );
   }
 
-  function openProfile() {
-    router.push({ pathname: "/partner/[id]", params: { id: candidate.userId } });
-  }
-
-  // --- Swipe deck (#13) — RN core Animated + PanResponder, no extra native deps.
-  // Left = skip, right = send invite. Latest handlers held in a ref so the
-  // once-created PanResponder never calls a stale closure for a past candidate.
-  const pan = useRef(new Animated.ValueXY()).current;
-  const actionsRef = useRef({ accept: handleAccept, decline: onDecline });
-  actionsRef.current.accept = handleAccept;
-  actionsRef.current.decline = onDecline;
-
-  // New candidate mounted into the same card instance → recentre.
-  useEffect(() => {
-    pan.setValue({ x: 0, y: 0 });
-  }, [candidate.userId, pan]);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_evt, g) =>
-        Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy),
-      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
-        useNativeDriver: false,
-      }),
-      onPanResponderRelease: (_evt, g) => {
-        if (g.dx > SWIPE_THRESHOLD) {
-          Animated.timing(pan, {
-            toValue: { x: SCREEN_W * 1.4, y: g.dy },
-            duration: 220,
-            useNativeDriver: false,
-          }).start(() => actionsRef.current.accept());
-        } else if (g.dx < -SWIPE_THRESHOLD) {
-          Animated.timing(pan, {
-            toValue: { x: -SCREEN_W * 1.4, y: g.dy },
-            duration: 220,
-            useNativeDriver: false,
-          }).start(() => actionsRef.current.decline());
-        } else {
-          Animated.spring(pan, {
-            toValue: { x: 0, y: 0 },
-            friction: 6,
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    }),
-  ).current;
-
-  const rotate = pan.x.interpolate({
-    inputRange: [-SCREEN_W / 2, 0, SCREEN_W / 2],
-    outputRange: ["-8deg", "0deg", "8deg"],
-    extrapolate: "clamp",
-  });
-  const likeOpacity = pan.x.interpolate({
-    inputRange: [0, SWIPE_THRESHOLD],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  });
-  const nopeOpacity = pan.x.interpolate({
-    inputRange: [-SWIPE_THRESHOLD, 0],
-    outputRange: [1, 0],
-    extrapolate: "clamp",
-  });
-
   return (
-    <Animated.View
+    <View
       testID="match-card"
       className="flex-1"
-      style={{
-        backgroundColor: CREAM,
-        transform: [
-          { translateX: pan.x },
-          { translateY: pan.y },
-          { rotate },
-        ],
-      }}
-      accessibilityActions={[
-        { name: "invite", label: "Send invite" },
-        { name: "skip", label: "Skip" },
-      ]}
-      onAccessibilityAction={(e) => {
-        if (e.nativeEvent.actionName === "invite") handleAccept();
-        else if (e.nativeEvent.actionName === "skip") onDecline();
-      }}
-      {...panResponder.panHandlers}
+      style={{ backgroundColor: CREAM }}
     >
-      {/* Swipe verdict overlays */}
-      <Animated.View
-        testID="swipe-like-overlay"
-        pointerEvents="none"
-        className="absolute z-10 px-4 py-2 rounded-2xl"
-        style={{
-          top: insets.top + 28,
-          left: 24,
-          opacity: likeOpacity,
-          borderWidth: 3,
-          borderColor: "#2E7D32",
-          transform: [{ rotate: "-12deg" }],
-        }}
-      >
-        <Text className="font-jakarta" style={{ fontSize: 26, color: "#2E7D32" }}>
-          HOI!
-        </Text>
-      </Animated.View>
-      <Animated.View
-        testID="swipe-nope-overlay"
-        pointerEvents="none"
-        className="absolute z-10 px-4 py-2 rounded-2xl"
-        style={{
-          top: insets.top + 28,
-          right: 24,
-          opacity: nopeOpacity,
-          borderWidth: 3,
-          borderColor: "#B0463C",
-          transform: [{ rotate: "12deg" }],
-        }}
-      >
-        <Text className="font-jakarta" style={{ fontSize: 26, color: "#B0463C" }}>
-          SKIP
-        </Text>
-      </Animated.View>
-
       {/* Top — partner */}
       <View
         testID="match-card-partner"
@@ -216,51 +87,40 @@ export function MatchCard({
         style={{ backgroundColor: ROSE, flex: 6, paddingTop: insets.top + 24 }}
       >
         <View className="flex-row items-center gap-3 mb-4">
-          {/* #11 — tap photo to open the full profile */}
-          <Pressable
-            testID="match-card-photo-button"
-            onPress={openProfile}
-            accessibilityLabel={`View ${candidate.name}'s profile`}
-          >
-            {candidate.image ? (
-              <Image
-                testID="match-card-photo"
-                source={{ uri: candidate.image }}
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 32,
-                  borderWidth: 2,
-                  borderColor: "rgba(255,255,255,0.85)",
-                }}
-              />
-            ) : (
-              <View
-                testID="match-card-photo-placeholder"
-                className="items-center justify-center"
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 32,
-                  borderWidth: 2,
-                  borderColor: "rgba(255,255,255,0.85)",
-                  backgroundColor: "rgba(255,255,255,0.12)",
-                }}
+          {candidate.image ? (
+            <Image
+              testID="match-card-photo"
+              source={{ uri: candidate.image }}
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                borderWidth: 2,
+                borderColor: "rgba(255,255,255,0.85)",
+              }}
+            />
+          ) : (
+            <View
+              testID="match-card-photo-placeholder"
+              className="items-center justify-center"
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                borderWidth: 2,
+                borderColor: "rgba(255,255,255,0.85)",
+                backgroundColor: "rgba(255,255,255,0.12)",
+              }}
+            >
+              <Text
+                className="text-white font-jakarta"
+                style={{ fontSize: 26 }}
               >
-                <Text
-                  className="text-white font-jakarta"
-                  style={{ fontSize: 26 }}
-                >
-                  {initial}
-                </Text>
-              </View>
-            )}
-          </Pressable>
-          <Pressable
-            testID="match-card-name-button"
-            onPress={openProfile}
-            className="flex-1"
-          >
+                {initial}
+              </Text>
+            </View>
+          )}
+          <View className="flex-1">
             <Text
               className="text-white font-jakarta"
               style={{ fontSize: 26, lineHeight: 30 }}
@@ -276,7 +136,7 @@ export function MatchCard({
                 {candidate.university}
               </Text>
             )}
-          </Pressable>
+          </View>
         </View>
 
         <Text
@@ -372,12 +232,23 @@ export function MatchCard({
         style={{ backgroundColor: "#FFFFFF" }}
         testID="match-overlap-band"
       >
-        <Text
-          className="font-manrope-semi tracking-widest text-brand-muted-foreground"
-          style={{ fontSize: 11 }}
-        >
-          MATCHING IN
-        </Text>
+        <View className="flex-row items-center justify-between">
+          <Text
+            className="font-manrope-semi tracking-widest text-brand-muted-foreground"
+            style={{ fontSize: 11 }}
+          >
+            MATCHING IN
+          </Text>
+          <View
+            testID="match-percent"
+            className="px-3 py-0.5 rounded-full"
+            style={{ backgroundColor: GOLD }}
+          >
+            <Text className="font-manrope-bold" style={{ fontSize: 12 }}>
+              {matchPct}%
+            </Text>
+          </View>
+        </View>
         <View
           className="flex-row flex-wrap mt-2"
           style={{ gap: 6 }}
@@ -445,17 +316,54 @@ export function MatchCard({
         )}
       </View>
 
-      {/* Action row — swipe-only deck keeps just the primary confirm (#13).
-          Skip = swipe left; the dashed hint tells first-timers. */}
+      {/* Action row */}
       <View
-        className="px-6 pt-2"
+        className="flex-row items-center gap-3 px-6 pt-2"
         style={{ backgroundColor: CREAM, paddingBottom: insets.bottom + 16 }}
       >
+        {onBack && (
+          <Pressable
+            testID="back-button"
+            onPress={onBack}
+            className="items-center justify-center"
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: "#F0E5DA",
+            }}
+          >
+            <Text
+              className="font-manrope-bold text-brand-muted-foreground"
+              style={{ fontSize: 22 }}
+            >
+              ←
+            </Text>
+          </Pressable>
+        )}
+        <Pressable
+          testID="decline-button"
+          onPress={onDecline}
+          className="items-center justify-center"
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: "#F0E5DA",
+          }}
+        >
+          <Text
+            className="font-manrope-bold text-brand-muted-foreground"
+            style={{ fontSize: 22 }}
+          >
+            ×
+          </Text>
+        </Pressable>
         <Pressable
           testID="accept-button"
           onPress={handleAccept}
           disabled={sendRequestMutation.isPending}
-          className="items-center justify-center rounded-full"
+          className="flex-1 items-center justify-center rounded-full"
           style={{
             height: 56,
             backgroundColor: GOLD,
@@ -466,14 +374,7 @@ export function MatchCard({
             {sendRequestMutation.isPending ? "Sending…" : "Say hoi  →"}
           </Text>
         </Pressable>
-        <Text
-          testID="swipe-hint"
-          className="text-brand-muted-foreground font-manrope text-center mt-3"
-          style={{ fontSize: 12 }}
-        >
-          ← swipe to skip   ·   swipe to say hoi →
-        </Text>
       </View>
-    </Animated.View>
+    </View>
   );
 }

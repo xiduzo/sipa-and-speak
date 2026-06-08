@@ -6,10 +6,6 @@ import { Alert } from "react-native";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
 
-jest.mock("expo-router", () => ({
-  useRouter: () => ({ push: jest.fn() }),
-}));
-
 jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
