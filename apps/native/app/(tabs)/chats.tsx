@@ -77,7 +77,7 @@ function lockedSubtitle(entry: Extract<ChatEntry, { kind: "locked" }>): string {
     case "awaiting_my_optin":
       return "tap to keep in touch";
     case "awaiting_partner_optin":
-      return `waiting on ${entry.partner.name.split(" ")[0]}`;
+      return `waiting for ${entry.partner.name.split(" ")[0]} to enable chatting`;
     case "declined":
       return "chat won't open";
   }
