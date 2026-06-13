@@ -39,13 +39,13 @@ function copyForPhase(phase: LockedPhase, partnerFirstName: string) {
       };
     case "awaiting_my_optin":
       return {
-        headline: `Stay in touch with ${partnerFirstName}?`,
+        headline: "Would you like to chat and keep in touch?",
         body: "Chat opens as soon as you both say yes.",
         cta: "Open meetup",
       };
     case "awaiting_partner_optin":
       return {
-        headline: `Waiting on ${partnerFirstName}`,
+        headline: `Waiting for ${partnerFirstName} to enable chatting`,
         body: "You said yes. Chat opens when they reply too.",
         cta: "See meetup details",
       };
@@ -62,7 +62,7 @@ function headerSubtitle(phase: LockedPhase): string {
   if (phase === "scheduled") return "locked · meet first";
   if (phase === "awaiting_attendance") return "locked · awaiting attendance";
   if (phase === "awaiting_my_optin") return "locked · rate to unlock";
-  if (phase === "awaiting_partner_optin") return "locked · waiting on buddy";
+  if (phase === "awaiting_partner_optin") return "locked · waiting to enable chatting";
   return "won't open";
 }
 
@@ -213,7 +213,7 @@ export default function LockedChatScreen() {
         {entry.phase === "awaiting_my_optin" ? (
           <View className="gap-2">
             <TouchableOpacity
-              testID="opt-in-accept"
+              testID="opt-in-cta"
               disabled={optInMutation.isPending}
               onPress={() =>
                 optInMutation.mutate({ meetupId: entry.meetupId, response: "accept" })
@@ -221,7 +221,7 @@ export default function LockedChatScreen() {
               className="rounded-full py-3.5 items-center"
               style={{ backgroundColor: "#2C1810", opacity: optInMutation.isPending ? 0.6 : 1 }}
             >
-              <Text className="text-background font-semibold">Keep in touch</Text>
+              <Text className="text-background font-semibold">Yes, keep in touch</Text>
             </TouchableOpacity>
             <TouchableOpacity
               testID="opt-in-decline"
