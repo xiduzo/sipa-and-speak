@@ -451,10 +451,16 @@ export default function ConfirmedMeetupsScreen() {
                           label="We met up"
                           disabled={reportAttendanceMutation.isPending}
                           onPress={() =>
-                            reportAttendanceMutation.mutate({
-                              meetupId: m.meetupId,
-                              attended: true,
-                            })
+                            reportAttendanceMutation.mutate(
+                              { meetupId: m.meetupId, attended: true },
+                              {
+                                onSuccess: () =>
+                                  Alert.alert(
+                                    "Thanks!",
+                                    `You reported attending this meetup — wait for ${m.partner.name} to respond.`,
+                                  ),
+                              },
+                            )
                           }
                           flex
                         />
