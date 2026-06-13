@@ -3,8 +3,10 @@
  *
  * Covers `keptEntryKeysByPartner`:
  *   - Multiple open conversations with the same partner collapse to the most recent.
- *   - Open chats and locked meetup cards dedupe together (cross-kind), most recent wins.
+ *   - An open chat always wins over a locked meetup card for the same partner, even when the
+ *     locked card is future-dated (a newly scheduled meet-up must not re-lock an open chat).
  *   - A stale locked card never hides a more recently active chat with the same partner.
+ *   - Pre-meet locked cards for partners with no open chat still surface as locked.
  *   - Distinct partners are all kept.
  *   - Entries with an unknown partner are always kept (never collapsed into each other).
  */
@@ -25,13 +27,34 @@ describe("keptEntryKeysByPartner", () => {
     expect(kept.size).toBe(1);
   });
 
-  it("dedupes a locked meetup card and an open chat with the same partner (most recent wins)", () => {
+  it("keeps the open chat over a future-dated locked meetup card with the same partner", () => {
+    // A newly scheduled meet-up (future sortAt) must not re-lock an already-open chat.
     const kept = keptEntryKeysByPartner([
       { kind: "locked", id: "meetupUpcoming", partner: { id: "bob" }, sortAt: at("2026-03-01T10:00:00Z") },
       { kind: "open", id: "convStale", partner: { id: "bob" }, sortAt: at("2026-01-15T10:00:00Z") },
     ]);
-    expect(kept.has("locked-meetupUpcoming")).toBe(true);
-    expect(kept.has("open-convStale")).toBe(false);
+    expect(kept.has("open-convStale")).toBe(true);
+    expect(kept.has("locked-meetupUpcoming")).toBe(false);
+    expect(kept.size).toBe(1);
+  });
+
+  it("keeps the open chat when a brand-new future meet-up is scheduled (order-independent)", () => {
+    // Same as above but with the open chat listed first — open must win regardless of order.
+    const now = at("2026-06-13T10:00:00Z");
+    const kept = keptEntryKeysByPartner([
+      { kind: "open", id: "convOpen", partner: { id: "bob" }, sortAt: at("2026-06-01T10:00:00Z") },
+      { kind: "locked", id: "newMeetup", partner: { id: "bob" }, sortAt: new Date(now.getTime() + 86_400_000) },
+    ]);
+    expect(kept.has("open-convOpen")).toBe(true);
+    expect(kept.has("locked-newMeetup")).toBe(false);
+    expect(kept.size).toBe(1);
+  });
+
+  it("still surfaces a pre-meet locked card for a partner with no open chat", () => {
+    const kept = keptEntryKeysByPartner([
+      { kind: "locked", id: "meetupSoon", partner: { id: "carol" }, sortAt: at("2026-07-01T10:00:00Z") },
+    ]);
+    expect(kept.has("locked-meetupSoon")).toBe(true);
     expect(kept.size).toBe(1);
   });
 
