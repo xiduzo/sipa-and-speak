@@ -1,6 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, Text, View } from "react-native";
+import { useRef } from "react";
+import {
+  Image,
+  type LayoutChangeEvent,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 
 import { Container } from "@/components/container";
 import { epochMs } from "@/lib/dates";
@@ -158,6 +166,16 @@ function SectionLabel({ children }: { children: string }) {
 
 export default function MatchesScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
+  const matchesListY = useRef(0);
+
+  const onMatchesListLayout = (e: LayoutChangeEvent) => {
+    matchesListY.current = e.nativeEvent.layout.y;
+  };
+
+  const scrollToMatchesList = () => {
+    scrollRef.current?.scrollTo({ y: matchesListY.current, animated: true });
+  };
   const matchesQuery = useQuery(
     trpc.matching.getMyMatches.queryOptions({ includeWithActiveMeetup: true }),
   );
@@ -204,6 +222,7 @@ export default function MatchesScreen() {
   return (
     <Container isScrollable={false}>
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
@@ -481,7 +500,7 @@ export default function MatchesScreen() {
             <Pressable
               testID="schedule-new-moment"
               accessibilityRole="button"
-              onPress={() => router.push("/match")}
+              onPress={scrollToMatchesList}
               style={({ pressed }) => ({
                 height: 52,
                 borderRadius: 26,
@@ -498,44 +517,48 @@ export default function MatchesScreen() {
           </View>
         )}
 
-        {/* New this week */}
-        {newMatches.length > 0 && (
-          <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
-            <View style={{ paddingHorizontal: 4 }}>
-              <SectionLabel>NEW THIS WEEK</SectionLabel>
+        {/* Existing matches — open a profile to propose a meet-up.
+            The "Schedule a new moment" button above scrolls here. */}
+        <View onLayout={onMatchesListLayout}>
+          {/* New this week */}
+          {newMatches.length > 0 && (
+            <View style={{ paddingHorizontal: 20, marginBottom: 24 }}>
+              <View style={{ paddingHorizontal: 4 }}>
+                <SectionLabel>NEW THIS WEEK</SectionLabel>
+              </View>
+              <View className="flex-row flex-wrap">
+                {newMatches.map((m) => (
+                  <MatchTile
+                    key={m.matchId}
+                    match={m}
+                    isNew
+                    onPress={() => openPartner(m.partnerId)}
+                  />
+                ))}
+              </View>
             </View>
-            <View className="flex-row flex-wrap">
-              {newMatches.map((m) => (
-                <MatchTile
-                  key={m.matchId}
-                  match={m}
-                  isNew
-                  onPress={() => openPartner(m.partnerId)}
-                />
-              ))}
-            </View>
-          </View>
-        )}
+          )}
 
-        {/* Everyone */}
-        {olderMatches.length > 0 && (
-          <View style={{ paddingHorizontal: 20 }}>
-            <View style={{ paddingHorizontal: 4 }}>
-              <SectionLabel>
-                {newMatches.length > 0 ? "EVERYONE" : "MY MATCHES"}
-              </SectionLabel>
+          {/* Everyone */}
+          {olderMatches.length > 0 && (
+            <View style={{ paddingHorizontal: 20 }}>
+              <View style={{ paddingHorizontal: 4 }}>
+                <SectionLabel>
+                  {newMatches.length > 0 ? "EVERYONE" : "MY MATCHES"}
+                </SectionLabel>
+              </View>
+              <View className="flex-row flex-wrap">
+                {olderMatches.map((m) => (
+                  <MatchTile
+                    key={m.matchId}
+                    match={m}
+                    onPress={() => openPartner(m.partnerId)}
+                  />
+                ))}
+              </View>
             </View>
-            <View className="flex-row flex-wrap">
-              {olderMatches.map((m) => (
-                <MatchTile
-                  key={m.matchId}
-                  match={m}
-                  onPress={() => openPartner(m.partnerId)}
-                />
-              ))}
-            </View>
-          </View>
-        )}
+          )}
+        </View>
 
         {/* Empty state */}
         {isEmpty && (

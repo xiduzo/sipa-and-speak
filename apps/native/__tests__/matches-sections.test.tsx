@@ -153,15 +153,36 @@ describe("#9 — Invitations received section", () => {
 });
 
 describe("#9 — Schedule a new moment", () => {
-  it("shows the action when there are matches and routes to discover", async () => {
+  it("surfaces the existing matches list instead of routing to discover (#373)", async () => {
     mockGetMyMatches.mockResolvedValue([match("m1", "Dee")]);
 
     renderScreen();
 
     await waitFor(() => expect(screen.getByTestId("schedule-new-moment")).toBeTruthy());
 
+    // The existing matches listing is rendered on the same screen.
+    expect(screen.getByTestId("matched-partner-card")).toBeTruthy();
+
     fireEvent.press(screen.getByTestId("schedule-new-moment"));
-    expect(mockPush).toHaveBeenCalledWith("/match");
+
+    // It must NOT route to the discover deck — scheduling is done with an
+    // existing match, opened from the listing below the button.
+    expect(mockPush).not.toHaveBeenCalledWith("/match");
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("opens an existing match's profile to start the propose-meetup flow", async () => {
+    mockGetMyMatches.mockResolvedValue([match("m1", "Dee")]);
+
+    renderScreen();
+
+    await waitFor(() => expect(screen.getByTestId("matched-partner-card")).toBeTruthy());
+
+    fireEvent.press(screen.getByTestId("matched-partner-card"));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/partner/[id]",
+      params: { id: "p-m1" },
+    });
   });
 
   it("hides the action when there are no matches", async () => {
