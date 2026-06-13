@@ -399,6 +399,16 @@ export const meetupRouter = router({
         conditions.push(eq(meetup.status, input.status));
       }
 
+      // #367 — A pending proposal whose currently-proposed datetime has passed
+      // is dead: hide it so the "Waiting for reply" card clears. scheduledAt
+      // always reflects the latest round (counter-proposals overwrite it), so
+      // this guards against the current datetime, never a stale earlier round.
+      // Confirmed/declined rows are unaffected — they still surface in history
+      // regardless of date.
+      if (input.status === "pending") {
+        conditions.push(gte(meetup.scheduledAt, new Date()));
+      }
+
       const rows = await db
         .select({
           meetup: meetup,
@@ -509,7 +519,17 @@ export const meetupRouter = router({
       .from(meetup)
       .innerJoin(venue, eq(meetup.venueId, venue.id))
       .innerJoin(sql`"user" as proposer`, sql`proposer.id = ${meetup.proposerId}`)
-      .where(and(eq(meetup.receiverId, userId), eq(meetup.status, "pending")))
+      // #367 — Skip proposals whose proposed datetime has already passed so the
+      // receiver isn't offered a response to a dead proposal the proposer no
+      // longer sees. Oldest-first selection is preserved among still-valid
+      // proposals.
+      .where(
+        and(
+          eq(meetup.receiverId, userId),
+          eq(meetup.status, "pending"),
+          gte(meetup.scheduledAt, new Date()),
+        ),
+      )
       .orderBy(meetup.createdAt)
       .limit(1);
 
