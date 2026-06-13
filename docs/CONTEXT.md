@@ -42,6 +42,16 @@ a snapshot of (identity row, language rows, interest count). Phases:
 `matchingEligible`, and a `missingFields` list. `assertCanSubmit` and
 `assertNoNativeSpokenLearningConflict` are the two guard helpers.
 
+### Conversation Practice context
+
+New bounded context (Epic #375) owning conversation-starter card content and
+the browsing experience. A **buddy** picks a *card language* — narrowed to the
+languages already on their profile (spoken or learning) — and flips through a
+flat set of basic conversation-starter cards in that language, tapping a card
+to reveal its English translation. Intended for use during a **meet-up**.
+Read-only dependency on the Identity profile for the language list; no coupling
+to the Meetup aggregate in its first iteration.
+
 ### Integration test harness
 
 `packages/api/src/__test-support__/harness.ts`. Boots an in-memory Postgres
