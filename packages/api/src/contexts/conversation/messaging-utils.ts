@@ -73,9 +73,17 @@ export function checkReadAccess(
 
 /**
  * Collapses chat-list entries to one row per partner. A user met more than once would otherwise
- * surface once per meetup/conversation; the most recently active entry (highest `sortAt`) wins,
- * comparing open chats and locked meetup cards together. Entries with an unknown partner
- * (`partner === null`) are always kept — there is nothing to dedupe them against.
+ * surface once per meetup/conversation. Precedence rules:
+ *   - An `open` conversation always outranks a `locked` meetup card for the same partner,
+ *     regardless of `sortAt`. Once a chat is unlocked it is a terminal state and must never be
+ *     re-hidden behind a future-dated locked teaser (a new meet-up's `sortAt` is in the future).
+ *   - When both entries are the same kind (two open chats, or two locked cards with no open chat),
+ *     the most recently active entry (highest `sortAt`) wins.
+ * Pre-meet locked cards for partners with NO open chat are unaffected — they still win against
+ * other locked cards by `sortAt` and surface as locked.
+ *
+ * Entries with an unknown partner (`partner === null`) are always kept — there is nothing to
+ * dedupe them against.
  *
  * Returns the set of kept entry keys, where a key is `${kind}-${id}` (matching the frontend's
  * list key). Callers filter their entries with `keptKeys.has(`${kind}-${id}`)`.
@@ -88,7 +96,7 @@ export function keptEntryKeysByPartner(
     sortAt: Date;
   }>,
 ): Set<string> {
-  const bestByPartner = new Map<string, { key: string; sortAt: Date }>();
+  const bestByPartner = new Map<string, { kind: "open" | "locked"; key: string; sortAt: Date }>();
   const keptKeys = new Set<string>();
   for (const entry of entries) {
     const key = `${entry.kind}-${entry.id}`;
@@ -98,8 +106,20 @@ export function keptEntryKeysByPartner(
       continue;
     }
     const current = bestByPartner.get(partnerId);
-    if (!current || entry.sortAt.getTime() > current.sortAt.getTime()) {
-      bestByPartner.set(partnerId, { key, sortAt: entry.sortAt });
+    if (!current) {
+      bestByPartner.set(partnerId, { kind: entry.kind, key, sortAt: entry.sortAt });
+      continue;
+    }
+    // Open always beats locked for the same partner, regardless of sortAt.
+    if (entry.kind !== current.kind) {
+      if (entry.kind === "open") {
+        bestByPartner.set(partnerId, { kind: entry.kind, key, sortAt: entry.sortAt });
+      }
+      continue; // incoming is locked and current is open — keep current
+    }
+    // Same kind — fall back to most-recent-activity comparison.
+    if (entry.sortAt.getTime() > current.sortAt.getTime()) {
+      bestByPartner.set(partnerId, { kind: entry.kind, key, sortAt: entry.sortAt });
     }
   }
   for (const { key } of bestByPartner.values()) keptKeys.add(key);

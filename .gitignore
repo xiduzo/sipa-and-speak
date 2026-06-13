@@ -51,3 +51,5 @@ coverage
 .cache
 tmp
 temp
+
+.claude/worktrees/
