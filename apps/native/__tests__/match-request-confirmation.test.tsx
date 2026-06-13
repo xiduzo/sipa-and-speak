@@ -57,7 +57,6 @@ function renderCard() {
     <QueryClientProvider client={client}>
       <MatchCard
         candidate={candidate}
-        yourLanguage="English"
         onAccept={onAccept}
         onDecline={onDecline}
       />
