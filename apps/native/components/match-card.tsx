@@ -4,11 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { trpc } from "@/utils/trpc";
 import { interestLabel } from "@/utils/interest-labels";
-import {
-  getLanguageCode,
-  getLanguageFlag,
-  getNativeName,
-} from "@/utils/language-flags";
+import { getLanguageCode, getLanguageFlag } from "@/utils/language-flags";
 
 const GOLD = "#F2C94C";
 const CHIP = "#C8E0E0";
@@ -35,7 +31,6 @@ export interface MatchCardCandidate {
 
 interface MatchCardProps {
   candidate: MatchCardCandidate;
-  yourLanguage: string;
   onAccept: () => void;
   onDecline: () => void;
   onBack?: () => void;
@@ -43,7 +38,6 @@ interface MatchCardProps {
 
 export function MatchCard({
   candidate,
-  yourLanguage,
   onAccept,
   onDecline,
   onBack,
@@ -277,42 +271,57 @@ export function MatchCard({
         </View>
       </View>
 
-      {/* Bottom — you */}
+      {/* Bottom — partner */}
       <View
         className="px-6 pt-6 pb-2"
         style={{ backgroundColor: CREAM, flex: 5 }}
       >
-        <Text
-          className="text-brand-muted-foreground font-manrope-semi tracking-widest"
-          style={{ fontSize: 12 }}
-        >
-          YOU SPEAK
-        </Text>
-        <Text
-          className="text-brand-foreground font-jakarta"
-          style={{ fontSize: 44, lineHeight: 48, marginTop: 4 }}
-        >
-          {getNativeName(yourLanguage)}
-        </Text>
-
-        {candidate.interests.length > 0 && (
-          <View className="flex-row flex-wrap gap-2 mt-4">
-            {candidate.interests.slice(0, 4).map((topic) => (
-              <View
-                key={topic}
-                testID="interest-chip"
-                className="px-3 py-1.5 rounded-full"
-                style={{ backgroundColor: CHIP }}
-              >
-                <Text
-                  className="font-manrope-semi text-brand-foreground"
-                  style={{ fontSize: 13 }}
+        {candidate.interests.length > 0 ? (
+          <>
+            <Text
+              testID="partner-interests-label"
+              className="text-brand-muted-foreground font-manrope-semi tracking-widest"
+              style={{ fontSize: 12 }}
+            >
+              {partnerLabel} IS INTO
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mt-3">
+              {candidate.interests.slice(0, 6).map((topic) => (
+                <View
+                  key={topic}
+                  testID="interest-chip"
+                  className="px-4 py-2 rounded-full"
+                  style={{ backgroundColor: CHIP }}
                 >
-                  {interestLabel(topic)}
-                </Text>
-              </View>
-            ))}
-          </View>
+                  <Text
+                    className="font-manrope-semi text-brand-foreground"
+                    style={{ fontSize: 16 }}
+                  >
+                    {interestLabel(topic)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </>
+        ) : (
+          <>
+            <Text
+              testID="partner-interests-empty-label"
+              className="text-brand-muted-foreground font-manrope-semi tracking-widest"
+              style={{ fontSize: 12 }}
+            >
+              ABOUT {partnerLabel}
+            </Text>
+            <Text
+              testID="partner-interests-empty"
+              className="text-brand-foreground font-jakarta"
+              style={{ fontSize: 24, lineHeight: 30, marginTop: 8 }}
+            >
+              {candidate.university
+                ? `Studies at ${candidate.university}.`
+                : `Hasn't shared interests yet — say hoi to find out more.`}
+            </Text>
+          </>
         )}
       </View>
 
