@@ -188,7 +188,7 @@ describe("resolveHomeState carousel", () => {
 });
 
 describe("needsAction", () => {
-  it("flags post (rating needed)", () => {
+  it("flags post (attendance report needed)", () => {
     expect(
       needsAction({ kind: "post", meetup: confirmed({ isPast: true }) }),
     ).toBe(true);
