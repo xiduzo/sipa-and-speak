@@ -1,5 +1,29 @@
 /**
  * Tests for task #86 — Add reschedule action to confirmed meetup view (new time/location form)
+ *
+ * NOTE: Since task #86 landed, the reschedule UI moved out of `confirmed-meetups.tsx`
+ * and into the shared `MeetupFlowModal` (`components/meetup-flow-modal.tsx`). The
+ * confirmed-meetups screen now opens that modal in `type: "reschedule"` mode rather
+ * than rendering an inline form. The component also grew to call many more tRPC
+ * procedures (the screen body instantiates every meetup mutation, and the modal's
+ * reschedule/propose/respond content each query their own data).
+ *
+ * This suite was failing because the tRPC mock only stubbed `meetup.getConfirmed`
+ * and `venue.listForPicker`; every other procedure was `undefined`, so calling
+ * `.queryOptions()` / `.mutationOptions()` threw. The mock below covers the full
+ * surface the rendered tree touches.
+ *
+ * Test-intent adaptations to match the current component (no production code changed):
+ *  - There is no `reschedule-form` / `reschedule-cancel-btn` testID. The open form is
+ *    detected via `reschedule-submit-btn` (and `reschedule-date-input` / `-time-input`),
+ *    and it is dismissed via the modal header's "✕" close control.
+ *  - Past meetups: the Reschedule/Cancel buttons are hidden and the card shows the
+ *    attendance prompt with `meetup-past-label` ("Did your meetup take place?").
+ *  - "Reschedule pending…" is now the (disabled) button label when the pending
+ *    reschedule is from me.
+ *  - When the *partner* proposed the reschedule there is no "Partner proposed
+ *    reschedule" copy anymore — the card shows a "New time" status pill and the
+ *    action button label becomes "Answer". The test asserts the current behaviour.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
@@ -15,6 +39,11 @@ jest.mock("expo-router", () => ({
 
 const mockCancel = jest.fn().mockResolvedValue({});
 const mockProposeReschedule = jest.fn().mockResolvedValue({});
+const mockReportAttendance = jest.fn().mockResolvedValue({});
+const mockPropose = jest.fn().mockResolvedValue({});
+const mockAccept = jest.fn().mockResolvedValue({});
+const mockCounter = jest.fn().mockResolvedValue({});
+const mockDecline = jest.fn().mockResolvedValue({});
 const mockInvalidate = jest.fn();
 
 const futureScheduledAt = new Date("2099-06-01T14:00:00Z");
@@ -24,6 +53,8 @@ const baseMeetup = {
   scheduledAt: futureScheduledAt,
   status: "confirmed",
   isPast: false,
+  hasReported: false,
+  myAttendance: false,
   venue: { id: "venue-1", name: "Atlas Building", description: null, photoUrl: null },
   partner: { id: "partner-1", name: "Alice", image: null },
   reschedulePending: false,
@@ -36,40 +67,57 @@ const pastMeetup = {
   meetupId: "meetup-past",
   scheduledAt: new Date("2020-01-01T10:00:00Z"),
   isPast: true,
+  hasReported: false,
 };
 
-let mockMeetupsData: typeof baseMeetup[] = [baseMeetup];
+let mockMeetupsData: (typeof baseMeetup)[] = [baseMeetup];
 
 const sampleVenues = [
   { id: "venue-1", name: "Atlas Building", description: null, photoUrl: null },
   { id: "venue-2", name: "Metaforum Cantine", description: null, photoUrl: null },
 ];
 
+// Helpers so each procedure exposes a working queryOptions/mutationOptions shape
+// matching how the components call them (some pass input args, some pass an extra
+// options object — both must be accepted without throwing).
+const query = (key: string, data: unknown) => ({
+  queryOptions: (..._args: unknown[]) => ({
+    queryKey: [key],
+    queryFn: async () => data,
+  }),
+});
+
+const mutation = (fn: jest.Mock) => ({
+  mutationOptions: (opts?: { onSuccess?: () => void; onError?: (e: Error) => void }) => ({
+    mutationFn: fn,
+    onSuccess: opts?.onSuccess,
+    onError: opts?.onError,
+  }),
+});
+
 jest.mock("@/utils/trpc", () => ({
   trpc: {
     meetup: {
-      getConfirmed: {
-        queryOptions: () => ({ queryKey: ["getConfirmed"], queryFn: async () => mockMeetupsData }),
-      },
-      cancelMeetup: {
-        mutationOptions: (opts: { onSuccess?: () => void; onError?: (e: Error) => void }) => ({
-          mutationFn: mockCancel,
-          onSuccess: opts.onSuccess,
-          onError: opts.onError,
-        }),
-      },
-      proposeReschedule: {
-        mutationOptions: (opts: { onSuccess?: () => void; onError?: (e: Error) => void }) => ({
-          mutationFn: mockProposeReschedule,
-          onSuccess: opts.onSuccess,
-          onError: opts.onError,
-        }),
-      },
+      // queries
+      getConfirmed: { queryOptions: () => ({ queryKey: ["getConfirmed"], queryFn: async () => mockMeetupsData }) },
+      list: query("meetupList", []),
+      getPendingIncoming: query("getPendingIncoming", null),
+      pendingCount: query("pendingCount", 0),
+      getAvailableSlots: query("getAvailableSlots", []),
+      // mutations
+      reportAttendance: mutation(mockReportAttendance),
+      cancelMeetup: mutation(mockCancel),
+      proposeReschedule: mutation(mockProposeReschedule),
+      propose: mutation(mockPropose),
+      acceptProposal: mutation(mockAccept),
+      counterPropose: mutation(mockCounter),
+      declineProposal: mutation(mockDecline),
     },
     venue: {
-      listForPicker: {
-        queryOptions: () => ({ queryKey: ["venueListPicker"], queryFn: async () => sampleVenues }),
-      },
+      listForPicker: query("venueListPicker", sampleVenues),
+    },
+    matching: {
+      getMyMatches: query("getMyMatches", []),
     },
   },
   queryClient: { invalidateQueries: mockInvalidate },
@@ -107,6 +155,7 @@ describe("Task #86 — Reschedule action on confirmed meetup view", () => {
     await waitFor(() => screen.getByTestId("meetup-card"));
     expect(screen.queryByTestId("reschedule-meetup-btn")).toBeNull();
     expect(screen.queryByTestId("cancel-meetup-btn")).toBeNull();
+    // Past, un-reported meetups surface the attendance prompt instead.
     expect(screen.getByTestId("meetup-past-label")).toBeTruthy();
   });
 
@@ -114,7 +163,8 @@ describe("Task #86 — Reschedule action on confirmed meetup view", () => {
     renderScreen();
     await waitFor(() => expect(screen.getByTestId("reschedule-meetup-btn")).toBeTruthy());
     fireEvent.press(screen.getByTestId("reschedule-meetup-btn"));
-    await waitFor(() => expect(screen.getByTestId("reschedule-form")).toBeTruthy());
+    // The form lives in MeetupFlowModal; presence of the submit button means it opened.
+    await waitFor(() => expect(screen.getByTestId("reschedule-submit-btn")).toBeTruthy());
   });
 
   it("pre-fills the date and time with the current meetup's values", async () => {
@@ -131,37 +181,43 @@ describe("Task #86 — Reschedule action on confirmed meetup view", () => {
     renderScreen();
     await waitFor(() => expect(screen.getByTestId("reschedule-meetup-btn")).toBeTruthy());
     fireEvent.press(screen.getByTestId("reschedule-meetup-btn"));
-    await waitFor(() => expect(screen.getByTestId("reschedule-form")).toBeTruthy());
-    fireEvent.press(screen.getByTestId("reschedule-cancel-btn"));
-    await waitFor(() => expect(screen.queryByTestId("reschedule-form")).toBeNull());
+    await waitFor(() => expect(screen.getByTestId("reschedule-submit-btn")).toBeTruthy());
+    // Dismiss the form. The modal header exposes a unique "✕" close pressable that
+    // calls onDismiss (the inline "Cancel" text collides with the card's own
+    // `cancel-meetup-btn`, so "✕" is the unambiguous dismiss control).
+    fireEvent.press(screen.getByText("✕"));
+    await waitFor(() => expect(screen.queryByTestId("reschedule-submit-btn")).toBeNull());
     expect(screen.getByTestId("reschedule-meetup-btn")).toBeTruthy();
   });
 
-  it("shows error when submitting with no venue selected", async () => {
-    // Rerender with a meetup whose venue id won't match any preselected venue
+  it("renders the reschedule submit control with the current venue pre-filled", async () => {
+    // The no-venue guard lives in RescheduleContent.handleSubmit: it pre-fills the
+    // current venueId on open, so the submit button is present and actionable.
     renderScreen();
     await waitFor(() => expect(screen.getByTestId("reschedule-meetup-btn")).toBeTruthy());
-    // Open form — it pre-fills the current venueId, so we need to test the validation path
-    // by checking a form that would produce an error (this tests the client guard layer)
     fireEvent.press(screen.getByTestId("reschedule-meetup-btn"));
-    await waitFor(() => expect(screen.getByTestId("reschedule-form")).toBeTruthy());
-    // Submit is allowed since venue is pre-filled — confirm proposeReschedule would be called
-    // (actual no-venue guard is tested via the venue pre-fill being set on open)
-    expect(screen.getByTestId("reschedule-submit-btn")).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId("reschedule-submit-btn")).toBeTruthy());
+    // Pre-filled venue means the submit path is reachable (no immediate venue error).
+    expect(screen.queryByTestId("reschedule-error")).toBeNull();
   });
 
-  it("shows 'Reschedule pending' label when a reschedule is already pending from me", async () => {
+  it("shows 'Reschedule pending…' label and disables the button when a reschedule is pending from me", async () => {
     mockMeetupsData = [{ ...baseMeetup, reschedulePending: true, rescheduleIsFromMe: true }];
     renderScreen();
     await waitFor(() => expect(screen.getByText("Reschedule pending…")).toBeTruthy());
-    // Form should not be openable — button press is disabled
-    expect(screen.queryByTestId("reschedule-form")).toBeNull();
+    // The button is disabled (rescheduleIsFromMe && reschedulePending), so the form
+    // cannot be opened.
+    expect(screen.queryByTestId("reschedule-submit-btn")).toBeNull();
   });
 
-  it("shows 'Partner proposed reschedule' label when the other student has a pending reschedule", async () => {
+  it("shows the partner-proposed-reschedule state (New time pill + Answer action) when the other student proposed", async () => {
     mockMeetupsData = [{ ...baseMeetup, reschedulePending: true, rescheduleIsFromMe: false }];
     renderScreen();
-    await waitFor(() => expect(screen.getByText("Partner proposed reschedule")).toBeTruthy());
-    expect(screen.queryByTestId("reschedule-form")).toBeNull();
+    // Current component surfaces a "New time" status pill (rendered upper-cased) and an
+    // "Answer" action button (it replaced the old "Partner proposed reschedule" copy).
+    await waitFor(() => expect(screen.getByText("NEW TIME")).toBeTruthy());
+    expect(screen.getByText("Answer")).toBeTruthy();
+    // The action button is enabled here (only from-me pending disables it).
+    expect(screen.getByTestId("reschedule-meetup-btn")).toBeTruthy();
   });
 });
