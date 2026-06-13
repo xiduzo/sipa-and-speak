@@ -13,9 +13,9 @@ function describe(state: HomeState): { eyebrow: string; title: string; subtitle:
   switch (state.kind) {
     case "post":
       return {
-        eyebrow: "RATE",
-        title: `How was ${state.meetup.partner.name}?`,
-        subtitle: "Tap to rate",
+        eyebrow: "MEET-UP",
+        title: "Did your meet-up take place?",
+        subtitle: `Tell us about ${state.meetup.partner.name}`,
         emoji: "✓",
       };
     case "confirmed":

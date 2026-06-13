@@ -1,20 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
 import { Alert, Pressable, Text, View } from "react-native";
-import { useState } from "react";
 
 import { trpc, queryClient } from "@/utils/trpc";
+import { GOLD } from "./tokens";
 import type { ConfirmedMeetup } from "./home-state";
 
 const MINT = "#CFE3E0";
 const DARK_GREEN = "#1F4744";
-
-const EMOJIS: { rating: 1 | 2 | 3 | 4 | 5; glyph: string }[] = [
-  { rating: 1, glyph: "🙁" },
-  { rating: 2, glyph: "😐" },
-  { rating: 3, glyph: "🙂" },
-  { rating: 4, glyph: "😊" },
-  { rating: 5, glyph: "🤩" },
-];
+const DARK = "#1A1A1A";
+const OUTLINE = "#1A1A1A";
 
 type Props = {
   meetup: ConfirmedMeetup;
@@ -27,8 +21,6 @@ type Props = {
 };
 
 export function HeroPost({ meetup, onOpenChat, onOpenLocked, onReschedule }: Props) {
-  const [selectedRating, setSelectedRating] = useState<number | null>(null);
-
   const reportMutation = useMutation(
     trpc.meetup.reportAttendance.mutationOptions({
       onSuccess: () => {
@@ -37,9 +29,18 @@ export function HeroPost({ meetup, onOpenChat, onOpenLocked, onReschedule }: Pro
     }),
   );
 
-  function handleEmojiPress(rating: 1 | 2 | 3 | 4 | 5) {
-    setSelectedRating(rating);
-    reportMutation.mutate({ meetupId: meetup.meetupId, attended: true, rating });
+  function handleAttended() {
+    reportMutation.mutate(
+      { meetupId: meetup.meetupId, attended: true },
+      {
+        onSuccess: () => {
+          Alert.alert(
+            "Thanks!",
+            `You reported attending this meetup — wait for ${meetup.partner.name} to respond.`,
+          );
+        },
+      },
+    );
   }
 
   function handleNoShow() {
@@ -162,7 +163,7 @@ export function HeroPost({ meetup, onOpenChat, onOpenLocked, onReschedule }: Pro
           className="text-brand-foreground font-jakarta mt-4 text-center"
           style={{ fontSize: 28 }}
         >
-          How was {meetup.partner.name}?
+          Did your meet-up take place?
         </Text>
         <Text
           className="text-brand-muted-foreground font-manrope mt-1 text-center"
@@ -171,44 +172,43 @@ export function HeroPost({ meetup, onOpenChat, onOpenLocked, onReschedule }: Pro
           {meetup.venue.name}
         </Text>
 
-        <View className="flex-row gap-2 mt-5">
-          {EMOJIS.map((e) => {
-            const isSelected = selectedRating === e.rating;
-            return (
-              <Pressable
-                key={e.rating}
-                testID={`rating-${e.rating}`}
-                onPress={() => handleEmojiPress(e.rating)}
-                disabled={reportMutation.isPending}
-                className="items-center justify-center rounded-full"
-                style={{
-                  width: isSelected ? 56 : 44,
-                  height: isSelected ? 56 : 44,
-                  backgroundColor: "#FFFFFF",
-                  opacity: selectedRating !== null && !isSelected ? 0.4 : 1,
-                }}
-              >
-                <Text style={{ fontSize: isSelected ? 28 : 22 }}>{e.glyph}</Text>
-              </Pressable>
-            );
-          })}
+        <View className="flex-row mt-5" style={{ gap: 10 }}>
+          <Pressable
+            testID="attendance-yes-btn"
+            onPress={handleAttended}
+            disabled={reportMutation.isPending}
+            className="flex-1 items-center justify-center rounded-full"
+            style={{
+              height: 46,
+              paddingHorizontal: 22,
+              backgroundColor: GOLD,
+              opacity: reportMutation.isPending ? 0.55 : 1,
+            }}
+          >
+            <Text className="font-manrope-bold" style={{ fontSize: 14, color: DARK }}>
+              We met up
+            </Text>
+          </Pressable>
+          <Pressable
+            testID="attendance-no-btn"
+            onPress={handleNoShow}
+            disabled={reportMutation.isPending}
+            className="flex-1 items-center justify-center rounded-full"
+            style={{
+              height: 46,
+              paddingHorizontal: 22,
+              borderWidth: 1.5,
+              borderColor: OUTLINE,
+              opacity: reportMutation.isPending ? 0.55 : 1,
+            }}
+          >
+            <Text className="font-manrope-bold" style={{ fontSize: 14, color: DARK }}>
+              We didn&apos;t
+            </Text>
+          </Pressable>
         </View>
 
         {renderChatBanner()}
-
-        <Pressable
-          testID="no-show-link"
-          onPress={handleNoShow}
-          disabled={reportMutation.isPending}
-          className="mt-4"
-        >
-          <Text
-            className="font-manrope"
-            style={{ fontSize: 12, color: DARK_GREEN, textDecorationLine: "underline" }}
-          >
-            We didn&apos;t meet
-          </Text>
-        </Pressable>
       </View>
     </View>
   );
