@@ -62,10 +62,11 @@ export const chatRouter = router({
           .limit(1);
 
         const lastMsg = lastMessage[0] ?? null;
+        const readEntry = readStatus[0];
         const hasUnread =
           lastMsg !== null &&
-          (readStatus.length === 0 ||
-            lastMsg.createdAt > readStatus[0].lastReadAt);
+          (readEntry === undefined ||
+            lastMsg.createdAt > readEntry.lastReadAt);
 
         return {
           id: conv.id,
@@ -187,16 +188,17 @@ export const chatRouter = router({
         )
         .limit(1);
 
-      if (existing.length > 0) {
+      const existingConversation = existing[0];
+      if (existingConversation) {
         // If greeting provided, send it as a message in the existing conversation
         if (input.greeting) {
           await db.insert(message).values({
-            conversationId: existing[0].id,
+            conversationId: existingConversation.id,
             senderId: userId,
             content: input.greeting,
           });
         }
-        return existing[0];
+        return existingConversation;
       }
 
       // Create new conversation
@@ -207,6 +209,10 @@ export const chatRouter = router({
           user2Id: input.partnerId,
         })
         .returning();
+
+      if (!newConversation) {
+        throw new Error("Failed to create conversation");
+      }
 
       // Send greeting message if provided
       if (input.greeting) {
@@ -248,7 +254,8 @@ export const chatRouter = router({
         .orderBy(desc(message.createdAt))
         .limit(1);
 
-      if (lastMsg.length === 0) continue;
+      const lastEntry = lastMsg[0];
+      if (!lastEntry) continue;
 
       const readStatus = await db
         .select({ lastReadAt: messageReadStatus.lastReadAt })
@@ -261,10 +268,8 @@ export const chatRouter = router({
         )
         .limit(1);
 
-      if (
-        readStatus.length === 0 ||
-        lastMsg[0].createdAt > readStatus[0].lastReadAt
-      ) {
+      const readEntry = readStatus[0];
+      if (readEntry === undefined || lastEntry.createdAt > readEntry.lastReadAt) {
         unreadCount++;
       }
     }
@@ -482,13 +487,14 @@ export const chatRouter = router({
         .limit(1);
 
       const now = new Date();
-      const newLastReadAt = computeMarkReadAt(existing[0]?.lastReadAt ?? null, now);
+      const existingStatus = existing[0];
+      const newLastReadAt = computeMarkReadAt(existingStatus?.lastReadAt ?? null, now);
 
-      if (existing.length > 0) {
+      if (existingStatus) {
         await db
           .update(messageReadStatus)
           .set({ lastReadAt: newLastReadAt })
-          .where(eq(messageReadStatus.id, existing[0].id));
+          .where(eq(messageReadStatus.id, existingStatus.id));
       } else {
         await db.insert(messageReadStatus).values({
           conversationId: input.conversationId,
