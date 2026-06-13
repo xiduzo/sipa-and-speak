@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 
-import { formatChatTimestamp, formatUnlockMoment } from "@/lib/dates";
+import { formatChatTimestamp } from "@/lib/dates";
 import { trpc } from "@/utils/trpc";
 import { Container } from "@/components/container";
 import { CARD, GOLD } from "@/components/home/tokens";
@@ -71,7 +71,7 @@ type ChatEntry =
 function lockedSubtitle(entry: Extract<ChatEntry, { kind: "locked" }>): string {
   switch (entry.phase) {
     case "scheduled":
-      return `unlocks ${formatUnlockMoment(entry.meetupAt)}`;
+      return "unlocks after you first meet up";
     case "awaiting_attendance":
       return "did you meet?";
     case "awaiting_my_optin":

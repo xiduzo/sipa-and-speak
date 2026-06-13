@@ -102,18 +102,6 @@ export function formatChatSectionLabel(input: DateInput, now: Date = new Date())
   return safeFormat(d, "MMM d").toUpperCase();
 }
 
-/** Lock-expiry phrase: "today HH:mm" / "tomorrow HH:mm" / "EEEE HH:mm" / "MMM d". */
-export function formatUnlockMoment(input: DateInput, now: Date = new Date()): string {
-  const at = toDate(input);
-  if (!at) return "";
-  const days = differenceInCalendarDays(at, now);
-  const time = safeFormat(at, "HH:mm");
-  if (days <= 0) return `today ${time}`;
-  if (days === 1) return `tomorrow ${time}`;
-  if (days < 7) return `${safeFormat(at, "EEEE")} ${time}`;
-  return safeFormat(at, "MMM d");
-}
-
 /** Absolute calendar-day distance between two dates. Returns 0 on invalid input. */
 export function daysBetween(a: DateInput, b: DateInput): number {
   const da = toDate(a);
