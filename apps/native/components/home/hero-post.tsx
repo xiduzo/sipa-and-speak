@@ -19,23 +19,18 @@ const EMOJIS: { rating: 1 | 2 | 3 | 4 | 5; glyph: string }[] = [
 type Props = {
   meetup: ConfirmedMeetup;
   onOpenChat: (conversationId: string) => void;
+  // #371 — route the locked keep-in-touch tile to the locked chat screen,
+  // which owns the opt-in (accept/decline) prompt (see #370).
+  onOpenLocked: (meetupId: string) => void;
   // #27 — re-open the propose flow after a "didn't meet" report.
   onReschedule: () => void;
 };
 
-export function HeroPost({ meetup, onOpenChat, onReschedule }: Props) {
+export function HeroPost({ meetup, onOpenChat, onOpenLocked, onReschedule }: Props) {
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
 
   const reportMutation = useMutation(
     trpc.meetup.reportAttendance.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
-      },
-    }),
-  );
-
-  const optInMutation = useMutation(
-    trpc.messaging.respondToOptIn.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
       },
@@ -100,10 +95,7 @@ export function HeroPost({ meetup, onOpenChat, onReschedule }: Props) {
       return (
         <Pressable
           testID="opt-in-cta"
-          onPress={() =>
-            optInMutation.mutate({ meetupId: meetup.meetupId, response: "accept" })
-          }
-          disabled={optInMutation.isPending}
+          onPress={() => onOpenLocked(meetup.meetupId)}
           className="rounded-2xl mt-5 flex-row items-center justify-between p-4"
           style={{ backgroundColor: "#FFFFFF" }}
         >

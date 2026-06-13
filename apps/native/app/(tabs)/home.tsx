@@ -92,6 +92,9 @@ export default function HomeScreen() {
             onOpenChat={(conversationId) =>
               router.push(`/chat/${conversationId}` as never)
             }
+            onOpenLocked={(meetupId) =>
+              router.push(`/chat/locked/${meetupId}` as never)
+            }
             onReschedule={() =>
               setMeetupModal({
                 type: "propose",
