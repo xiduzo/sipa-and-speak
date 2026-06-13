@@ -1,12 +1,13 @@
 /**
- * Tests for tasks:
+ * Tests for the partner profile screen (`app/partner/[id].tsx`):
  *   #119 — Display comments section on candidate profile
- *   #120 — Surface "Send Request" action contextually based on match status
  *   #121 — Handle removed/unavailable candidate profile gracefully
- *   #122 — Send Request button on candidate profile screen
- *   #127 — Allow receiver to open requester's profile before deciding
- *   #128 — Accept action transitioning both Students to Matched state
- *   #129 — Decline action removing the request and navigating back
+ *   #10  — Matched buddy actions (Propose a meet-up + Unmatch)
+ *
+ * The match-request send / accept / decline flow that USED to live on this
+ * screen (scenarios #120, #122, #123, #124, #127, #128, #129) has been
+ * refactored into the suggestion card and the Matches tab. That coverage now
+ * lives in `match-request-actions.test.tsx`.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
@@ -31,10 +32,7 @@ jest.mock("@/components/flag-user-modal", () => ({
 // Use mock-prefixed functions so jest.mock() factory can reference them
 const mockProfileFn = jest.fn();
 const mockCommentsFn = jest.fn();
-const mockSendMatchRequest = jest.fn();
 const mockGetMatchRequestStatusFn = jest.fn();
-const mockAcceptMatchRequest = jest.fn();
-const mockDeclineMatchRequest = jest.fn();
 const mockUnmatch = jest.fn();
 const mockInvalidateQueries = jest.fn();
 
@@ -48,20 +46,11 @@ jest.mock("@/utils/trpc", () => ({
           queryFn: () => mockProfileFn(),
         }),
       },
-      sendMatchRequest: {
-        mutationOptions: () => ({ mutationFn: mockSendMatchRequest }),
-      },
       getMatchRequestStatus: {
         queryOptions: () => ({
           queryKey: ["matching.getMatchRequestStatus"],
           queryFn: () => mockGetMatchRequestStatusFn(),
         }),
-      },
-      acceptMatchRequest: {
-        mutationOptions: () => ({ mutationFn: mockAcceptMatchRequest }),
-      },
-      declineMatchRequest: {
-        mutationOptions: () => ({ mutationFn: mockDeclineMatchRequest }),
       },
       getMyMatches: {
         queryOptions: () => ({ queryKey: ["matching.getMyMatches"] }),
@@ -120,9 +109,6 @@ beforeEach(() => {
   mockSearchParams = { id: "candidate-123" };
   mockBack.mockClear();
   mockPush.mockClear();
-  mockSendMatchRequest.mockClear().mockResolvedValue({ matchRequestId: "req-1", status: "pending" });
-  mockAcceptMatchRequest.mockClear().mockResolvedValue({ status: "accepted", matchedWithUserId: "requester-1" });
-  mockDeclineMatchRequest.mockClear().mockResolvedValue({ status: "declined" });
   mockUnmatch.mockClear().mockResolvedValue({ success: true });
   mockInvalidateQueries.mockClear();
   mockProfileFn.mockReset().mockResolvedValue(defaultProfile);
@@ -175,257 +161,6 @@ describe("#121 — Handle removed/unavailable candidate profile gracefully", () 
 
     await waitFor(() => {
       expect(screen.getByText(/no longer available/i)).toBeTruthy();
-    });
-  });
-});
-
-// ─── #124: Confirmation feedback ───────────────────────────────────────────
-
-describe("#124 — Confirmation feedback on candidate profile", () => {
-  it("shows confirmation message after successfully sending a request", async () => {
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("send-request-button"));
-    fireEvent.press(screen.getByTestId("send-request-button"));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("confirmation-message")).toBeTruthy();
-    });
-  });
-
-  it("shows Request Sent indicator instead of Send Request button after success", async () => {
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("send-request-button"));
-    fireEvent.press(screen.getByTestId("send-request-button"));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("request-sent-indicator")).toBeTruthy();
-    });
-    expect(screen.queryByTestId("send-request-button")).toBeNull();
-  });
-});
-
-// ─── #122: Send Request on profile screen ──────────────────────────────────
-
-describe("#122 — Send Request on candidate profile screen", () => {
-  it("renders Send Request button", async () => {
-    renderScreen();
-
-    await waitFor(() => {
-      expect(screen.getByTestId("send-request-button")).toBeTruthy();
-    });
-  });
-
-  it("calls sendMatchRequest mutation when tapped and shows confirmation", async () => {
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("send-request-button"));
-    fireEvent.press(screen.getByTestId("send-request-button"));
-
-    await waitFor(() => {
-      expect(mockSendMatchRequest).toHaveBeenCalledTimes(1);
-    });
-  });
-});
-
-// ─── #120: Contextual Send Request based on match status ───────────────────
-
-describe("#120 — Contextual Send Request action on candidate profile", () => {
-  it("shows Send Request button when no request has been sent", async () => {
-    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "none", isMatched: false });
-
-    renderScreen();
-
-    await waitFor(() => {
-      expect(screen.getByTestId("send-request-button")).toBeTruthy();
-    });
-    expect(screen.queryByTestId("request-sent-indicator")).toBeNull();
-  });
-
-  it("hides Send Request button and shows Request Sent indicator when a request has already been sent", async () => {
-    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "pending" });
-
-    renderScreen();
-
-    await waitFor(() => {
-      expect(screen.getByTestId("request-sent-indicator")).toBeTruthy();
-    });
-    expect(screen.queryByTestId("send-request-button")).toBeNull();
-  });
-});
-
-// ─── #123: Duplicate match request prevention ──────────────────────────────
-
-describe("#123 — Duplicate match request prevention on candidate profile", () => {
-  it("shows conflict error message when a second request is attempted", async () => {
-    const conflictError = Object.assign(new Error("Conflict"), {
-      data: { code: "CONFLICT" },
-    });
-    mockSendMatchRequest.mockRejectedValue(conflictError);
-
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("send-request-button"));
-    fireEvent.press(screen.getByTestId("send-request-button"));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("conflict-error-message")).toBeTruthy();
-    });
-  });
-
-  it("shows Send Request button (not indicator) when previous request was declined", async () => {
-    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "declined" });
-
-    renderScreen();
-
-    await waitFor(() => {
-      expect(screen.getByTestId("send-request-button")).toBeTruthy();
-    });
-    expect(screen.queryByTestId("request-sent-indicator")).toBeNull();
-  });
-
-  it("allows re-requesting after a decline", async () => {
-    mockGetMatchRequestStatusFn.mockResolvedValue({ matchRequestStatus: "declined" });
-
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("send-request-button"));
-    fireEvent.press(screen.getByTestId("send-request-button"));
-
-    await waitFor(() => {
-      expect(mockSendMatchRequest).toHaveBeenCalledTimes(1);
-    });
-  });
-});
-
-// ─── #127: Accept/Decline bar when opened from incoming request ────────────
-
-describe("#127 — Accept/Decline action bar on requester profile", () => {
-  it("shows Accept/Decline action bar when opened from incoming request context", async () => {
-    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
-
-    renderScreen();
-
-    await waitFor(() => {
-      expect(screen.getByTestId("accept-decline-bar")).toBeTruthy();
-    });
-    expect(screen.getByTestId("accept-button")).toBeTruthy();
-    expect(screen.getByTestId("decline-button")).toBeTruthy();
-  });
-
-  it("hides Send Request section when opened from incoming request context", async () => {
-    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
-
-    renderScreen();
-
-    await waitFor(() => {
-      expect(screen.getByTestId("accept-decline-bar")).toBeTruthy();
-    });
-    expect(screen.queryByTestId("send-request-button")).toBeNull();
-    expect(screen.queryByTestId("request-sent-indicator")).toBeNull();
-  });
-
-  it("shows Send Request section when not opened from incoming request context", async () => {
-    mockSearchParams = { id: "candidate-123" };
-
-    renderScreen();
-
-    await waitFor(() => {
-      expect(screen.getByTestId("send-request-button")).toBeTruthy();
-    });
-    expect(screen.queryByTestId("accept-decline-bar")).toBeNull();
-  });
-});
-
-// ─── #128: Accept action ───────────────────────────────────────────────────
-
-describe("#128 — Accept action transitioning both Students to Matched state", () => {
-  it("calls acceptMatchRequest mutation when Accept is tapped", async () => {
-    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
-
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("accept-button"));
-    fireEvent.press(screen.getByTestId("accept-button"));
-
-    await waitFor(() => {
-      expect(mockAcceptMatchRequest).toHaveBeenCalledTimes(1);
-      expect(mockAcceptMatchRequest.mock.calls[0][0]).toEqual({ matchRequestId: "req-abc" });
-    });
-  });
-
-  it("invalidates incoming requests query after accepting", async () => {
-    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
-
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("accept-button"));
-    fireEvent.press(screen.getByTestId("accept-button"));
-
-    await waitFor(() => {
-      expect(mockInvalidateQueries).toHaveBeenCalledWith(
-        expect.objectContaining({ queryKey: ["matching.getIncomingRequests"] }),
-      );
-    });
-  });
-
-  it("shows Accepted label and disables Accept button after success", async () => {
-    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
-
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("accept-button"));
-    fireEvent.press(screen.getByTestId("accept-button"));
-
-    await waitFor(() => {
-      expect(screen.getByText("Accepted")).toBeTruthy();
-    });
-  });
-});
-
-// ─── #129: Decline action ──────────────────────────────────────────────────
-
-describe("#129 — Decline action removing the request and navigating back", () => {
-  it("calls declineMatchRequest mutation when Decline is tapped", async () => {
-    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
-
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("decline-button"));
-    fireEvent.press(screen.getByTestId("decline-button"));
-
-    await waitFor(() => {
-      expect(mockDeclineMatchRequest).toHaveBeenCalledTimes(1);
-      expect(mockDeclineMatchRequest.mock.calls[0][0]).toEqual({ matchRequestId: "req-abc" });
-    });
-  });
-
-  it("navigates back after successful decline", async () => {
-    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
-
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("decline-button"));
-    fireEvent.press(screen.getByTestId("decline-button"));
-
-    await waitFor(() => {
-      expect(mockBack).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  it("invalidates incoming requests query after declining", async () => {
-    mockSearchParams = { id: "candidate-123", matchRequestId: "req-abc" };
-
-    renderScreen();
-
-    await waitFor(() => screen.getByTestId("decline-button"));
-    fireEvent.press(screen.getByTestId("decline-button"));
-
-    await waitFor(() => {
-      expect(mockInvalidateQueries).toHaveBeenCalledWith(
-        expect.objectContaining({ queryKey: ["matching.getIncomingRequests"] }),
-      );
     });
   });
 });
