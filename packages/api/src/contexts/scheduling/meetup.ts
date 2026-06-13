@@ -1,5 +1,5 @@
 import type { EventEmitter } from "events";
-import { and, eq, or, sql, count, gte, lt, inArray } from "drizzle-orm";
+import { and, eq, or, sql, count, gte, lt, inArray, desc } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
@@ -429,7 +429,7 @@ export const meetupRouter = router({
           sql`receiver.id = ${meetup.receiverId}`,
         )
         .where(and(...conditions))
-        .orderBy(meetup.createdAt);
+        .orderBy(desc(meetup.createdAt));
 
       return rows.map((row) => {
         const isProposer = row.meetup.proposerId === userId;
