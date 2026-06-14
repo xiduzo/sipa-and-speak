@@ -9,6 +9,7 @@ import { queryClient, trpc } from "@/utils/trpc";
 type LockedPhase =
   | "scheduled"
   | "awaiting_attendance"
+  | "awaiting_partner_attendance"
   | "awaiting_my_optin"
   | "awaiting_partner_optin"
   | "declined";
@@ -37,6 +38,12 @@ function copyForPhase(phase: LockedPhase, partnerFirstName: string) {
         body: "Confirm attendance to unlock the chat.",
         cta: "Report attendance",
       };
+    case "awaiting_partner_attendance":
+      return {
+        headline: `Waiting for ${partnerFirstName} to confirm you met`,
+        body: "You've confirmed. The chat opens once they confirm too.",
+        cta: "See meetup details",
+      };
     case "awaiting_my_optin":
       return {
         headline: "Would you like to chat and keep in touch?",
@@ -61,6 +68,7 @@ function copyForPhase(phase: LockedPhase, partnerFirstName: string) {
 function headerSubtitle(phase: LockedPhase): string {
   if (phase === "scheduled") return "locked · meet first";
   if (phase === "awaiting_attendance") return "locked · awaiting attendance";
+  if (phase === "awaiting_partner_attendance") return "locked · waiting on partner";
   if (phase === "awaiting_my_optin") return "locked · rate to unlock";
   if (phase === "awaiting_partner_optin") return "locked · waiting to enable chatting";
   return "won't open";

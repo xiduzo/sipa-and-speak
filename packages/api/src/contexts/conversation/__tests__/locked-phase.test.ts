@@ -38,6 +38,25 @@ describe("deriveLockedPhase", () => {
     ).toBe("awaiting_attendance");
   });
 
+  it("returns 'awaiting_partner_attendance' when current student already reported but meetup is still confirmed", () => {
+    // #398 — A confirmed meetup only becomes `completed` once BOTH participants
+    // report attendance. While the current student has reported but the partner
+    // has not, the status stays `confirmed`. We must NOT re-prompt attendance
+    // (the server rejects a duplicate report) nor advance to `awaiting_my_optin`
+    // (the opt-in handler rejects non-completed meetups). Surface a dedicated
+    // waiting phase instead.
+    const phase = deriveLockedPhase({
+      meetupStatus: "confirmed",
+      meetupAt: past,
+      now,
+      hasMyAttendanceReport: true,
+      myOptIn: null,
+      partnerOptIn: null,
+    });
+    expect(phase).not.toBe("awaiting_attendance");
+    expect(phase).toBe("awaiting_partner_attendance");
+  });
+
   it("returns 'awaiting_my_optin' for completed meetups when current student has not responded", () => {
     expect(
       deriveLockedPhase({

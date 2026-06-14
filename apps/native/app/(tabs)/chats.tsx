@@ -63,6 +63,7 @@ type ChatEntry =
       phase:
         | "scheduled"
         | "awaiting_attendance"
+        | "awaiting_partner_attendance"
         | "awaiting_my_optin"
         | "awaiting_partner_optin"
         | "declined";
@@ -74,6 +75,8 @@ function lockedSubtitle(entry: Extract<ChatEntry, { kind: "locked" }>): string {
       return "unlocks after you first meet up";
     case "awaiting_attendance":
       return "did you meet?";
+    case "awaiting_partner_attendance":
+      return `waiting for ${entry.partner.name.split(" ")[0]} to confirm you met`;
     case "awaiting_my_optin":
       return "tap to keep in touch";
     case "awaiting_partner_optin":

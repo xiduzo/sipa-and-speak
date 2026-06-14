@@ -435,9 +435,10 @@ export const chatRouter = router({
     const phaseRank: Record<string, number> = {
       scheduled: 0,
       awaiting_attendance: 1,
-      awaiting_my_optin: 2,
-      awaiting_partner_optin: 3,
-      declined: 4,
+      awaiting_partner_attendance: 2,
+      awaiting_my_optin: 3,
+      awaiting_partner_optin: 4,
+      declined: 5,
     };
     const sortedLocked = lockedEntries.filter(keepEntry).sort((a, b) => {
       const r = (phaseRank[a.phase] ?? 99) - (phaseRank[b.phase] ?? 99);
