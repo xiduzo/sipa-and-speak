@@ -619,7 +619,7 @@ export const meetupRouter = router({
             or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
           ),
         )
-        .orderBy(meetup.scheduledAt),
+        .orderBy(desc(meetup.scheduledAt)),
       // #97 — Fetch this user's attendance reports
       db
         .select({

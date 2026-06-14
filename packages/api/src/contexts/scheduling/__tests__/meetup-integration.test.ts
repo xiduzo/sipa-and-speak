@@ -18,6 +18,7 @@ import { resetDb, buildSessionContext, captureEvents } from "../../../__test-sup
 
 const FUTURE_AT = new Date("2099-09-01T18:00:00Z");
 const FUTURE_AT_ALT = new Date("2099-09-01T19:30:00Z");
+const FUTURE_AT_LATER = new Date("2099-09-15T18:00:00Z");
 
 async function seedMatchedPair(): Promise<{ a: string; b: string; venueId: string }> {
   const a = "u-A";
@@ -199,5 +200,43 @@ describe("meetup integration — counter-propose", () => {
     expect(counter!.venueId).toBe(v2!.id);
     expect(counter!.scheduledAt.getTime()).toBe(FUTURE_AT_ALT.getTime());
     expect(capture.events.map((e) => e.name)).toContain("MeetupCounterProposed");
+  });
+});
+
+describe("meetup integration — getConfirmed ordering", () => {
+  beforeEach(() => {
+    resetDb();
+  });
+
+  it("returns confirmed meetups newest-first (desc by scheduledAt)", async () => {
+    const { a, b, venueId } = await seedMatchedPair();
+
+    // Earlier meetup
+    const early = await appRouter
+      .createCaller(buildSessionContext(a))
+      .meetup.propose({ partnerId: b, venueId, scheduledAt: FUTURE_AT.toISOString() });
+    await appRouter
+      .createCaller(buildSessionContext(b))
+      .meetup.acceptProposal({ meetupId: early!.id });
+
+    // Later meetup
+    const late = await appRouter
+      .createCaller(buildSessionContext(a))
+      .meetup.propose({ partnerId: b, venueId, scheduledAt: FUTURE_AT_LATER.toISOString() });
+    await appRouter
+      .createCaller(buildSessionContext(b))
+      .meetup.acceptProposal({ meetupId: late!.id });
+
+    const confirmed = await appRouter
+      .createCaller(buildSessionContext(a))
+      .meetup.getConfirmed();
+
+    expect(confirmed).toHaveLength(2);
+    // Newest (later scheduledAt) must come first
+    expect(confirmed[0]!.meetupId).toBe(late!.id);
+    expect(confirmed[1]!.meetupId).toBe(early!.id);
+    expect(confirmed[0]!.scheduledAt.getTime()).toBeGreaterThan(
+      confirmed[1]!.scheduledAt.getTime(),
+    );
   });
 });
