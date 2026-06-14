@@ -50,6 +50,7 @@ export type MeetupEventName =
   | "MeetupCounterProposed"
   | "MeetupDeclined"
   | "MeetupCancelled"
+  | "MeetupWithdrawn"
   | "MeetupRescheduleProposed"
   | "MeetupRescheduled"
   | "MeetupRescheduleDeclined"
@@ -337,6 +338,48 @@ export const Meetup = {
           cancelledById: args.actorId,
           otherStudentId,
           cancelledAt: args.now,
+        },
+      },
+    ];
+    return { state: next, events };
+  },
+
+  /**
+   * Withdraw a still-pending proposal (proposer-only). Distinct from `cancel`,
+   * which only ever applies to a *confirmed* booking. Keeping the two commands
+   * separate guarantees a confirmed/completed meetup can never be retracted via
+   * the withdraw path, and a never-confirmed proposal never emits the
+   * `MeetupCancelled` event the cancel flow uses (so the receiver is not told a
+   * confirmed booking was cancelled). After a counter-proposal the roles swap,
+   * so only the *current* proposer may withdraw.
+   */
+  withdraw(
+    state: MeetupSnapshot,
+    args: { actorId: string; now: Date },
+  ): { state: MeetupSnapshot; events: DomainEventToEmit[] } {
+    ensureParticipant(state, args.actorId);
+    if (state.proposerId !== args.actorId) {
+      throw new MeetupRuleError(
+        "FORBIDDEN",
+        "Only the proposer can withdraw this proposal",
+      );
+    }
+    if (state.status !== "pending") {
+      throw new MeetupRuleError(
+        "BAD_REQUEST",
+        "Only pending proposals can be withdrawn",
+      );
+    }
+
+    const next: MeetupSnapshot = { ...state, status: "cancelled" };
+    const events: DomainEventToEmit[] = [
+      {
+        name: "MeetupWithdrawn",
+        payload: {
+          meetupId: state.id,
+          withdrawnById: args.actorId,
+          receiverId: state.receiverId,
+          withdrawnAt: args.now,
         },
       },
     ];

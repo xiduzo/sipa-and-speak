@@ -215,6 +215,16 @@ export default function ConfirmedMeetupsScreen() {
     }),
   );
 
+  const withdrawMutation = useMutation(
+    trpc.meetup.withdrawMeetup.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(trpc.meetup.list.queryOptions({ status: "pending" }));
+        Alert.alert("Proposal withdrawn", "Your proposal has been withdrawn.");
+      },
+      onError: (err) => Alert.alert("Error", err.message),
+    }),
+  );
+
   if (meetupsQuery.isPending || pendingQuery.isPending) {
     return (
       <Container isScrollable={false}>
@@ -267,6 +277,17 @@ export default function ConfirmedMeetupsScreen() {
         text: "Cancel meetup",
         style: "destructive",
         onPress: () => cancelMutation.mutate({ meetupId }),
+      },
+    ]);
+  }
+
+  function handleWithdraw(meetupId: string) {
+    Alert.alert("Withdraw proposal", "Are you sure you want to withdraw this proposal?", [
+      { text: "Keep it", style: "cancel" },
+      {
+        text: "Withdraw",
+        style: "destructive",
+        onPress: () => withdrawMutation.mutate({ meetupId }),
       },
     ]);
   }
@@ -339,13 +360,27 @@ export default function ConfirmedMeetupsScreen() {
                   />
 
                   {isOutgoing ? (
-                    <Text
-                      testID="awaiting-response-label"
-                      className="font-manrope text-center"
-                      style={{ fontSize: 12, color: MUTED, fontStyle: "italic" }}
-                    >
-                      Awaiting response from {p.partner.name}
-                    </Text>
+                    <>
+                      <Text
+                        testID="awaiting-response-label"
+                        className="font-manrope text-center"
+                        style={{
+                          fontSize: 12,
+                          color: MUTED,
+                          fontStyle: "italic",
+                          marginBottom: 12,
+                        }}
+                      >
+                        Awaiting response from {p.partner.name}
+                      </Text>
+                      <SecondaryPill
+                        testID="withdraw-proposal-btn"
+                        label="Withdraw"
+                        onPress={() => handleWithdraw(p.id)}
+                        disabled={withdrawMutation.isPending}
+                        destructive
+                      />
+                    </>
                   ) : (
                     <PrimaryPill
                       testID="respond-to-proposal-btn"

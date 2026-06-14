@@ -171,6 +171,7 @@ const EVENT_NAMES = [
   "MeetupCounterProposed",
   "MeetupDeclined",
   "MeetupCancelled",
+  "MeetupWithdrawn",
   "MeetupRescheduleProposed",
   "MeetupRescheduled",
   "MeetupRescheduleDeclined",
