@@ -130,6 +130,10 @@ export function keptEntryKeysByPartner(
  * Phase a locked chat teaser is in. Drives copy + CTA on the chat list and locked detail screen.
  * - `scheduled`            — meetup confirmed, datetime in the future ("unlocks Friday at 10:30")
  * - `awaiting_attendance`  — meetup datetime passed, current student hasn't filed an attendance report
+ * - `awaiting_partner_attendance` — current student reported attendance, but the meetup is still
+ *   `confirmed` because the partner hasn't reported yet. A meetup only becomes `completed` once
+ *   BOTH report (see #398). This is a non-interactive waiting state: re-prompting attendance is
+ *   rejected as a duplicate, and the messaging opt-in handler rejects non-completed meetups.
  * - `awaiting_my_optin`    — meetup completed, current student hasn't responded to messaging opt-in
  * - `awaiting_partner_optin` — current student opted in, partner hasn't responded yet
  * - `declined`             — outcome already decided against opening (one declined, or `not_attended`)
@@ -137,6 +141,7 @@ export function keptEntryKeysByPartner(
 export type LockedPhase =
   | "scheduled"
   | "awaiting_attendance"
+  | "awaiting_partner_attendance"
   | "awaiting_my_optin"
   | "awaiting_partner_optin"
   | "declined";
@@ -153,7 +158,10 @@ export function deriveLockedPhase(args: {
   if (args.meetupStatus === "confirmed") {
     if (args.meetupAt > args.now) return "scheduled";
     if (!args.hasMyAttendanceReport) return "awaiting_attendance";
-    return "awaiting_attendance";
+    // #398 — I've reported but the meetup is still `confirmed`, so the partner
+    // hasn't reported yet. Don't re-prompt attendance (the server rejects the
+    // duplicate) and don't advance to opt-in (rejected for non-completed meetups).
+    return "awaiting_partner_attendance";
   }
   // completed
   if (args.myOptIn === "decline" || args.partnerOptIn === "decline") return "declined";
