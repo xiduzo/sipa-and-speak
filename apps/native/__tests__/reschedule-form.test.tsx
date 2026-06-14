@@ -38,6 +38,7 @@ jest.mock("expo-router", () => ({
 // ── tRPC / query mock ─────────────────────────────────────────────────────────
 
 const mockCancel = jest.fn().mockResolvedValue({});
+const mockWithdraw = jest.fn().mockResolvedValue({});
 const mockProposeReschedule = jest.fn().mockResolvedValue({});
 const mockReportAttendance = jest.fn().mockResolvedValue({});
 const mockPropose = jest.fn().mockResolvedValue({});
@@ -107,6 +108,7 @@ jest.mock("@/utils/trpc", () => ({
       // mutations
       reportAttendance: mutation(mockReportAttendance),
       cancelMeetup: mutation(mockCancel),
+      withdrawMeetup: mutation(mockWithdraw),
       proposeReschedule: mutation(mockProposeReschedule),
       propose: mutation(mockPropose),
       acceptProposal: mutation(mockAccept),

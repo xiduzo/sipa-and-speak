@@ -87,6 +87,19 @@ export interface MeetupCancelledEvent {
   cancelledAt: Date;
 }
 
+/**
+ * Emitted when a proposer retracts a still-pending proposal. Distinct from
+ * `MeetupCancelled` (which applies only to confirmed bookings) so consumers can
+ * treat a withdrawn never-confirmed proposal differently — notably, the
+ * receiver is not notified of a "cancelled meetup".
+ */
+export interface MeetupWithdrawnEvent {
+  meetupId: string;
+  withdrawnById: string;
+  receiverId: string;
+  withdrawnAt: Date;
+}
+
 export interface MeetupRescheduleProposedEvent {
   meetupId: string;
   proposerId: string;
@@ -265,6 +278,7 @@ type DomainEventMap = {
   MeetupCounterProposed: [MeetupCounterProposedEvent];
   MeetupDeclined: [MeetupDeclinedEvent];
   MeetupCancelled: [MeetupCancelledEvent];
+  MeetupWithdrawn: [MeetupWithdrawnEvent];
   MeetupRescheduleProposed: [MeetupRescheduleProposedEvent];
   MeetupRescheduled: [MeetupRescheduledEvent];
   MeetupRescheduleDeclined: [MeetupRescheduleDeclinedEvent];

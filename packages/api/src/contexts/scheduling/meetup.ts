@@ -587,6 +587,35 @@ export const meetupRouter = router({
       return updated;
     }),
 
+  // #399 — Withdraw a still-pending proposal (proposer-only) → cancelled status,
+  // emit MeetupWithdrawn. Separate from cancelMeetup so a confirmed/completed
+  // meetup can never be retracted here, and the receiver is never notified of a
+  // "cancelled meetup" for a proposal that was never confirmed.
+  withdrawMeetup: protectedProcedure
+    .input(z.object({ meetupId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const existing = await loadMeetupSnapshot(input.meetupId);
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
+      }
+
+      let decision;
+      try {
+        decision = Meetup.withdraw(existing, { actorId: userId, now: new Date() });
+      } catch (err) {
+        toTrpcError(err);
+      }
+
+      const [updated] = await db
+        .update(meetup)
+        .set({ status: decision.state.status })
+        .where(eq(meetup.id, existing.id))
+        .returning();
+      emit(decision.events);
+      return updated;
+    }),
+
   // Query confirmed meetups for the current user
   getConfirmed: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;

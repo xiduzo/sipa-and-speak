@@ -166,6 +166,95 @@ describe("meetup integration — accept/decline lifecycle", () => {
   });
 });
 
+describe("meetup integration — withdraw", () => {
+  beforeEach(() => {
+    resetDb();
+  });
+
+  it("withdrawMeetup lets the proposer retract a pending proposal and emits MeetupWithdrawn", async () => {
+    const { a, b, venueId } = await seedMatchedPair();
+    const proposeCaller = appRouter.createCaller(buildSessionContext(a));
+    const created = await proposeCaller.meetup.propose({
+      partnerId: b,
+      venueId,
+      scheduledAt: FUTURE_AT.toISOString(),
+    });
+
+    const capture = captureEvents();
+    const updated = await proposeCaller.meetup.withdrawMeetup({ meetupId: created!.id });
+    capture.stop();
+
+    expect(updated!.status).toBe("cancelled");
+    expect(capture.events.map((e) => e.name)).toContain("MeetupWithdrawn");
+    // A withdrawn never-confirmed proposal must NOT notify the receiver as a cancellation.
+    expect(capture.events.map((e) => e.name)).not.toContain("MeetupCancelled");
+  });
+
+  it("removes the proposal from the proposer's pending list after withdrawal", async () => {
+    const { a, b, venueId } = await seedMatchedPair();
+    const proposeCaller = appRouter.createCaller(buildSessionContext(a));
+    const created = await proposeCaller.meetup.propose({
+      partnerId: b,
+      venueId,
+      scheduledAt: FUTURE_AT.toISOString(),
+    });
+
+    await proposeCaller.meetup.withdrawMeetup({ meetupId: created!.id });
+
+    const pending = await proposeCaller.meetup.list({ status: "pending" });
+    expect(pending.map((m) => m.id)).not.toContain(created!.id);
+  });
+
+  it("does not offer the receiver a response to a withdrawn proposal", async () => {
+    const { a, b, venueId } = await seedMatchedPair();
+    const created = await appRouter
+      .createCaller(buildSessionContext(a))
+      .meetup.propose({ partnerId: b, venueId, scheduledAt: FUTURE_AT.toISOString() });
+
+    await appRouter
+      .createCaller(buildSessionContext(a))
+      .meetup.withdrawMeetup({ meetupId: created!.id });
+
+    const receiverCaller = appRouter.createCaller(buildSessionContext(b));
+    const receiverPending = await receiverCaller.meetup.list({ status: "pending" });
+    expect(receiverPending.map((m) => m.id)).not.toContain(created!.id);
+
+    // Receiver can no longer respond to a withdrawn (now cancelled) proposal.
+    await expect(
+      receiverCaller.meetup.acceptProposal({ meetupId: created!.id }),
+    ).rejects.toThrow();
+  });
+
+  it("rejects the receiver attempting to withdraw the proposer's proposal", async () => {
+    const { a, b, venueId } = await seedMatchedPair();
+    const created = await appRouter
+      .createCaller(buildSessionContext(a))
+      .meetup.propose({ partnerId: b, venueId, scheduledAt: FUTURE_AT.toISOString() });
+
+    await expect(
+      appRouter
+        .createCaller(buildSessionContext(b))
+        .meetup.withdrawMeetup({ meetupId: created!.id }),
+    ).rejects.toThrow(/proposer/);
+  });
+
+  it("rejects withdrawing a confirmed meetup", async () => {
+    const { a, b, venueId } = await seedMatchedPair();
+    const created = await appRouter
+      .createCaller(buildSessionContext(a))
+      .meetup.propose({ partnerId: b, venueId, scheduledAt: FUTURE_AT.toISOString() });
+    await appRouter
+      .createCaller(buildSessionContext(b))
+      .meetup.acceptProposal({ meetupId: created!.id });
+
+    await expect(
+      appRouter
+        .createCaller(buildSessionContext(a))
+        .meetup.withdrawMeetup({ meetupId: created!.id }),
+    ).rejects.toThrow(/pending/);
+  });
+});
+
 describe("meetup integration — counter-propose", () => {
   beforeEach(() => {
     resetDb();

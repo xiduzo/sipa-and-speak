@@ -220,6 +220,50 @@ describe("Meetup.cancel", () => {
   });
 });
 
+describe("Meetup.withdraw", () => {
+  it("transitions pending → cancelled for the proposer and emits MeetupWithdrawn", () => {
+    const { state, events } = Meetup.withdraw(pending(), { actorId: "u-A", now: NOW });
+    expect(state.status).toBe("cancelled");
+    expect(events).toHaveLength(1);
+    expect(events[0]!.name).toBe("MeetupWithdrawn");
+    expect(events[0]!.payload.meetupId).toBe("m-1");
+    expect(events[0]!.payload.withdrawnById).toBe("u-A");
+    expect(events[0]!.payload.receiverId).toBe("u-B");
+  });
+
+  it("rejects when the actor is the receiver, not the proposer", () => {
+    expect(() =>
+      Meetup.withdraw(pending(), { actorId: "u-B", now: NOW }),
+    ).toThrow(/proposer/);
+  });
+
+  it("rejects when the actor is not a participant", () => {
+    expect(() =>
+      Meetup.withdraw(pending(), { actorId: "u-X", now: NOW }),
+    ).toThrow(MeetupRuleError);
+  });
+
+  it("rejects withdrawing a confirmed meetup", () => {
+    expect(() =>
+      Meetup.withdraw(confirmed(), { actorId: "u-A", now: NOW }),
+    ).toThrow(/pending/);
+  });
+
+  it("rejects withdrawing a completed meetup", () => {
+    expect(() =>
+      Meetup.withdraw(pending({ status: "completed" }), { actorId: "u-A", now: NOW }),
+    ).toThrow(/pending/);
+  });
+
+  // After a counter-proposal the roles swap; only the *current* proposer may withdraw.
+  it("rejects the original proposer once roles have swapped via counter-proposal", () => {
+    const swapped = pending({ proposerId: "u-B", receiverId: "u-A", round: 2 });
+    expect(() =>
+      Meetup.withdraw(swapped, { actorId: "u-A", now: NOW }),
+    ).toThrow(/proposer/);
+  });
+});
+
 describe("Meetup.proposeReschedule + accept + decline", () => {
   it("proposeReschedule stores reschedule fields and emits event", () => {
     const { state, events } = Meetup.proposeReschedule(confirmed(), {
