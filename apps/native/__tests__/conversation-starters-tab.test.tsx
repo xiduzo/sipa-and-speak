@@ -31,7 +31,7 @@ jest.mock("expo-router", () => {
     registeredScreens.push({ name, options });
     return null;
   };
-  return { Tabs };
+  return { Tabs, useRouter: () => ({ push: jest.fn() }) };
 });
 
 jest.mock("@expo/vector-icons", () => {
@@ -45,9 +45,17 @@ jest.mock("uniwind", () => ({
   withUniwind: (Component: unknown) => Component,
 }));
 
-jest.mock("@tanstack/react-query", () => ({
-  useQuery: () => ({ data: [] }),
-}));
+jest.mock("@tanstack/react-query", () => {
+  // The layout's badge queries read `.data.length` / `.data.filter(...)` (an
+  // array), while the Conversation Starters screen reads `.data.languages`.
+  // An array carrying a `languages` property satisfies both: the badges see an
+  // empty array, and the screen sees one language → ready entry point.
+  const data: unknown[] & { languages?: unknown } = [];
+  data.languages = [{ language: "es", type: "spoken" }];
+  return {
+    useQuery: () => ({ data, isPending: false, isError: false }),
+  };
+});
 
 const makeQueryable = () => ({ queryOptions: () => ({}) });
 jest.mock("@/utils/trpc", () => ({
@@ -55,6 +63,7 @@ jest.mock("@/utils/trpc", () => ({
     matching: { getIncomingRequests: makeQueryable() },
     meetup: { list: makeQueryable(), getConfirmed: makeQueryable() },
     chat: { listEntries: makeQueryable() },
+    profile: { getMyProfile: makeQueryable() },
   },
 }));
 
