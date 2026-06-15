@@ -47,6 +47,19 @@ jest.mock("@/utils/trpc", () => ({
         }),
       },
     },
+    // The ready-state deck (#405) lives behind the gate; stub it with an empty
+    // set so this gate-focused suite never touches real content.
+    content: {
+      starters: {
+        listByLanguage: {
+          queryOptions: (input: { language: string }) => ({
+            queryKey: ["content.starters.listByLanguage", input],
+            queryFn: () =>
+              Promise.resolve({ language: input.language, cards: [] }),
+          }),
+        },
+      },
+    },
   },
 }));
 

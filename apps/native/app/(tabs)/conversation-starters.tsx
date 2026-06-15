@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
+import { CardDeck } from "@/components/conversation-starters/card-deck";
 import {
   CardLanguagePicker,
   dedupeLanguages,
@@ -133,11 +134,13 @@ function ReadyState({ languages }: { languages: ProfileLanguage[] }) {
           <View
             testID="conversation-starters-deck-area"
             accessibilityLabel={`Cards for ${activeLanguage}`}
-            className="mt-6 items-center"
+            className="mt-6 w-full items-center"
           >
-            <Text className="text-center text-sm text-muted-foreground">
-              Your {activeLanguage} practice cards will appear here.
-            </Text>
+            {/*
+              Keying by language remounts the deck on language change, so its
+              internal position index resets to the first card (issue #405).
+            */}
+            <CardDeck key={activeLanguage} language={activeLanguage} />
           </View>
         ) : (
           <Text className="mt-6 text-center text-sm text-muted-foreground">
