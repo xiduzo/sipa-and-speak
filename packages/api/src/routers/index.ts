@@ -6,6 +6,7 @@ import { adminVenueRouter } from "../contexts/scheduling/venue-admin";
 import { meetupRouter } from "../contexts/scheduling/meetup";
 import { chatRouter, messagingRouter } from "../contexts/conversation";
 import { moderationRouter } from "../contexts/moderation";
+import { contentRouter } from "../contexts/conversation-practice";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -25,5 +26,6 @@ export const appRouter = router({
   chat: chatRouter,
   messaging: messagingRouter,
   moderation: moderationRouter,
+  content: contentRouter,
 });
 export type AppRouter = typeof appRouter;
