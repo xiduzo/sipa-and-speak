@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
+import {
+  CardLanguagePicker,
+  dedupeLanguages,
+  type ProfileLanguage,
+} from "@/components/conversation-starters/card-language-picker";
 import { Container } from "@/components/container";
 import { trpc } from "@/utils/trpc";
 
@@ -32,7 +38,7 @@ export default function ConversationStartersScreen() {
     return <EmptyState onAddLanguages={() => router.push("/(tabs)/home")} />;
   }
 
-  return <ReadyState />;
+  return <ReadyState languages={languages} />;
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
@@ -98,16 +104,46 @@ function EmptyState({ onAddLanguages }: { onAddLanguages: () => void }) {
   );
 }
 
-function ReadyState() {
+function ReadyState({ languages }: { languages: ProfileLanguage[] }) {
+  const options = dedupeLanguages(languages);
+  // A buddy with exactly one profile language never needs to pick — the
+  // language is auto-selected and the picker collapses (issue #403).
+  const autoSelected = options.length === 1 ? options[0] : null;
+  const [activeLanguage, setActiveLanguage] = useState<string | null>(
+    autoSelected,
+  );
+
+  // Hide the picker when there is nothing to choose between.
+  const showPicker = options.length > 1;
+
   return (
     <Centered>
-      <View testID="conversation-starters-entry-point" className="items-center">
-        <Text className="text-center text-lg font-semibold text-foreground">
-          Conversation Starters
-        </Text>
-        <Text className="mt-2 text-center text-sm text-muted-foreground">
-          Your practice cards will appear here.
-        </Text>
+      <View testID="conversation-starters-entry-point" className="w-full">
+        {showPicker ? (
+          <CardLanguagePicker
+            languages={languages}
+            activeLanguage={activeLanguage}
+            onSelect={setActiveLanguage}
+          />
+        ) : null}
+
+        {activeLanguage ? (
+          // Deck-area entry point. Feature #378 (#405) renders the actual deck
+          // here; this task only exposes the active language to it.
+          <View
+            testID="conversation-starters-deck-area"
+            accessibilityLabel={`Cards for ${activeLanguage}`}
+            className="mt-6 items-center"
+          >
+            <Text className="text-center text-sm text-muted-foreground">
+              Your {activeLanguage} practice cards will appear here.
+            </Text>
+          </View>
+        ) : (
+          <Text className="mt-6 text-center text-sm text-muted-foreground">
+            Pick a language to start practising.
+          </Text>
+        )}
       </View>
     </Centered>
   );

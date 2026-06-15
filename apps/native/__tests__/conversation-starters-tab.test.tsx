@@ -110,6 +110,10 @@ describe("Conversation Starters screen", () => {
     const ConversationStartersScreen = require("@/app/(tabs)/conversation-starters").default;
     render(<ConversationStartersScreen />);
 
-    expect(screen.getByText("Conversation Starters")).toBeTruthy();
+    // The screen renders its ready-state content (the cards entry point that
+    // task #403 fills with the language picker / deck area).
+    expect(
+      screen.getByTestId("conversation-starters-entry-point"),
+    ).toBeTruthy();
   });
 });
