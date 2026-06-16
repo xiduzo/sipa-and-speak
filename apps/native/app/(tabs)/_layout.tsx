@@ -84,6 +84,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="conversation-starters"
+        options={{
+          title: "Conversation Starters",
+          tabBarIcon: ({ color, size }) => (
+            <StyledIonicons name="chatbox-ellipses-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="suggestions"
         options={{ href: null }}
       />
