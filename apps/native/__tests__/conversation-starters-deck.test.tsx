@@ -48,6 +48,8 @@ const CARD_TEXT_TEST_ID = "card-deck-text";
 const NEXT_TEST_ID = "card-deck-next";
 const PREV_TEST_ID = "card-deck-previous";
 const EMPTY_TEST_ID = "card-deck-empty";
+const CARD_TEST_ID = "card-deck-card";
+const REVEAL_HINT_TEST_ID = "card-deck-translation-hint";
 
 function makeCards(language: string, count: number): Card[] {
   return Array.from({ length: count }, (_, i) => {
@@ -264,6 +266,180 @@ describe("#405 — Conversation-starter card deck browser", () => {
       await waitFor(() => {
         expect(screen.getByTestId("card-deck-error")).toBeTruthy();
       });
+    });
+  });
+});
+
+describe("#406 — Tap-to-reveal English translation on a card", () => {
+  beforeEach(() => {
+    mockListByLanguage.mockReset();
+  });
+
+  describe("Scenario: Tap reveals the English translation", () => {
+    it("shows the English translation after tapping a Dutch card", async () => {
+      const cards = makeCards("Dutch", 3);
+      mockListByLanguage.mockResolvedValue({ language: "Dutch", cards });
+
+      renderDeck("Dutch");
+
+      await waitFor(() => {
+        expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+          cards[0].text,
+        );
+      });
+
+      fireEvent.press(screen.getByTestId(CARD_TEST_ID));
+
+      expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+        cards[0].translation,
+      );
+    });
+  });
+
+  describe("Scenario: Tapping again returns to the chosen language", () => {
+    it("toggles back to the Dutch text on a second tap", async () => {
+      const cards = makeCards("Dutch", 3);
+      mockListByLanguage.mockResolvedValue({ language: "Dutch", cards });
+
+      renderDeck("Dutch");
+
+      await waitFor(() => {
+        expect(screen.getByTestId(CARD_TEXT_TEST_ID)).toBeTruthy();
+      });
+
+      fireEvent.press(screen.getByTestId(CARD_TEST_ID));
+      expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+        cards[0].translation,
+      );
+
+      fireEvent.press(screen.getByTestId(CARD_TEST_ID));
+      expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+        cards[0].text,
+      );
+    });
+  });
+
+  describe("Scenario: Navigation resets to the chosen language", () => {
+    it("shows the next card in the chosen language after revealing, then Next", async () => {
+      const cards = makeCards("Dutch", 3);
+      mockListByLanguage.mockResolvedValue({ language: "Dutch", cards });
+
+      renderDeck("Dutch");
+
+      await waitFor(() => {
+        expect(screen.getByTestId(CARD_TEXT_TEST_ID)).toBeTruthy();
+      });
+
+      // Reveal the first card's translation.
+      fireEvent.press(screen.getByTestId(CARD_TEST_ID));
+      expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+        cards[0].translation,
+      );
+
+      // Move to the next card → it must show the chosen language, not English.
+      fireEvent.press(screen.getByTestId(NEXT_TEST_ID));
+      expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+        cards[1].text,
+      );
+
+      // Going back also resets reveal.
+      fireEvent.press(screen.getByTestId(CARD_TEST_ID));
+      expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+        cards[1].translation,
+      );
+      fireEvent.press(screen.getByTestId(PREV_TEST_ID));
+      expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+        cards[0].text,
+      );
+    });
+  });
+
+  describe("Scenario: English chosen language has no translation affordance", () => {
+    it("hides the affordance and makes tapping a no-op when text === translation", async () => {
+      // English cards carry the same value for text and translation.
+      const cards = [
+        { id: "English-001", text: "How are you?", translation: "How are you?" },
+        { id: "English-002", text: "What's new?", translation: "What's new?" },
+      ];
+      mockListByLanguage.mockResolvedValue({ language: "English", cards });
+
+      renderDeck("English");
+
+      await waitFor(() => {
+        expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+          cards[0].text,
+        );
+      });
+
+      // No tap-to-translate hint is rendered.
+      expect(screen.queryByTestId(REVEAL_HINT_TEST_ID)).toBeNull();
+
+      // Tapping does nothing — the card keeps showing the same text.
+      fireEvent.press(screen.getByTestId(CARD_TEST_ID));
+      expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+        cards[0].text,
+      );
+    });
+
+    it("shows the translation hint when there is something to translate", async () => {
+      const cards = makeCards("Dutch", 2);
+      mockListByLanguage.mockResolvedValue({ language: "Dutch", cards });
+
+      renderDeck("Dutch");
+
+      await waitFor(() => {
+        expect(screen.getByTestId(REVEAL_HINT_TEST_ID)).toBeTruthy();
+      });
+    });
+  });
+
+  describe("Scenario: Rapid tapping stays in sync", () => {
+    it("never gets stuck between faces after many quick taps", async () => {
+      const cards = makeCards("Dutch", 3);
+      mockListByLanguage.mockResolvedValue({ language: "Dutch", cards });
+
+      renderDeck("Dutch");
+
+      await waitFor(() => {
+        expect(screen.getByTestId(CARD_TEXT_TEST_ID)).toBeTruthy();
+      });
+
+      const card = screen.getByTestId(CARD_TEST_ID);
+      // Even number of taps → back to the chosen language.
+      for (let i = 0; i < 6; i++) {
+        fireEvent.press(card);
+      }
+      expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+        cards[0].text,
+      );
+
+      // Odd number of taps → English translation.
+      fireEvent.press(card);
+      expect(screen.getByTestId(CARD_TEXT_TEST_ID).props.children).toBe(
+        cards[0].translation,
+      );
+    });
+  });
+
+  describe("Accessibility", () => {
+    it("announces the reveal state via the tappable card", async () => {
+      const cards = makeCards("Dutch", 2);
+      mockListByLanguage.mockResolvedValue({ language: "Dutch", cards });
+
+      renderDeck("Dutch");
+
+      await waitFor(() => {
+        expect(screen.getByTestId(CARD_TEST_ID)).toBeTruthy();
+      });
+
+      const card = screen.getByTestId(CARD_TEST_ID);
+      expect(card.props.accessibilityRole).toBe("button");
+      expect(card.props.accessibilityState.expanded).toBe(false);
+
+      fireEvent.press(card);
+      expect(
+        screen.getByTestId(CARD_TEST_ID).props.accessibilityState.expanded,
+      ).toBe(true);
     });
   });
 });

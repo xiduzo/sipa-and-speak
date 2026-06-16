@@ -65,19 +65,58 @@ function DeckBrowser({
   const isFirst = safeIndex === 0;
   const isLast = safeIndex === lastIndex;
 
+  // Per-card reveal: tapping flips between the chosen-language `text` and the
+  // English `translation`. Reset to the chosen language whenever the active
+  // card changes so the reveal never leaks across Next/Previous.
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    setRevealed(false);
+  }, [safeIndex, language]);
+
+  // When the chosen language is English there is nothing to translate — the
+  // card already carries identical `text`/`translation`. Hide the affordance
+  // and make tapping a no-op so the card never looks broken.
+  const canTranslate = current.translation !== current.text;
+  const showTranslation = canTranslate && revealed;
+
+  function toggleReveal() {
+    if (!canTranslate) return;
+    setRevealed((r) => !r);
+  }
+
   return (
     <View testID="card-deck" className="w-full items-center">
-      <View
+      <Pressable
         testID="card-deck-card"
+        accessibilityRole="button"
+        accessibilityLabel={
+          canTranslate
+            ? showTranslation
+              ? "Card, showing English translation. Tap to show the original."
+              : "Card. Tap to reveal the English translation."
+            : undefined
+        }
+        accessibilityState={{ expanded: canTranslate ? showTranslation : false }}
+        disabled={!canTranslate}
+        onPress={toggleReveal}
         className="w-full items-center justify-center rounded-3xl bg-muted px-6 py-12"
       >
         <Text
           testID="card-deck-text"
           className="text-center text-2xl font-semibold text-foreground"
         >
-          {current.text}
+          {showTranslation ? current.translation : current.text}
         </Text>
-      </View>
+
+        {canTranslate ? (
+          <Text
+            testID="card-deck-translation-hint"
+            className="mt-4 text-center text-xs font-medium uppercase tracking-wide text-muted-foreground"
+          >
+            {showTranslation ? "Tap to show original" : "Tap to translate"}
+          </Text>
+        ) : null}
+      </Pressable>
 
       <Text
         testID="card-deck-position"
