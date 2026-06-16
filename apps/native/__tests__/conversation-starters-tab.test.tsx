@@ -64,6 +64,8 @@ jest.mock("@/utils/trpc", () => ({
     meetup: { list: makeQueryable(), getConfirmed: makeQueryable() },
     chat: { listEntries: makeQueryable() },
     profile: { getMyProfile: makeQueryable() },
+    // The ready-state deck (#405) issues this query once a language is active.
+    content: { starters: { listByLanguage: makeQueryable() } },
   },
 }));
 

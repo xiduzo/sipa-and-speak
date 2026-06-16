@@ -41,6 +41,19 @@ jest.mock("@/utils/trpc", () => ({
         }),
       },
     },
+    // Deck content (#405) is exercised in conversation-starters-deck.test.tsx;
+    // here it is stubbed empty so the picker assertions stay focused.
+    content: {
+      starters: {
+        listByLanguage: {
+          queryOptions: (input: { language: string }) => ({
+            queryKey: ["content.starters.listByLanguage", input],
+            queryFn: () =>
+              Promise.resolve({ language: input.language, cards: [] }),
+          }),
+        },
+      },
+    },
   },
 }));
 
