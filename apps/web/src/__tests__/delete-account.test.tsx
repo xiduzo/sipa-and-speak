@@ -57,3 +57,28 @@ describe("#419 — public /delete-account instructions page", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("#423 — email fallback for members who cannot access the app", () => {
+  it("offers an email path to request deletion", () => {
+    render(<DeleteAccountPage />);
+
+    const link = screen.getByRole("link", {
+      name: /hello@sipandspeak\.nl/i,
+    });
+    expect(link).toHaveAttribute("href", "mailto:hello@sipandspeak.nl");
+  });
+
+  it("states the member must email from the address linked to their account", () => {
+    render(<DeleteAccountPage />);
+
+    expect(
+      screen.getByText(/from the address linked to your account/i),
+    ).toBeInTheDocument();
+  });
+
+  it("states the 30-day fulfillment window", () => {
+    render(<DeleteAccountPage />);
+
+    expect(screen.getByText(/within 30 days of a verified/i)).toBeInTheDocument();
+  });
+});
