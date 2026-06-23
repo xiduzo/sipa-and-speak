@@ -11,6 +11,8 @@ const DELETED_DATA = [
   "Your meet-ups",
 ];
 
+const SUPPORT_EMAIL = "hello@sipandspeak.nl";
+
 export function DeleteAccountPage() {
   return (
     <main className="container mx-auto max-w-2xl px-4 py-8">
@@ -30,6 +32,29 @@ export function DeleteAccountPage() {
           <li>Tap Delete account.</li>
           <li>Confirm when prompted.</li>
         </ol>
+      </section>
+
+      <section className="mb-6">
+        <h2 className="mb-2 text-xl font-semibold">
+          Can&apos;t access the app? Request deletion by email
+        </h2>
+        <p className="mb-2">
+          If you can no longer sign in, you can ask us to delete your account and
+          data for you. Email{" "}
+          <a className="underline" href={`mailto:${SUPPORT_EMAIL}`}>
+            {SUPPORT_EMAIL}
+          </a>{" "}
+          to make a request.
+        </p>
+        <p className="mb-2">
+          Please email{" "}
+          <strong>from the address linked to your account</strong> so we can
+          verify the request is yours.
+        </p>
+        <p>
+          We will delete your account and data within 30 days of a verified
+          request.
+        </p>
       </section>
 
       <section className="mb-6">
