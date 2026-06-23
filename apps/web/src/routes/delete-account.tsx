@@ -80,11 +80,17 @@ export function DeleteAccountPage() {
       </section>
 
       <section className="mb-6">
-        <h2 className="mb-2 text-xl font-semibold">Data retention</h2>
+        <h2 className="mb-2 text-xl font-semibold">What we keep</h2>
+        <p className="mb-2">
+          Some moderation records you created about other people — such as a
+          comment or a flag you raised — are kept for the safety of the
+          community, but your identity is removed so they can no longer be traced
+          back to you.
+        </p>
         <p>
-          Some limited records may be retained where required (for example, to
-          comply with legal obligations). This retention note is provisional and
-          will be finalized once our data-deletion audit is complete.
+          If your account was removed by a moderator (rather than deleted by
+          you), your institutional email address may be retained to prevent
+          re-registration.
         </p>
       </section>
     </main>

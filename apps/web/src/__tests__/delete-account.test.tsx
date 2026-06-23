@@ -49,12 +49,17 @@ describe("#419 — public /delete-account instructions page", () => {
     expect(screen.getByText(/no recovery/i)).toBeInTheDocument();
   });
 
-  it("notes data retention", () => {
+  it("states retained moderation records keep their history with identity removed", () => {
     render(<DeleteAccountPage />);
 
     expect(
-      screen.getByText(/retention note is provisional/i),
+      screen.getByText(/kept for the safety of the\s+community/i),
     ).toBeInTheDocument();
+    expect(screen.getByText(/your identity is removed/i)).toBeInTheDocument();
+    // The provisional placeholder must be gone once the audit is reflected.
+    expect(
+      screen.queryByText(/retention note is provisional/i),
+    ).not.toBeInTheDocument();
   });
 });
 
