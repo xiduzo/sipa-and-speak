@@ -87,3 +87,28 @@ describe("#423 — email fallback for members who cannot access the app", () => 
     expect(screen.getByText(/within 30 days of a verified/i)).toBeInTheDocument();
   });
 });
+
+describe("#420 — responsive & accessible deletion page", () => {
+  it("uses a single top-level heading", () => {
+    render(<DeleteAccountPage />);
+
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+  });
+
+  it("organizes content under section sub-headings", () => {
+    render(<DeleteAccountPage />);
+
+    expect(
+      screen.getAllByRole("heading", { level: 2 }).length,
+    ).toBeGreaterThanOrEqual(4);
+  });
+
+  it("renders the email link as a keyboard-focusable anchor with a visible focus style", () => {
+    render(<DeleteAccountPage />);
+
+    const link = screen.getByRole("link", { name: /hello@sipandspeak\.nl/i });
+    expect(link.tagName).toBe("A");
+    expect(link).toHaveAttribute("href", "mailto:hello@sipandspeak.nl");
+    expect(link.className).toMatch(/focus-visible:ring/);
+  });
+});

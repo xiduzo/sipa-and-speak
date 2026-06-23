@@ -15,8 +15,8 @@ const SUPPORT_EMAIL = "hello@sipandspeak.nl";
 
 export function DeleteAccountPage() {
   return (
-    <main className="container mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-4 text-2xl font-bold">
+    <main className="container mx-auto max-w-2xl break-words px-4 py-8 leading-relaxed">
+      <h1 className="mb-4 text-2xl font-bold sm:text-3xl">
         Delete your Sip &amp; Speak account and data
       </h1>
 
@@ -41,7 +41,10 @@ export function DeleteAccountPage() {
         <p className="mb-2">
           If you can no longer sign in, you can ask us to delete your account and
           data for you. Email{" "}
-          <a className="underline" href={`mailto:${SUPPORT_EMAIL}`}>
+          <a
+            className="rounded-sm underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            href={`mailto:${SUPPORT_EMAIL}`}
+          >
             {SUPPORT_EMAIL}
           </a>{" "}
           to make a request.
