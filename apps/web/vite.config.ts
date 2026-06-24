@@ -16,6 +16,6 @@ export default defineConfig({
     port: 3001,
   },
   preview: {
-    allowedHosts: ["sipandspeak.xiduzo.com"],
+    allowedHosts: ["sipandspeak.nl"],
   },
 });
