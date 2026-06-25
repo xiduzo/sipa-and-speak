@@ -20,6 +20,10 @@ export const user = pgTable("user", {
   studentStatus: text("student_status", { enum: ["active", "suspended", "removed"] })
     .notNull()
     .default("active"),
+  // #447/#446 — Soft-delete marker. When set, the account is considered deleted:
+  // the row is retained (so history/joins survive) but PII is scrubbed, the user
+  // is excluded from matching, and meetup actions against them are rejected.
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const session = pgTable(

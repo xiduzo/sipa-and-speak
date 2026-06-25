@@ -1,4 +1,4 @@
-import { and, eq, ne, inArray, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, ne, inArray, notInArray, or, sql, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "@sip-and-speak/db";
@@ -88,7 +88,7 @@ export const matchingRouter = router({
         .where(inArray(userInterest.userId, otherUserIds));
 
       // Fetch user info (name, image) for candidates — exclude suspended AND
-      // permanently removed Students (#100/#108)
+      // permanently removed Students (#100/#108) and soft-deleted accounts (#447)
       const allUsers = await db
         .select({ id: user.id, name: user.name, image: user.image })
         .from(user)
@@ -96,6 +96,7 @@ export const matchingRouter = router({
           and(
             inArray(user.id, otherUserIds),
             notInArray(user.studentStatus, ["suspended", "removed"]),
+            isNull(user.deletedAt),
           ),
         );
 

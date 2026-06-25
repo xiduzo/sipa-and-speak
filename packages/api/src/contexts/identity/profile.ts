@@ -1,10 +1,12 @@
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, or, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "@sip-and-speak/db";
 import { languageProfile, userLanguage, userInterest, userDeviceToken } from "@sip-and-speak/db/schema/identity";
 import { studentComment } from "@sip-and-speak/db/schema/moderation";
-import { user } from "@sip-and-speak/db/schema/auth";
+import { user, session, account } from "@sip-and-speak/db/schema/auth";
+import { meetup } from "@sip-and-speak/db/schema/scheduling";
+import { conversation } from "@sip-and-speak/db/schema/conversation";
 import { protectedProcedure, router } from "../../index";
 import { domainEvents } from "../../domain-events";
 import {
@@ -155,6 +157,98 @@ async function syncMatchingEligibility(userId: string): Promise<boolean> {
     .where(eq(languageProfile.userId, userId));
 
   return isEligible;
+}
+
+/**
+ * #447/#446 — Soft-delete an account.
+ *
+ * Hard-deleting the user row used to cascade away every meetup and conversation,
+ * which broke the *other* party's history and silently skipped the meetup
+ * `cancelled` transition. Instead we keep the row and:
+ *   1. Cancel in-progress meetups (pending/confirmed) and notify the partners
+ *      (reusing the `ProposalsCancelledByCascade` cascade the moderation context
+ *      already wires to push notifications).
+ *   2. Close open conversations (read-only, history preserved).
+ *   3. Remove the user from the matching pool.
+ *   4. Scrub PII and stamp `deletedAt` so every surface treats them as an
+ *      unavailable/placeholder user.
+ *   5. Revoke auth (sessions, credentials, device tokens) so the account can no
+ *      longer be accessed.
+ *
+ * Exported for integration testing.
+ */
+export async function softDeleteAccount(userId: string): Promise<void> {
+  const now = new Date();
+
+  // 1. Cancel in-progress meetups and collect the affected partners.
+  const activeMeetups = await db
+    .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
+    .from(meetup)
+    .where(
+      and(
+        or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
+        inArray(meetup.status, ["pending", "confirmed"]),
+      ),
+    );
+
+  if (activeMeetups.length > 0) {
+    await db
+      .update(meetup)
+      .set({ status: "cancelled" })
+      .where(
+        and(
+          or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
+          inArray(meetup.status, ["pending", "confirmed"]),
+        ),
+      );
+
+    const peerIds = [
+      ...new Set(
+        activeMeetups.map((m) => (m.proposerId === userId ? m.receiverId : m.proposerId)),
+      ),
+    ];
+    domainEvents.emit("ProposalsCancelledByCascade", { targetId: userId, peerIds });
+  }
+
+  // 2. Close any open conversations — history stays, but they become read-only.
+  await db
+    .update(conversation)
+    .set({ status: "closed" })
+    .where(
+      and(
+        or(eq(conversation.user1Id, userId), eq(conversation.user2Id, userId)),
+        eq(conversation.status, "open"),
+      ),
+    );
+
+  // 3. Drop out of the matching pool.
+  await db
+    .update(languageProfile)
+    .set({ onboardingComplete: false })
+    .where(eq(languageProfile.userId, userId));
+
+  // 4. Scrub PII and mark soft-deleted. The email is anonymized but kept unique
+  //    (the column has a unique constraint) so the original address can later
+  //    re-register.
+  await db
+    .update(user)
+    .set({
+      deletedAt: now,
+      studentStatus: "removed",
+      name: "Deleted user",
+      surname: null,
+      image: null,
+      email: `deleted+${userId}@deleted.invalid`,
+      emailVerified: false,
+    })
+    .where(eq(user.id, userId));
+
+  // 5. Revoke all access for the account.
+  await Promise.all([
+    db.delete(session).where(eq(session.userId, userId)),
+    db.delete(account).where(eq(account.userId, userId)),
+    db.delete(userDeviceToken).where(eq(userDeviceToken.userId, userId)),
+  ]);
 }
 
 const setIdentityProfileInput = z.object({
@@ -635,12 +729,13 @@ export const profileRouter = router({
       }));
     }),
 
-  // #5 — permanent account deletion. Every user-owned row cascades; the few
-  // audit references (authored comments, moderator/reschedule pointers) null out
-  // by design. The destructive client confirm is the guard, so no input here.
+  // #447/#446 — account deletion is a SOFT delete. We retain the user row so
+  // existing conversations and meetup history don't break or vanish for the
+  // other party; instead the row is scrubbed of PII and marked `deletedAt`.
+  // The destructive client confirm is the guard, so no input here.
   deleteAccount: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
-    await db.delete(user).where(eq(user.id, userId));
+    await softDeleteAccount(userId);
     console.info("[AccountDeleted]", { userId });
     return { success: true as const };
   }),
