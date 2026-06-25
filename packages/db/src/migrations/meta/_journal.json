@@ -148,6 +148,13 @@
       "when": 1778972299817,
       "tag": "0020_drop_redundant_blocked_email_index",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1778972299818,
+      "tag": "0021_soft_delete_user",
+      "breakpoints": true
     }
   ]
 }

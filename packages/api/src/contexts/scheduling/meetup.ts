@@ -50,6 +50,27 @@ function toTrpcError(err: unknown): never {
   throw err;
 }
 
+// #446 — Shown to the partner when they try to act on a meetup whose
+// counterparty has soft-deleted their account mid-process.
+export const PARTNER_DELETED_MESSAGE =
+  "Sorry, this user has deleted their account in the middle of the process";
+
+/**
+ * Guard a meetup action against a counterparty who no longer exists or has
+ * deleted their account. Throws the canonical partner-deleted error so the
+ * client can surface the dialog and block further reschedule/propose/counter.
+ */
+async function assertPartnerActive(partnerId: string): Promise<void> {
+  const [row] = await db
+    .select({ deletedAt: user.deletedAt })
+    .from(user)
+    .where(eq(user.id, partnerId))
+    .limit(1);
+  if (!row || row.deletedAt !== null) {
+    throw new TRPCError({ code: "CONFLICT", message: PARTNER_DELETED_MESSAGE });
+  }
+}
+
 /**
  * Replay aggregate events through the global domain-events emitter. We dodge
  * the per-event generic by routing through the base `EventEmitter.emit`.
@@ -147,6 +168,9 @@ export const meetupRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+
+      // #446 — refuse to propose to a partner who has deleted their account.
+      await assertPartnerActive(input.partnerId);
 
       const [[proposer], matchRows, pendingRows, venueRow] = await Promise.all([
         db.select({ studentStatus: user.studentStatus }).from(user).where(eq(user.id, userId)).limit(1),
@@ -350,6 +374,8 @@ export const meetupRouter = router({
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
       }
+      // #446 — block counter-proposing when the counterparty has deleted their account.
+      await assertPartnerActive(existing.proposerId === userId ? existing.receiverId : existing.proposerId);
       const newVenue = await loadVenueSnapshot(input.venueId);
 
       let decision;
@@ -421,11 +447,13 @@ export const meetupRouter = router({
             id: sql<string>`proposer.id`.as("proposer_id_alias"),
             name: sql<string>`proposer.name`.as("proposer_name"),
             image: sql<string | null>`proposer.image`.as("proposer_image"),
+            deletedAt: sql<Date | null>`proposer.deleted_at`.as("proposer_deleted_at"),
           },
           receiver: {
             id: sql<string>`receiver.id`.as("receiver_id_alias"),
             name: sql<string>`receiver.name`.as("receiver_name"),
             image: sql<string | null>`receiver.image`.as("receiver_image"),
+            deletedAt: sql<Date | null>`receiver.deleted_at`.as("receiver_deleted_at"),
           },
         })
         .from(meetup)
@@ -445,15 +473,19 @@ export const meetupRouter = router({
         const isProposer = row.meetup.proposerId === userId;
         const partner = isProposer ? row.receiver : row.proposer;
 
+        const partnerDeleted = partner.deletedAt !== null;
+
         return {
           ...row.meetup,
           isProposer,
           venue: row.venue,
           partner: {
             id: partner.id,
-            name: partner.name,
-            image: partner.image,
+            // #447 — render deleted partners as an unavailable placeholder.
+            name: partnerDeleted ? "Deleted user" : partner.name,
+            image: partnerDeleted ? null : partner.image,
           },
+          partnerDeleted,
         };
       });
     }),
@@ -634,6 +666,7 @@ export const meetupRouter = router({
             id: sql<string>`partner.id`.as("gc_partner_id"),
             name: sql<string>`partner.name`.as("gc_partner_name"),
             image: sql<string | null>`partner.image`.as("gc_partner_image"),
+            deletedAt: sql<Date | null>`partner.deleted_at`.as("gc_partner_deleted_at"),
           },
         })
         .from(meetup)
@@ -668,13 +701,20 @@ export const meetupRouter = router({
     return rows.map((row) => {
       const myReport = myReportMap.get(row.meetup.id);
       const messaging = messagingState.get(row.meetup.id) ?? { mine: null, partner: null, conversationId: null };
+      const partnerDeleted = row.partner.deletedAt !== null;
       return {
         meetupId: row.meetup.id,
         scheduledAt: row.meetup.scheduledAt,
         status: row.meetup.status,
         isPast: row.meetup.scheduledAt <= now,
         venue: row.venue,
-        partner: row.partner,
+        // #447 — render deleted partners as an unavailable placeholder.
+        partner: {
+          id: row.partner.id,
+          name: partnerDeleted ? "Deleted user" : row.partner.name,
+          image: partnerDeleted ? null : row.partner.image,
+        },
+        partnerDeleted,
         // #86 — Reschedule proposal state
         reschedulePending: row.meetup.rescheduleProposerId !== null,
         rescheduleIsFromMe: row.meetup.rescheduleProposerId === userId,
@@ -713,6 +753,8 @@ export const meetupRouter = router({
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Meetup not found" });
       }
+      // #446 — block rescheduling when the counterparty has deleted their account.
+      await assertPartnerActive(existing.proposerId === userId ? existing.receiverId : existing.proposerId);
       const venueRow = await loadVenueSnapshot(input.venueId);
 
       let decision;
