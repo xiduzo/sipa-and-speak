@@ -170,6 +170,41 @@ export const chatRouter = router({
         throw new Error("Cannot start a conversation with yourself");
       }
 
+      // Authorization: messaging is only unlocked when the two students share a
+      // meetup where BOTH opted in to accept (#139-141). Without this guard any
+      // authenticated user could open a conversation with — and message — anyone.
+      const sharedMeetups = await db
+        .select({ id: meetup.id })
+        .from(meetup)
+        .where(
+          or(
+            and(eq(meetup.proposerId, userId), eq(meetup.receiverId, input.partnerId)),
+            and(eq(meetup.proposerId, input.partnerId), eq(meetup.receiverId, userId)),
+          ),
+        );
+
+      let mutuallyOptedIn = false;
+      for (const m of sharedMeetups) {
+        const responses = await db
+          .select({ response: messagingOptIn.response })
+          .from(messagingOptIn)
+          .where(eq(messagingOptIn.meetupId, m.id));
+        if (
+          responses.length === 2 &&
+          responses.every((r) => r.response === "accept")
+        ) {
+          mutuallyOptedIn = true;
+          break;
+        }
+      }
+
+      if (!mutuallyOptedIn) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Messaging is not unlocked with this student.",
+        });
+      }
+
       // Check if conversation already exists (in either direction)
       const existing = await db
         .select()

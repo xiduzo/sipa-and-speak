@@ -87,11 +87,17 @@ export const matchingRouter = router({
         .from(userInterest)
         .where(inArray(userInterest.userId, otherUserIds));
 
-      // Fetch user info (name, image) for candidates — exclude suspended Students (#100)
+      // Fetch user info (name, image) for candidates — exclude suspended AND
+      // permanently removed Students (#100/#108)
       const allUsers = await db
         .select({ id: user.id, name: user.name, image: user.image })
         .from(user)
-        .where(and(inArray(user.id, otherUserIds), ne(user.studentStatus, "suspended")));
+        .where(
+          and(
+            inArray(user.id, otherUserIds),
+            notInArray(user.studentStatus, ["suspended", "removed"]),
+          ),
+        );
 
       const userMap = new Map(allUsers.map((u) => [u.id, u]));
 
@@ -486,15 +492,20 @@ export const matchingRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending requests can be accepted." });
       }
 
-      await db
-        .update(matchRequest)
-        .set({ status: "accepted" })
-        .where(eq(matchRequest.id, input.matchRequestId));
+      // Atomic: marking the request accepted and creating the match must both
+      // commit or both roll back, else we get an accepted request with no match
+      // (or an orphan match).
+      await db.transaction(async (tx) => {
+        await tx
+          .update(matchRequest)
+          .set({ status: "accepted" })
+          .where(eq(matchRequest.id, input.matchRequestId));
 
-      await db.insert(studentMatch).values({
-        studentAId: request.requesterId,
-        studentBId: receiverId,
-        matchRequestId: input.matchRequestId,
+        await tx.insert(studentMatch).values({
+          studentAId: request.requesterId,
+          studentBId: receiverId,
+          matchRequestId: input.matchRequestId,
+        });
       });
 
       console.info("[MatchRequestAccepted]", {

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { and, eq, count, asc, ne } from "drizzle-orm";
 
-import { protectedProcedure, router } from "../../index";
+import { moderatorProcedure, protectedProcedure, router } from "../../index";
 import { db } from "@sip-and-speak/db";
 import { userFlag } from "@sip-and-speak/db/schema/moderation";
 import { user } from "@sip-and-speak/db/schema/auth";
@@ -38,7 +38,7 @@ export const moderationRouter = router({
    * Any authenticated user can call this query; Moderator RBAC is deferred
    * until a role field is added to the user schema. (TODO: tighten once role exists)
    */
-  listOpenFlags: protectedProcedure.query(async () => {
+  listOpenFlags: moderatorProcedure.query(async () => {
     const rows = await db
       .select({
         id: userFlag.id,
@@ -59,7 +59,7 @@ export const moderationRouter = router({
    * #80 — Get full flag detail for Moderator review.
    * Returns flag info, flagged Student identity, and prior resolved flag history.
    */
-  getFlagDetail: protectedProcedure
+  getFlagDetail: moderatorProcedure
     .input(z.object({ flagId: z.string() }))
     .query(async ({ input }) => {
       const flagRows = await db
@@ -108,7 +108,7 @@ export const moderationRouter = router({
    * Resolves the flag with outcome 'warned', records moderator identity + timestamp,
    * and emits the StudentWarned domain event.
    */
-  warnStudent: protectedProcedure
+  warnStudent: moderatorProcedure
     .input(z.object({ flagId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const moderatorId = ctx.session.user.id;
@@ -166,7 +166,7 @@ export const moderationRouter = router({
    * partial failure between the user.studentStatus write and the userFlag
    * resolution write must roll both back. No integration harness exists yet.
    */
-  suspendStudent: protectedProcedure
+  suspendStudent: moderatorProcedure
     .input(z.object({ flagId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const moderatorId = ctx.session.user.id;
@@ -228,7 +228,7 @@ export const moderationRouter = router({
    * #105 — Lift a Student's suspension.
    * Resets studentStatus to 'active' and emits SuspensionLifted event.
    */
-  liftSuspension: protectedProcedure
+  liftSuspension: moderatorProcedure
     .input(z.object({ targetId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const moderatorId = ctx.session.user.id;
@@ -270,7 +270,7 @@ export const moderationRouter = router({
    * partial failure between the user.studentStatus write and the userFlag
    * resolution write must roll both back. No integration harness exists yet.
    */
-  removeStudent: protectedProcedure
+  removeStudent: moderatorProcedure
     .input(z.object({ flagId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const moderatorId = ctx.session.user.id;

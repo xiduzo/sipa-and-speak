@@ -92,6 +92,6 @@ describe("#137 — Suggestion list deep-link in decline notification", () => {
       );
     });
 
-    expect(mockPush).toHaveBeenCalledWith("/schedule/partner-abc");
+    expect(mockPush).toHaveBeenCalledWith("/propose-meetup?partnerId=partner-abc");
   });
 });

@@ -30,6 +30,14 @@ export class ExpoPushDelivery implements NotificationDelivery {
       },
       body: JSON.stringify(messages),
     });
+    if (!response.ok) {
+      // A non-2xx Expo response previously fell through to `json.data ?? []`,
+      // silently swallowing every push failure (and skipping stale-token cleanup).
+      const detail = await response.text().catch(() => "");
+      throw new Error(
+        `Expo push request failed: ${response.status} ${response.statusText} ${detail}`.trim(),
+      );
+    }
     const json = (await response.json()) as { data: DeliveryTicket[] };
     return json.data ?? [];
   }

@@ -3,7 +3,6 @@ import {
   pgTable,
   text,
   timestamp,
-  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { user } from "./auth";
@@ -14,8 +13,10 @@ export const studentComment = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
+    // Nullable: when an author's account is deleted the FK sets this to NULL
+    // (keeps the comment about the target intact). NOT NULL + ON DELETE SET NULL
+    // would make the parent user DELETE abort.
     authorId: text("author_id")
-      .notNull()
       .references(() => user.id, { onDelete: "set null" }),
     targetId: text("target_id")
       .notNull()
@@ -35,10 +36,11 @@ export const blockedEmail = pgTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
+    // `.unique()` already creates the blocked_email_email_unique constraint;
+    // a separate unique index on the same column was redundant (dropped in 0020).
     email: text("email").notNull().unique(),
     blockedAt: timestamp("blocked_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (table) => [uniqueIndex("blocked_email_email_idx").on(table.email)],
 );
 
 // A Student reports a peer as disruptive for Moderator review.

@@ -883,26 +883,61 @@ export const meetupRouter = router({
         toTrpcError(err);
       }
 
-      const [created] = await db
-        .insert(attendanceReport)
-        .values({
-          meetupId: input.meetupId,
-          studentId: userId,
-          attended: input.attended,
-          rating: input.rating ?? null,
-        })
-        .returning();
+      // Atomic: the attendance report, the meetup status transition, and the
+      // cross-context match promotion must all commit or all roll back. A
+      // mid-sequence failure previously left the report recorded while the
+      // meetup/match state stayed inconsistent.
+      const { created, promotedMatch } = await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(attendanceReport)
+          .values({
+            meetupId: input.meetupId,
+            studentId: userId,
+            attended: input.attended,
+            rating: input.rating ?? null,
+          })
+          .returning();
 
-      // Outcome may transition the meetup status. Cross-context match update +
-      // messaging opt-in prompt remain in the router because they touch tables
-      // outside the Scheduling aggregate.
-      if (decision.outcome !== "pending") {
-        await db
-          .update(meetup)
-          .set({ status: decision.state.status })
-          .where(eq(meetup.id, existing.id));
-      }
+        if (decision.outcome !== "pending") {
+          await tx
+            .update(meetup)
+            .set({ status: decision.state.status })
+            .where(eq(meetup.id, existing.id));
+        }
 
+        let promotedMatch = false;
+        if (decision.outcome === "completed") {
+          // Cross-context: promote the studentMatch to `connected`.
+          const [matchRecord] = await tx
+            .select({ id: studentMatch.id })
+            .from(studentMatch)
+            .where(
+              or(
+                and(
+                  eq(studentMatch.studentAId, existing.proposerId),
+                  eq(studentMatch.studentBId, existing.receiverId),
+                ),
+                and(
+                  eq(studentMatch.studentAId, existing.receiverId),
+                  eq(studentMatch.studentBId, existing.proposerId),
+                ),
+              ),
+            )
+            .limit(1);
+
+          if (matchRecord) {
+            await tx
+              .update(studentMatch)
+              .set({ status: "connected" })
+              .where(eq(studentMatch.id, matchRecord.id));
+            promotedMatch = true;
+          }
+        }
+
+        return { created, promotedMatch };
+      });
+
+      // Side effects fire only after the transaction commits.
       // Enrich AttendanceReported with the freshly-persisted report id.
       const attendanceReportedIdx = decision.events.findIndex(
         (e) => e.name === "AttendanceReported",
@@ -913,46 +948,20 @@ export const meetupRouter = router({
       }
       emit(decision.events);
 
-      if (decision.outcome === "completed") {
-        // Cross-context: promote the studentMatch to `connected` and prompt
-        // both Students to opt in to messaging.
-        const [matchRecord] = await db
-          .select({ id: studentMatch.id })
-          .from(studentMatch)
-          .where(
-            or(
-              and(
-                eq(studentMatch.studentAId, existing.proposerId),
-                eq(studentMatch.studentBId, existing.receiverId),
-              ),
-              and(
-                eq(studentMatch.studentAId, existing.receiverId),
-                eq(studentMatch.studentBId, existing.proposerId),
-              ),
-            ),
-          )
-          .limit(1);
-
-        if (matchRecord) {
-          await db
-            .update(studentMatch)
-            .set({ status: "connected" })
-            .where(eq(studentMatch.id, matchRecord.id));
-
-          const [studentARow, studentBRow] = await Promise.all([
-            db.select({ name: user.name }).from(user).where(eq(user.id, existing.proposerId)).limit(1),
-            db.select({ name: user.name }).from(user).where(eq(user.id, existing.receiverId)).limit(1),
-          ]);
-          // #138 — Prompt both Students to opt in to messaging after a completed meetup
-          domainEvents.emit("MessagingOptInPrompted", {
-            meetupId: input.meetupId,
-            studentAId: existing.proposerId,
-            studentAName: studentARow[0]?.name ?? "Your match",
-            studentBId: existing.receiverId,
-            studentBName: studentBRow[0]?.name ?? "Your match",
-            promptedAt: new Date(),
-          });
-        }
+      if (promotedMatch) {
+        const [studentARow, studentBRow] = await Promise.all([
+          db.select({ name: user.name }).from(user).where(eq(user.id, existing.proposerId)).limit(1),
+          db.select({ name: user.name }).from(user).where(eq(user.id, existing.receiverId)).limit(1),
+        ]);
+        // #138 — Prompt both Students to opt in to messaging after a completed meetup
+        domainEvents.emit("MessagingOptInPrompted", {
+          meetupId: input.meetupId,
+          studentAId: existing.proposerId,
+          studentAName: studentARow[0]?.name ?? "Your match",
+          studentBId: existing.receiverId,
+          studentBName: studentBRow[0]?.name ?? "Your match",
+          promptedAt: new Date(),
+        });
       }
 
       return created;

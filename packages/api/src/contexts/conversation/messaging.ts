@@ -326,6 +326,19 @@ export const messagingRouter = router({
       const studentId = ctx.session.user.id;
       const PRESENCE_TTL_MS = 30_000;
 
+      // Authorization: only a participant may write presence for a conversation.
+      const [conv] = await db
+        .select({ user1Id: conversation.user1Id, user2Id: conversation.user2Id })
+        .from(conversation)
+        .where(eq(conversation.id, input.conversationId))
+        .limit(1);
+      if (!conv || (conv.user1Id !== studentId && conv.user2Id !== studentId)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not a participant in this conversation.",
+        });
+      }
+
       if (input.active) {
         const activeUntil = new Date(Date.now() + PRESENCE_TTL_MS);
         await db

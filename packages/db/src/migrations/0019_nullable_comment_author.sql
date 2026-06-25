@@ -1,0 +1,1 @@
+ALTER TABLE "student_comment" ALTER COLUMN "author_id" DROP NOT NULL;

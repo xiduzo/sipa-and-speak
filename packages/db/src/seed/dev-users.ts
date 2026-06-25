@@ -30,7 +30,7 @@ import {
   messagingOptIn,
   conversation,
   message,
-} from "../schema/sip-and-speak";
+} from "../schema";
 import { user } from "../schema/auth";
 import { eq } from "drizzle-orm";
 
@@ -273,6 +273,11 @@ async function seed() {
 
   const t = (offsetMinutes: number) =>
     new Date(new Date("2026-03-15T13:20:00Z").getTime() + offsetMinutes * 60_000);
+
+  // Messages use random UUIDs, so onConflictDoNothing can't dedupe them.
+  // Clear any prior seed messages for this conversation first to keep the
+  // seed idempotent (re-running must not stack duplicate messages).
+  await db.delete(message).where(eq(message.conversationId, IDS.CONV_TEST_YUKI));
 
   await db.insert(message).values([
     { conversationId: IDS.CONV_TEST_YUKI, senderId: TEST_ID,   content: "Hey Yuki! Great meeting you at the library today 😊", createdAt: t(0) },

@@ -49,7 +49,10 @@ function LocationForm({
   const [description, setDescription] = useState(
     initialVenue?.description ?? "",
   );
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
+  const [coordError, setCoordError] = useState<string | null>(null);
 
   const createMutation = useMutation(
     trpc.adminVenue.create.mutationOptions({
@@ -90,6 +93,7 @@ function LocationForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setNameError(null);
+    setCoordError(null);
 
     const trimmedName = name.trim();
     if (!trimmedName) {
@@ -104,11 +108,26 @@ function LocationForm({
         description: description.trim() || null,
       });
     } else {
+      const lat = Number(latitude.trim());
+      const lng = Number(longitude.trim());
+      if (
+        latitude.trim() === "" ||
+        longitude.trim() === "" ||
+        Number.isNaN(lat) ||
+        Number.isNaN(lng) ||
+        lat < -90 ||
+        lat > 90 ||
+        lng < -180 ||
+        lng > 180
+      ) {
+        setCoordError("Enter a valid latitude (-90..90) and longitude (-180..180)");
+        return;
+      }
       createMutation.mutate({
         name: trimmedName,
         description: description.trim() || undefined,
-        latitude: 51.4483,
-        longitude: 5.4903,
+        latitude: lat,
+        longitude: lng,
       });
     }
   }
@@ -154,6 +173,53 @@ function LocationForm({
               disabled={isPending}
             />
           </div>
+
+          {mode?.type !== "edit" && (
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-2">
+                <div className="flex flex-col gap-1 flex-1">
+                  <Label htmlFor="loc-lat">Latitude</Label>
+                  <Input
+                    id="loc-lat"
+                    data-testid="location-latitude-input"
+                    type="number"
+                    step="any"
+                    value={latitude}
+                    onChange={(e) => {
+                      setLatitude(e.target.value);
+                      setCoordError(null);
+                    }}
+                    placeholder="51.4483"
+                    disabled={isPending}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 flex-1">
+                  <Label htmlFor="loc-lng">Longitude</Label>
+                  <Input
+                    id="loc-lng"
+                    data-testid="location-longitude-input"
+                    type="number"
+                    step="any"
+                    value={longitude}
+                    onChange={(e) => {
+                      setLongitude(e.target.value);
+                      setCoordError(null);
+                    }}
+                    placeholder="5.4903"
+                    disabled={isPending}
+                  />
+                </div>
+              </div>
+              {coordError && (
+                <p
+                  data-testid="location-coord-error"
+                  className="text-destructive text-sm"
+                >
+                  {coordError}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-2 justify-end mt-2">
             <Button

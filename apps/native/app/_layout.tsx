@@ -150,29 +150,31 @@ function AuthGuard() {
   }, [segments]);
 
   useEffect(() => {
-    console.log("[AuthGuard] state:", {
-      navigationReady,
-      isPending,
-      session: session ? "signed-in" : session === null ? "signed-out" : "loading",
-      segments,
-    });
+    if (__DEV__) {
+      console.log("[AuthGuard] state:", {
+        navigationReady,
+        isPending,
+        session: session ? "signed-in" : session === null ? "signed-out" : "loading",
+        segments,
+      });
+    }
 
     if (!navigationReady || isPending) return;
 
     const inEnrolment = segments[0] === "enrolment";
     const atRoot = segments.length === 0;
 
-    console.log("[AuthGuard] routing:", { inEnrolment, atRoot });
+    if (__DEV__) console.log("[AuthGuard] routing:", { inEnrolment, atRoot });
 
     if (!session && !inEnrolment) {
-      console.log("[AuthGuard] → /enrolment (not signed in)");
+      if (__DEV__) console.log("[AuthGuard] → /enrolment (not signed in)");
       router.replace("/enrolment");
     } else if (session && inEnrolment) {
-      console.log("[AuthGuard] → /(tabs) (signed in)");
+      if (__DEV__) console.log("[AuthGuard] → /(tabs) (signed in)");
       queryClient.clear();
       router.replace("/(tabs)/home");
     } else {
-      console.log("[AuthGuard] no redirect needed");
+      if (__DEV__) console.log("[AuthGuard] no redirect needed");
     }
   }, [navigationReady, isPending, session, segments]);
 

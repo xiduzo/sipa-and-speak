@@ -919,7 +919,7 @@ function RescheduleContent({
       {showTimePicker && (
         <DateTimePicker
           testID="reschedule-time-picker"
-          value={time ? new Date(`1970-01-01T${time}:00`) : new Date()}
+          value={(time ? combineLocal(date || "2000-01-01", time) : null) ?? new Date()}
           mode="time"
           display={Platform.OS === "ios" ? "inline" : "default"}
           onChange={(_event, picked) => {

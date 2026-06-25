@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
@@ -31,8 +31,9 @@ function CandidateCard({
   interests: string[];
 }) {
   return (
-    <a
-      href={`/partner/${userId}`}
+    <Link
+      to="/partner/$id"
+      params={{ id: userId }}
       data-testid="candidate-card"
       className="block bg-card border border-border rounded-2xl p-4 cursor-pointer hover:opacity-80 transition-opacity no-underline"
     >
@@ -97,7 +98,7 @@ function CandidateCard({
           </div>
         </div>
       )}
-    </a>
+    </Link>
   );
 }
 
@@ -107,12 +108,18 @@ const APP_SHARE_MESSAGE =
   APP_SHARE_URL;
 
 async function handleWebShare() {
-  if (navigator.share) {
-    await navigator.share({ title: "Sip&Speak", text: APP_SHARE_MESSAGE, url: APP_SHARE_URL });
-  } else {
-    await navigator.clipboard.writeText(APP_SHARE_URL);
-    // Toast not available here without additional setup — inline alert as fallback
-    alert("App link copied to clipboard!");
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "Sip&Speak", text: APP_SHARE_MESSAGE, url: APP_SHARE_URL });
+    } else {
+      await navigator.clipboard.writeText(APP_SHARE_URL);
+      // Toast not available here without additional setup — inline alert as fallback
+      alert("App link copied to clipboard!");
+    }
+  } catch (err) {
+    // User dismissing the share sheet rejects with AbortError — not an error.
+    if (err instanceof Error && err.name === "AbortError") return;
+    console.error("Share failed", err);
   }
 }
 
