@@ -630,6 +630,28 @@ export const profileRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
+      // Every category must always retain at least one language (mirrors the
+      // onboarding invariant). Only guard when the language actually exists in
+      // the category — removing a non-existent one is a harmless no-op.
+      const ofType = await db
+        .select()
+        .from(userLanguage)
+        .where(
+          and(eq(userLanguage.userId, userId), eq(userLanguage.type, input.type)),
+        );
+
+      const removingExisting = ofType.some((r) => r.language === input.language);
+      if (removingExisting) {
+        try {
+          OnboardingProgression.assertCanRemoveLanguage(input.type, ofType.length);
+        } catch (err) {
+          if (err instanceof OnboardingRuleError) {
+            throw new TRPCError({ code: err.code, message: err.message });
+          }
+          throw err;
+        }
+      }
+
       await db
         .delete(userLanguage)
         .where(

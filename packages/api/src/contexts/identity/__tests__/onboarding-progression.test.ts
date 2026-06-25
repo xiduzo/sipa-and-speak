@@ -84,6 +84,32 @@ describe("OnboardingProgression.assertCanSubmit", () => {
   });
 });
 
+describe("OnboardingProgression.assertCanRemoveLanguage", () => {
+  it("throws when removing the last language in a category", () => {
+    expect(() =>
+      OnboardingProgression.assertCanRemoveLanguage("spoken", 1),
+    ).toThrow(OnboardingRuleError);
+    expect(() =>
+      OnboardingProgression.assertCanRemoveLanguage("learning", 1),
+    ).toThrow(/at least one language in this category/);
+  });
+
+  it("throws defensively when the category is already empty", () => {
+    expect(() =>
+      OnboardingProgression.assertCanRemoveLanguage("spoken", 0),
+    ).toThrow(OnboardingRuleError);
+  });
+
+  it("passes when more than one language remains", () => {
+    expect(() =>
+      OnboardingProgression.assertCanRemoveLanguage("spoken", 2),
+    ).not.toThrow();
+    expect(() =>
+      OnboardingProgression.assertCanRemoveLanguage("learning", 5),
+    ).not.toThrow();
+  });
+});
+
 describe("OnboardingProgression.assertNoNativeSpokenLearningConflict", () => {
   it("passes when no overlap", () => {
     expect(() =>
