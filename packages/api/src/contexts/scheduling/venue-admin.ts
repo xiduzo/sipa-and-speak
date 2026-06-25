@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { and, count, eq, ne } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { meetup, venue } from "@sip-and-speak/db/schema/scheduling";
-import { protectedProcedure, router } from "../../index";
+import { moderatorProcedure, router } from "../../index";
 
 async function assertNameUnique(name: string, excludeId?: string) {
   const existing = await db
@@ -20,7 +20,7 @@ async function assertNameUnique(name: string, excludeId?: string) {
 }
 
 export const adminVenueRouter = router({
-  create: protectedProcedure
+  create: moderatorProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -43,11 +43,11 @@ export const adminVenueRouter = router({
       return created;
     }),
 
-  findAll: protectedProcedure.query(async () => {
+  findAll: moderatorProcedure.query(async () => {
     return db.select().from(venue);
   }),
 
-  findById: protectedProcedure
+  findById: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       const [found] = await db
@@ -60,7 +60,7 @@ export const adminVenueRouter = router({
       return found;
     }),
 
-  update: protectedProcedure
+  update: moderatorProcedure
     .input(
       z.object({
         id: z.string(),
@@ -87,7 +87,7 @@ export const adminVenueRouter = router({
       return updated;
     }),
 
-  deactivateWarnings: protectedProcedure
+  deactivateWarnings: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       const [pendingMeetupsResult, activeCountResult] = await Promise.all([
@@ -112,7 +112,7 @@ export const adminVenueRouter = router({
       };
     }),
 
-  deactivate: protectedProcedure
+  deactivate: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       const [updated] = await db
@@ -126,7 +126,7 @@ export const adminVenueRouter = router({
       return updated;
     }),
 
-  reactivate: protectedProcedure
+  reactivate: moderatorProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
       const [updated] = await db

@@ -11,7 +11,7 @@ export function useNotificationTapHandler() {
 
     if (type === "match_accepted") {
       const matchedWithUserId = typeof data?.matchedWithUserId === "string" ? data.matchedWithUserId : undefined;
-      if (matchedWithUserId) router.push(`/schedule/${matchedWithUserId}`);
+      if (matchedWithUserId) router.push(`/propose-meetup?partnerId=${matchedWithUserId}`);
       return;
     }
 

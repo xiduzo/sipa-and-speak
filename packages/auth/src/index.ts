@@ -93,10 +93,11 @@ export function createAuth() {
       expo(),
       emailOTP({
         expiresIn: 600, // 10 minutes
-        generateOTP: () => "310394",
         async sendVerificationOTP({ email, otp, type }) {
-          // Always log the code (dev/debug visibility)
-          console.log(`[OTP] ${type} → ${email}: ${otp}`);
+          // Log the code for local debugging only — never in production.
+          if (env.NODE_ENV !== "production") {
+            console.log(`[OTP] ${type} → ${email}: ${otp}`);
+          }
 
           if (!resend || !env.RESEND_FROM) {
             return;

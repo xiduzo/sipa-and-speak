@@ -71,7 +71,7 @@ describe("#136 — Connect Now CTA in acceptance notification", () => {
       );
     });
 
-    expect(mockPush).toHaveBeenCalledWith("/schedule/partner-abc");
+    expect(mockPush).toHaveBeenCalledWith("/propose-meetup?partnerId=partner-abc");
   });
 
   it("tapping Connect Now action navigates to the scheduling flow (same listener path)", async () => {
@@ -89,7 +89,7 @@ describe("#136 — Connect Now CTA in acceptance notification", () => {
       );
     });
 
-    expect(mockPush).toHaveBeenCalledWith("/schedule/partner-xyz");
+    expect(mockPush).toHaveBeenCalledWith("/propose-meetup?partnerId=partner-xyz");
   });
 
   it("does not navigate when matchedWithUserId is missing from acceptance notification", async () => {

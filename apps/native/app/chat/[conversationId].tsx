@@ -73,7 +73,9 @@ export default function ChatScreen() {
         { conversationId },
         {
           onSuccess: () => {
-            void queryClient.invalidateQueries({ queryKey: ["chat.getMessages"] });
+            void queryClient.invalidateQueries({
+              queryKey: trpc.chat.getMessages.queryOptions({ conversationId }).queryKey,
+            });
           },
         },
       );

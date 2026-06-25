@@ -12,6 +12,10 @@ export const env = createEnv({
     CORS_ORIGIN: z.url(),
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_FROM: z.email().optional(),
+    // Comma-separated allowlist of emails permitted to use moderator/admin
+    // procedures (venue catalog, moderation actions). Interim authorization
+    // until a role field is added to the user schema.
+    MODERATOR_EMAILS: z.string().default(""),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   },
   runtimeEnv: process.env,

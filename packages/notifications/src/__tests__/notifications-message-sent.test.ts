@@ -29,6 +29,12 @@ let mockFetchTickets: Array<{ status: string; id?: string; details?: { error?: s
     messages: JSON.parse(options.body as string) as CapturedFetchCall["messages"],
   });
   return {
+    // Expo returns HTTP 200 even when individual tickets carry per-token errors
+    // like DeviceNotRegistered; only non-2xx means the whole request failed.
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    text: async () => "",
     json: async () => ({ data: mockFetchTickets }),
   };
 });

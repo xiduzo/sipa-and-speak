@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS "blocked_email_email_idx";
