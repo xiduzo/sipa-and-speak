@@ -153,7 +153,11 @@ function Hero() {
           <h1 className="font-heading text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
             Find a language buddy
             <br />
-            over <span className="text-primary">coffee</span>.
+            over{" "}
+            <span className="font-caveat text-[1.15em] font-bold leading-none text-primary">
+              coffee
+            </span>
+            .
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
             Sip &amp; Speak pairs you with a local who speaks the language you’re
@@ -235,8 +239,8 @@ function PairingCard() {
             learning="EN"
           />
 
-          <div className="!mt-4 flex items-center justify-center gap-2 rounded-2xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-            <Sparkles className="size-3.5 text-primary" />
+          <div className="!mt-4 flex items-center justify-center gap-2 rounded-2xl border border-gold/30 bg-gold/15 px-3 py-2 text-xs text-muted-foreground">
+            <Sparkles className="size-3.5 text-gold" />
             Both into{" "}
             <span className="font-semibold text-foreground">{buddy.interest}</span>
           </div>

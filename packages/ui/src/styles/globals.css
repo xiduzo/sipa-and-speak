@@ -40,6 +40,11 @@
   --input: oklch(0.884 0.031 64.3);
   --ring: oklch(0.625 0.169 41.2);
 
+  /* Extended brand tokens — mirrored exactly (hex) from the native source of
+     truth in apps/native/global.css. */
+  --gold: #f2c94c; /* conversation cards, gold accents */
+  --green: #2d7a4f; /* success / positive states */
+
   /* Charts */
   --chart-1: oklch(0.625 0.169 41.2);
   --chart-2: oklch(0.543 0.093 194.8);
@@ -106,9 +111,12 @@
 @theme inline {
   --font-heading: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", sans-serif;
   --font-sans: "Manrope Variable", "Manrope", sans-serif;
+  --font-caveat: "Caveat", cursive;
 
   --color-tertiary: var(--tertiary);
   --color-tertiary-foreground: var(--tertiary-foreground);
+  --color-gold: var(--gold);
+  --color-green: var(--green);
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
