@@ -14,6 +14,7 @@ import {
   OnboardingRuleError,
   type OnboardingSnapshot,
 } from "./onboarding-progression";
+import { getProfileForUser } from "./profile-read-model";
 
 /**
  * Load the cross-table snapshot the OnboardingProgression aggregate needs.
@@ -286,29 +287,11 @@ export const profileRouter = router({
       return { success: true };
     }),
 
-  getMyProfile: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
-
-    const [profile, languages, interests, identity] = await Promise.all([
-      db.query.languageProfile.findFirst({
-        where: eq(languageProfile.userId, userId),
-      }),
-      db.select().from(userLanguage).where(eq(userLanguage.userId, userId)),
-      db.select().from(userInterest).where(eq(userInterest.userId, userId)),
-      db
-        .select({ name: user.name, surname: user.surname, image: user.image, email: user.email })
-        .from(user)
-        .where(eq(user.id, userId))
-        .limit(1),
-    ]);
-
-    return {
-      profile: profile ?? null,
-      languages,
-      interests,
-      identity: identity[0] ?? null,
-    };
-  }),
+  // Read assembly lives in the Identity read model (mirrors the Meetup read
+  // model): the multi-table fetch + shaping for the Student's own profile.
+  getMyProfile: protectedProcedure.query(({ ctx }) =>
+    getProfileForUser(ctx.session.user.id),
+  ),
 
   upsertProfile: protectedProcedure
     .input(upsertProfileInput)
