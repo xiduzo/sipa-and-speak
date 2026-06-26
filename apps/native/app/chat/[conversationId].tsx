@@ -76,6 +76,12 @@ export default function ChatScreen() {
             void queryClient.invalidateQueries({
               queryKey: trpc.chat.getMessages.queryOptions({ conversationId }).queryKey,
             });
+            // #422 — listEntries drives the chat-list yellow dot and the Chats
+            // tab badge; without this the unread indicators linger until the
+            // next refocus/refetch.
+            void queryClient.invalidateQueries({
+              queryKey: trpc.chat.listEntries.queryOptions().queryKey,
+            });
           },
         },
       );
@@ -124,11 +130,53 @@ export default function ChatScreen() {
 
   const sendMessage = useMutation(
     trpc.messaging.sendMessage.mutationOptions({
+      // #444 — optimistically append the pending message so it shows instantly
+      // instead of waiting for the 5s poll, then reconcile on settle.
+      onMutate: async (variables) => {
+        const messagesKey = trpc.chat.getMessages.queryOptions({
+          conversationId: variables.conversationId,
+        }).queryKey;
+        await queryClient.cancelQueries({ queryKey: messagesKey });
+        const previous = queryClient.getQueryData(messagesKey);
+        const optimisticMessage = {
+          id: `optimistic-${Date.now()}`,
+          conversationId: variables.conversationId,
+          senderId: currentUserId ?? "",
+          content: variables.content,
+          createdAt: new Date().toISOString(),
+          isUnread: false,
+        };
+        queryClient.setQueryData(messagesKey, (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            messages: [
+              ...old.messages,
+              optimisticMessage as (typeof old.messages)[number],
+            ],
+          };
+        });
+        return { previous, messagesKey };
+      },
       onSuccess: () => {
         setContent("");
         setSendError(null);
       },
-      onError: (err) => setSendError(err.message),
+      onError: (err, _variables, context) => {
+        // Roll back the optimistic message; the unsent text stays in the input.
+        if (context) {
+          queryClient.setQueryData(context.messagesKey, context.previous);
+        }
+        setSendError(err.message);
+      },
+      onSettled: (_data, _err, variables) => {
+        // Reconcile the optimistic row with the real server row.
+        void queryClient.invalidateQueries({
+          queryKey: trpc.chat.getMessages.queryOptions({
+            conversationId: variables.conversationId,
+          }).queryKey,
+        });
+      },
     }),
   );
 
@@ -188,6 +236,16 @@ export default function ChatScreen() {
           testID="chat-info-btn"
           accessibilityLabel="Conversation info"
           hitSlop={12}
+          // #443 — open the partner's profile (languages, interests, photo)
+          // via the existing /partner/[id] details screen.
+          onPress={() => {
+            if (!partner) return;
+            router.push({
+              pathname: "/partner/[id]",
+              params: { id: partner.id },
+            });
+          }}
+          disabled={!partner}
         >
           <Ionicons name="information-circle-outline" size={24} color="#6F605B" />
         </TouchableOpacity>
@@ -289,6 +347,9 @@ export default function ChatScreen() {
               <TextInput
                 testID="message-input"
                 className="text-brand-foreground font-manrope text-base py-2"
+                // #442 — cap the height so long/pasted messages scroll inside
+                // the textbox instead of growing past the screen.
+                style={{ maxHeight: 120 }}
                 placeholder="Type a message…"
                 placeholderTextColor="#6F605B"
                 multiline
