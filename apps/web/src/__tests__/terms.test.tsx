@@ -18,6 +18,9 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 import { TermsPage } from "@/routes/terms";
+import { PrivacyPage } from "@/routes/privacy";
+import { CommunityCodePage } from "@/routes/community-code";
+import { DeleteAccountPage } from "@/routes/delete-account";
 
 describe("#454 — Terms of Use content", () => {
   it("names the provider and offers a way to make contact", () => {
@@ -74,5 +77,37 @@ describe("#454 — Terms of Use content", () => {
       name: /privacy statement/i,
     });
     expect(privacyLink).toHaveAttribute("href", "/privacy");
+  });
+});
+
+describe("#455 — /terms cross-links resolve to live pages", () => {
+  it("exposes cross-links to the Privacy Statement, Community Code, and account deletion", () => {
+    render(<TermsPage />);
+
+    expect(
+      screen.getByRole("link", { name: /privacy statement/i }),
+    ).toHaveAttribute("href", "/privacy");
+    expect(
+      screen.getByRole("link", { name: /community code/i }),
+    ).toHaveAttribute("href", "/community-code");
+    expect(
+      screen.getByRole("link", { name: /delete your account/i }),
+    ).toHaveAttribute("href", "/delete-account");
+  });
+
+  // A cross-link only "resolves" if its target route module is real and the
+  // page actually renders. Importing and rendering each target guards against a
+  // link pointing at a route that exists in source but is missing or broken.
+  it("each cross-link target renders a real page rather than a missing page", () => {
+    const { unmount: unmountPrivacy } = render(<PrivacyPage />);
+    expect(screen.getAllByRole("heading", { level: 1 }).length).toBe(1);
+    unmountPrivacy();
+
+    const { unmount: unmountCommunity } = render(<CommunityCodePage />);
+    expect(screen.getAllByRole("heading", { level: 1 }).length).toBe(1);
+    unmountCommunity();
+
+    render(<DeleteAccountPage />);
+    expect(screen.getAllByRole("heading", { level: 1 }).length).toBe(1);
   });
 });
