@@ -34,6 +34,22 @@ const venues = [
     longitude: 5.4918,
     tags: ["outdoor", "campus", "wifi"],
   },
+  {
+    name: "Bakkie040 (Blauwe Loper 63a)",
+    description: "Neighbourhood coffee bar on Blauwe Loper, a cosy spot for a casual chat over a good cup of coffee.",
+    photoUrl: "https://picsum.photos/seed/bakkie040/800/600",
+    latitude: 51.4515,
+    longitude: 5.479,
+    tags: ["wifi", "vibrant"],
+  },
+  {
+    name: "Meteor Community Café (Blauwe Loper 60)",
+    description: "Community café on Blauwe Loper with a welcoming atmosphere, perfect for meeting new people.",
+    photoUrl: "https://picsum.photos/seed/meteor-cafe/800/600",
+    latitude: 51.4514,
+    longitude: 5.4792,
+    tags: ["wifi", "vibrant", "quiet_zone"],
+  },
 ];
 
 export async function seedVenues() {

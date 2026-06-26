@@ -9,17 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SuggestionsRouteImport } from './routes/suggestions'
 import { Route as SuccessRouteImport } from './routes/success'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CommunityCodeRouteImport } from './routes/community-code'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PartnerIdRouteImport } from './routes/partner/$id'
 import { Route as ModeratorFlagsRouteImport } from './routes/moderator/flags'
 import { Route as AdminLocationsRouteImport } from './routes/admin/locations'
 import { Route as ModeratorFlagsFlagIdRouteImport } from './routes/moderator/flags.$flagId'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuggestionsRoute = SuggestionsRouteImport.update({
   id: '/suggestions',
   path: '/suggestions',
@@ -28,6 +36,11 @@ const SuggestionsRoute = SuggestionsRouteImport.update({
 const SuccessRoute = SuccessRouteImport.update({
   id: '/success',
   path: '/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -43,6 +56,11 @@ const DeleteAccountRoute = DeleteAccountRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityCodeRoute = CommunityCodeRouteImport.update({
+  id: '/community-code',
+  path: '/community-code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -73,11 +91,14 @@ const ModeratorFlagsFlagIdRoute = ModeratorFlagsFlagIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/community-code': typeof CommunityCodeRoute
   '/dashboard': typeof DashboardRoute
   '/delete-account': typeof DeleteAccountRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
+  '/terms': typeof TermsRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/moderator/flags': typeof ModeratorFlagsRouteWithChildren
   '/partner/$id': typeof PartnerIdRoute
@@ -85,11 +106,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/community-code': typeof CommunityCodeRoute
   '/dashboard': typeof DashboardRoute
   '/delete-account': typeof DeleteAccountRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
+  '/terms': typeof TermsRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/moderator/flags': typeof ModeratorFlagsRouteWithChildren
   '/partner/$id': typeof PartnerIdRoute
@@ -98,11 +122,14 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/community-code': typeof CommunityCodeRoute
   '/dashboard': typeof DashboardRoute
   '/delete-account': typeof DeleteAccountRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
+  '/terms': typeof TermsRoute
   '/admin/locations': typeof AdminLocationsRoute
   '/moderator/flags': typeof ModeratorFlagsRouteWithChildren
   '/partner/$id': typeof PartnerIdRoute
@@ -112,11 +139,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/community-code'
     | '/dashboard'
     | '/delete-account'
     | '/login'
+    | '/privacy'
     | '/success'
     | '/suggestions'
+    | '/terms'
     | '/admin/locations'
     | '/moderator/flags'
     | '/partner/$id'
@@ -124,11 +154,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/community-code'
     | '/dashboard'
     | '/delete-account'
     | '/login'
+    | '/privacy'
     | '/success'
     | '/suggestions'
+    | '/terms'
     | '/admin/locations'
     | '/moderator/flags'
     | '/partner/$id'
@@ -136,11 +169,14 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/community-code'
     | '/dashboard'
     | '/delete-account'
     | '/login'
+    | '/privacy'
     | '/success'
     | '/suggestions'
+    | '/terms'
     | '/admin/locations'
     | '/moderator/flags'
     | '/partner/$id'
@@ -149,11 +185,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CommunityCodeRoute: typeof CommunityCodeRoute
   DashboardRoute: typeof DashboardRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
   LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
   SuccessRoute: typeof SuccessRoute
   SuggestionsRoute: typeof SuggestionsRoute
+  TermsRoute: typeof TermsRoute
   AdminLocationsRoute: typeof AdminLocationsRoute
   ModeratorFlagsRoute: typeof ModeratorFlagsRouteWithChildren
   PartnerIdRoute: typeof PartnerIdRoute
@@ -161,6 +200,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/suggestions': {
       id: '/suggestions'
       path: '/suggestions'
@@ -173,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/success'
       fullPath: '/success'
       preLoaderRoute: typeof SuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -194,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community-code': {
+      id: '/community-code'
+      path: '/community-code'
+      fullPath: '/community-code'
+      preLoaderRoute: typeof CommunityCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -248,11 +308,14 @@ const ModeratorFlagsRouteWithChildren = ModeratorFlagsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CommunityCodeRoute: CommunityCodeRoute,
   DashboardRoute: DashboardRoute,
   DeleteAccountRoute: DeleteAccountRoute,
   LoginRoute: LoginRoute,
+  PrivacyRoute: PrivacyRoute,
   SuccessRoute: SuccessRoute,
   SuggestionsRoute: SuggestionsRoute,
+  TermsRoute: TermsRoute,
   AdminLocationsRoute: AdminLocationsRoute,
   ModeratorFlagsRoute: ModeratorFlagsRouteWithChildren,
   PartnerIdRoute: PartnerIdRoute,
