@@ -162,7 +162,7 @@ function AuthGuard() {
     if (!navigationReady || isPending) return;
 
     const inEnrolment = segments[0] === "enrolment";
-    const atRoot = segments.length === 0;
+    const atRoot = (segments as string[]).length === 0;
 
     if (__DEV__) console.log("[AuthGuard] routing:", { inEnrolment, atRoot });
 

@@ -33,7 +33,7 @@ export function CandidateCard({
   const [sendConflictError, setSendConflictError] = useState<string | null>(null);
   const sendRequestMutation = useMutation({
     ...trpc.matching.sendMatchRequest.mutationOptions(),
-    onError: (error: { data?: { code?: string } }) => {
+    onError: (error) => {
       if (error.data?.code === "CONFLICT") {
         setSendConflictError("A match request to this candidate already exists.");
       }

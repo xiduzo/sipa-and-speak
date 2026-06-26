@@ -10,6 +10,7 @@
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
     "web": "expo start --web",
+    "check-types": "tsc --noEmit",
     "test": "jest --no-coverage"
   },
   "dependencies": {
@@ -77,6 +78,7 @@
     "@sip-and-speak/config": "workspace:*",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30",
     "@types/node": "^24.10.0",
     "@types/react": "~19.2.10",
     "jest": "^30.3.0",

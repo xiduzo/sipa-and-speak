@@ -30,7 +30,8 @@ type InterestValue =
   | "sustainability" | "cinephile" | "cosmology" | "photography"
   | "board_games" | "hiking_outdoors" | "yoga_wellness" | "literature"
   | "entrepreneurship" | "design_architecture" | "travel" | "gaming"
-  | "fitness_sports" | "philosophy" | "theatre";
+  | "fitness_sports" | "philosophy" | "theatre"
+  | "grocery_shopping" | "family_conversations" | "pronunciation_practice";
 
 interface SpokenLanguage { language: string; proficiency: LearningProficiency }
 interface LearningLang { language: string; proficiency: LearningProficiency }
