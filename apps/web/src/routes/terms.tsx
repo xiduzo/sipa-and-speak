@@ -6,8 +6,11 @@ export const Route = createFileRoute("/terms")({
 
 const SUPPORT_EMAIL = "hello@sipandspeak.nl";
 
-// TODO: replace with the provider's legal name (matches the Privacy Statement).
-const PROVIDER = "[Your full name]";
+// The provider is the same natural person as the controller named in the
+// Privacy Statement. We show initials here to match it (see privacy.tsx); the
+// full name and address are available on request. If a legal entity is formed
+// later, replace with its name in both places.
+const PROVIDER = "V.J.O.C.";
 
 const LAST_UPDATED = "25 June 2026";
 
