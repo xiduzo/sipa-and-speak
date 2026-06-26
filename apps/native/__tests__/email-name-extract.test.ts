@@ -2,7 +2,6 @@
  * Tests for email-based name pre-fill utility
  */
 import { extractNameFromEmail } from "@/utils/email-name-extract";
-import { describe, it, expect } from "@jest/globals";
 
 describe("extractNameFromEmail", () => {
   it("extracts capitalized name and surname from firstname.lastname format", () => {

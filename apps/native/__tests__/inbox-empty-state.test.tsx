@@ -12,7 +12,7 @@ import React from "react";
 
 jest.mock("react-native", () => {
   const RN = jest.requireActual("react-native");
-  RN.FlatList = (props) => {
+  RN.FlatList = (props: any) => {
     const React = require("react");
     const { data, renderItem, testID, ListEmptyComponent } = props;
     if (!data || data.length === 0) {
@@ -21,7 +21,7 @@ jest.mock("react-native", () => {
     return React.createElement(
       RN.View,
       { testID },
-      data.map((item, index) => renderItem({ item, index })),
+      data.map((item: any, index: number) => renderItem({ item, index })),
     );
   };
   return RN;
