@@ -96,8 +96,9 @@ export function PrivacyPage() {
             account emails. They receive your email address.
           </li>
           <li>
-            <strong>Expo</strong> (with Apple and Google push services) —
-            delivers push notifications to your device, if you enable them.
+            <strong>Expo</strong> (with Apple and Google push services — Apple
+            APNs on iOS and Google FCM on Android) — delivers push notifications
+            to your device, if you enable them. They receive a device push token.
           </li>
         </ul>
         <p className="mt-2">
