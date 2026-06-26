@@ -103,3 +103,62 @@ requires **3–7 interests** (plus ≥1 spoken and ≥1 learning language) to fi
 — deliberately STRICTER than the server's matching-eligibility rule (≥1
 interest, owned by OnboardingProgression). The server stays the source of truth
 for whether a profile is matchable; these gates govern only the wizard UX.
+
+### Matching read model
+
+The query side of the Matching context:
+`packages/api/src/contexts/matching/matching-read-model.ts` (`getRankedCandidates`).
+Owns partner discovery — the candidate queries, exclusion-list construction,
+onboarding/suspension/deleted-account filtering, per-user grouping of languages
+and interests, staging into the pure `scoreCandidates` ranker, and cursor
+pagination — that the `discover` procedure used to inline. The MatchRequest
+aggregate owns the write side; this owns the read side. (Mirrors the Meetup
+read model.)
+
+### Conversation read model
+
+The query side of the Conversation context:
+`packages/api/src/contexts/conversation/chat-read-model.ts`
+(`listConversationsForUser`, `unreadCountForUser`, `listEntriesForUser`). Owns
+the inbox multi-table joins and view shaping (partner self-join, `messagingOptIn`
+and `attendanceReport` enrichment, locked-phase derivation, per-partner dedupe,
+phase-rank sort) the `listConversations` / `unreadCount` / `listEntries`
+procedures used to inline. Access control stays in the router and stays split —
+the read model contains **zero** access logic (see ADR-0004).
+
+### Profile read model
+
+The query side of the Identity context:
+`packages/api/src/contexts/identity/profile-read-model.ts` (`getProfileForUser`).
+Owns the four-table profile assembly (`languageProfile` + `userLanguage` +
+`userInterest` + whitelisted identity fields) the `getMyProfile` procedure used
+to inline. The write side — `softDeleteAccount`, `syncMatchingEligibility`,
+identity/language/interest mutations — stays in the router; it was already
+well-localized.
+
+### Notification dispatch seam
+
+`packages/notifications/src/recipe.ts`. `dispatch` is a thin orchestrator over
+two pure transforms and two adapters:
+
+- `toDeliveryMessages(recipes, tokensByRecipient)` — pure; flattens recipes ×
+  device tokens into the messages to send.
+- `staleTokenIds(tickets, tokenIds)` — pure; selects `DeviceNotRegistered`
+  tokens to prune.
+- `TokenStore` (`getTokenStore` / `setTokenStore`) — the device-token seam,
+  mirroring the `Delivery` seam. `DbTokenStore` defers its `@sip-and-speak/db`
+  import to call time, so importing the module does not trigger env validation;
+  `InMemoryTokenStore` is the test double. Together with `InMemoryDelivery` this
+  lets notification tests run with **no** `mock.module` (resolves the ADR-0002
+  mock-leak follow-up).
+
+### Meetup flow view-model
+
+Client-side, `apps/native/utils/meetup-flow.ts`. Pure transition/validation/date
+helpers for the propose / counter-propose / reschedule flows
+(`validateProposedScheduledAt`, `validateScheduledAt`, `buildSuggestions`,
+`freeSlotsFor`, `pickProposedScheduledAt`, `isValidTimeFormat`), extracted from
+the `MeetupFlowModal` render body so the rules are testable in isolation —
+mirroring `onboarding-flow.ts`. Server-driven rules (`canCounterPropose`, round
+limits, available slots) stay server-owned; the modal keeps its state and
+mutations.
