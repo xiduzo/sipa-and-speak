@@ -43,7 +43,7 @@ export function CommunityCodePage() {
         </p>
       </section>
 
-      <section className="mb-6">
+      <section className="mb-6" data-testid="report-section">
         <h2 className="mb-2 text-xl font-semibold">Report problems</h2>
         <p>
           If someone makes you uncomfortable or breaks this code, use the in-app
