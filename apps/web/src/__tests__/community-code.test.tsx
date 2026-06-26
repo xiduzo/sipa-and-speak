@@ -11,11 +11,18 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 
+// Capture the path passed to createFileRoute so we can assert the route is
+// registered at the public `/community-code` address (task #463, AC1).
+const { createFileRouteMock } = vi.hoisted(() => ({
+  createFileRouteMock: vi.fn((_path: string) => () => null),
+}));
+
 vi.mock("@tanstack/react-router", () => ({
-  createFileRoute: () => () => null,
+  createFileRoute: createFileRouteMock,
 }));
 
 import { CommunityCodePage } from "@/routes/community-code";
+import { TermsPage } from "@/routes/terms";
 
 describe("#461 — Community Code conduct", () => {
   it("renders without authentication with a single top-level heading", () => {
@@ -88,5 +95,20 @@ describe("#461 — consequences aligned with Moderation policy", () => {
     expect(
       screen.getByText(/at our discretion and depending on\s+severity/i),
     ).toBeInTheDocument();
+  });
+});
+
+describe("#463 — /community-code route is published and discoverable", () => {
+  // Scenario: Member opens the Community Code page (route registration / AC1)
+  it("registers a file route at the public /community-code address", () => {
+    expect(createFileRouteMock).toHaveBeenCalledWith("/community-code");
+  });
+
+  // Scenario: Member reaches the Community Code from the Terms page
+  it("is linked from the Terms page", () => {
+    render(<TermsPage />);
+
+    const link = screen.getByRole("link", { name: /community code/i });
+    expect(link).toHaveAttribute("href", "/community-code");
   });
 });
