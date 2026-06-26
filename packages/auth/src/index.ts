@@ -43,6 +43,10 @@ export function createAuth() {
         create: {
           after: async (user) => {
             try {
+              // Polar processes member email+name. It is NOT yet listed on the
+              // Privacy Statement because it runs in sandbox (not production member
+              // data). It MUST be added as a sub-processor (US, SCCs, GDPR Art. 46)
+              // on /privacy before Polar is enabled in production.
               await polarClient.customers.create({ email: user.email, name: user.name ?? undefined });
             } catch (e) {
               console.error("[polar] customer creation failed for", user.email, e instanceof Error ? e.message : e);
