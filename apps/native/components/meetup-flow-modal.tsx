@@ -1,9 +1,6 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { Spinner } from "heroui-native";
-import { useMemo, useState } from "react";
 import {
-  Alert,
   Modal,
   Platform,
   Pressable,
@@ -17,23 +14,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MeetupConfirmedModal } from "@/components/meetup-confirmed-modal";
 import {
+  useProposeFlow,
+  useRescheduleFlow,
+  useRespondFlow,
+} from "@/hooks/use-meetup-flow";
+import {
   combineLocal,
-  dayBoundsIso,
   formatDayTime,
   formatLongDate,
   formatLongDayDate,
   formatTime,
   toDate,
-  toIsoDate,
 } from "@/lib/dates";
-import {
-  buildSuggestions,
-  freeSlotsFor,
-  timeFromDate,
-  validateProposedScheduledAt,
-  validateScheduledAt,
-} from "@/utils/meetup-flow";
-import { trpc, queryClient } from "@/utils/trpc";
 
 const GOLD = "#F2C94C";
 const MUTED_BORDER = "#D9C9BC";
@@ -46,7 +38,8 @@ export type MeetupFlowMode =
   | { type: "reschedule"; meetupId: string; currentVenueId: string; currentScheduledAt: Date | string };
 
 // ── presentational sub-components ──────────────────────────────────────────────
-// Pure date/slot/validation logic lives in `@/utils/meetup-flow`.
+// Behaviour (queries, mutations, validation, cascades) lives in
+// `@/hooks/use-meetup-flow`; pure date/slot logic in `@/utils/meetup-flow`.
 
 function GoldButton({
   onPress, disabled, label, loading, testID,
@@ -172,70 +165,7 @@ export function ProposeContent({
   partnerName: string;
   onDismiss: () => void;
 }) {
-  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
-  const [selectedSuggestionIdx, setSelectedSuggestionIdx] = useState<number | null>(0);
-  const [customMode, setCustomMode] = useState(false);
-  const [customDate, setCustomDate] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [customTime, setCustomTime] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const suggestions = useMemo(buildSuggestions, []);
-  const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
-  const slotChecks = useQueries({
-    queries: suggestions.map((s) => {
-      const bounds = dayBoundsIso(s.date);
-      return trpc.meetup.getAvailableSlots.queryOptions(
-        { partnerId, startIso: bounds?.startIso ?? "", endIso: bounds?.endIso ?? "" },
-        { enabled: !!partnerId && !!bounds },
-      );
-    }),
-  });
-
-  const customDateIso = customDate ? toIsoDate(customDate) : "";
-  const customBounds = customDateIso ? dayBoundsIso(customDateIso) : null;
-  const customSlotsQuery = useQuery(
-    trpc.meetup.getAvailableSlots.queryOptions(
-      { partnerId, startIso: customBounds?.startIso ?? "", endIso: customBounds?.endIso ?? "" },
-      { enabled: !!partnerId && !!customBounds },
-    ),
-  );
-
-  const proposeMutation = useMutation(
-    trpc.meetup.propose.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.meetup.list.queryOptions({ status: "pending" }));
-        void queryClient.invalidateQueries(trpc.matching.getMyMatches.queryOptions());
-        Alert.alert(
-          "Proposal sent!",
-          `Your meetup proposal has been sent to ${partnerName}.`,
-          [{ text: "OK", onPress: onDismiss }],
-        );
-      },
-      onError: (err) => setError(err.message),
-    }),
-  );
-
-  function handleSubmit() {
-    setError(null);
-    if (!selectedVenueId) { setError("Please pick a venue"); return; }
-    const result = validateProposedScheduledAt({
-      customMode,
-      customDateIso,
-      customTime,
-      selectedSuggestionIdx,
-      suggestions,
-    });
-    if (!result.ok) { setError(result.error); return; }
-    proposeMutation.mutate({
-      partnerId,
-      venueId: selectedVenueId,
-      scheduledAt: result.scheduledAt.toISOString(),
-    });
-  }
-
-  const venues = venuesQuery.data ?? [];
-  const customFreeSlots = customDateIso ? freeSlotsFor(customDateIso, customSlotsQuery.data ?? []) : [];
+  const f = useProposeFlow({ partnerId, partnerName, onDismiss });
 
   return (
     <ScrollView
@@ -262,29 +192,26 @@ export function ProposeContent({
         PICK A VENUE
       </Text>
       <VenuePicker
-        venues={venues}
-        loading={venuesQuery.isPending}
-        selectedId={selectedVenueId}
-        onSelect={setSelectedVenueId}
+        venues={f.venues}
+        loading={f.venuesLoading}
+        selectedId={f.selectedVenueId}
+        onSelect={f.selectVenue}
       />
 
       <Text className="font-manrope-semi tracking-[2px] uppercase mb-3" style={{ fontSize: 11, color: MUTED }}>
         SUGGESTED TIMES
       </Text>
       <View className="gap-3 mb-3">
-        {suggestions.map((s, idx) => {
-          const blocked = slotChecks[idx]?.data ?? [];
-          const free = freeSlotsFor(s.date, blocked);
-          const isFree = free.includes(s.time);
-          const selected = !customMode && selectedSuggestionIdx === idx;
-          const subtitle = isFree
+        {f.suggestions.map((s, idx) => {
+          const selected = !f.customMode && f.selectedSuggestionIdx === idx;
+          const subtitle = s.isFree
             ? s.hint ? `Both free · ${s.hint}` : "Both free"
             : "Tap or pick another time";
           return (
             <TouchableOpacity
               key={`${s.date}-${s.time}`}
               testID="suggested-time-option"
-              onPress={() => { setCustomMode(false); setSelectedSuggestionIdx(idx); setError(null); }}
+              onPress={() => f.selectSuggestion(idx)}
               activeOpacity={0.85}
               className="rounded-2xl px-5 py-4 flex-row items-center"
               style={{
@@ -309,19 +236,19 @@ export function ProposeContent({
 
       <Pressable
         testID="propose-another-time"
-        onPress={() => { setCustomMode((m) => !m); setSelectedSuggestionIdx(null); setError(null); }}
+        onPress={f.toggleCustomMode}
         className="self-center py-2 mb-4"
       >
         <Text className="font-manrope" style={{ fontSize: 14, color: MUTED }}>
-          {customMode ? "Use a suggested time" : "Or propose another time"}
+          {f.customMode ? "Use a suggested time" : "Or propose another time"}
         </Text>
       </Pressable>
 
-      {customMode && (
+      {f.customMode && (
         <View className="mb-6 gap-3">
           <Pressable
             testID="date-input"
-            onPress={() => setShowDatePicker(true)}
+            onPress={() => f.setShowDatePicker(true)}
             className="rounded-2xl px-5 py-4"
             style={{ backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: MUTED_BORDER }}
           >
@@ -333,21 +260,21 @@ export function ProposeContent({
             </Text>
             <Text
               className="font-manrope-bold mt-0.5"
-              style={{ fontSize: 16, color: customDate ? undefined : MUTED }}
+              style={{ fontSize: 16, color: f.customDate ? undefined : MUTED }}
             >
-              {customDate ? formatLongDayDate(customDate) : "Select a date"}
+              {f.customDate ? formatLongDayDate(f.customDate) : "Select a date"}
             </Text>
           </Pressable>
-          {showDatePicker && (
+          {f.showDatePicker && (
             <DateTimePicker
               testID="date-picker"
-              value={customDate ?? new Date()}
+              value={f.customDate ?? new Date()}
               mode="date"
               minimumDate={new Date()}
               display={Platform.OS === "ios" ? "inline" : "default"}
               onChange={(_event, picked) => {
-                setShowDatePicker(Platform.OS === "ios");
-                if (picked) { setCustomDate(picked); setError(null); }
+                f.setShowDatePicker(Platform.OS === "ios");
+                if (picked) f.pickCustomDate(picked);
               }}
             />
           )}
@@ -362,23 +289,23 @@ export function ProposeContent({
             >
               TIME
             </Text>
-            {customDateIso && customSlotsQuery.data ? (
+            {f.customSlotsLoaded ? (
               <View className="flex flex-row flex-wrap gap-2 mt-1">
-                {customFreeSlots.map((slot) => (
+                {f.customFreeSlots.map((slot) => (
                   <TouchableOpacity
                     key={slot}
                     testID="time-slot"
-                    onPress={() => setCustomTime(slot)}
+                    onPress={() => f.setCustomTime(slot)}
                     className="rounded-xl px-4 py-2"
                     style={{
-                      backgroundColor: customTime === slot ? GOLD : "#F5EFE8",
+                      backgroundColor: f.customTime === slot ? GOLD : "#F5EFE8",
                       borderWidth: 1.5,
-                      borderColor: customTime === slot ? GOLD : MUTED_BORDER,
+                      borderColor: f.customTime === slot ? GOLD : MUTED_BORDER,
                     }}
                   >
                     <Text
                       className="font-manrope-semi"
-                      style={{ fontSize: 14, color: customTime === slot ? DARK : "#5C4A3F" }}
+                      style={{ fontSize: 14, color: f.customTime === slot ? DARK : "#5C4A3F" }}
                     >
                       {slot}
                     </Text>
@@ -388,8 +315,8 @@ export function ProposeContent({
             ) : (
               <TextInput
                 testID="time-input"
-                value={customTime}
-                onChangeText={(t) => { setCustomTime(t); setError(null); }}
+                value={f.customTime}
+                onChangeText={(t) => { f.setCustomTime(t); f.clearError(); }}
                 placeholder="14:00"
                 className="font-manrope-bold text-foreground"
                 style={{ fontSize: 16 }}
@@ -400,11 +327,11 @@ export function ProposeContent({
         </View>
       )}
 
-      <ErrorBanner error={error} testID="proposal-error" />
+      <ErrorBanner error={f.error} testID="proposal-error" />
       <GoldButton
-        onPress={handleSubmit}
-        disabled={proposeMutation.isPending || venues.length === 0}
-        loading={proposeMutation.isPending}
+        onPress={f.submit}
+        disabled={f.submitting || f.venues.length === 0}
+        loading={f.submitting}
         label="Send proposal →"
       />
     </ScrollView>
@@ -420,94 +347,20 @@ export function RespondContent({
   meetupId?: string;
   onDismiss: () => void;
 }) {
-  const [counterMode, setCounterMode] = useState(false);
-  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState<{ venueName: string; scheduledAt: Date | string } | null>(null);
+  const f = useRespondFlow({ meetupId: meetupIdProp, onDismiss });
 
-  const proposalQuery = useQuery(trpc.meetup.getPendingIncoming.queryOptions());
-  const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
-  const counterBounds = date ? dayBoundsIso(date) : null;
-  const slotsQuery = useQuery(
-    trpc.meetup.getAvailableSlots.queryOptions(
-      {
-        partnerId: proposalQuery.data?.proposer.id ?? "",
-        startIso: counterBounds?.startIso ?? "",
-        endIso: counterBounds?.endIso ?? "",
-      },
-      { enabled: !!proposalQuery.data?.proposer.id && !!counterBounds },
-    ),
-  );
-
-  const proposal = proposalQuery.data;
-  const activeMeetupId = meetupIdProp ?? proposal?.meetupId;
-
-  function invalidateQueries() {
-    void queryClient.invalidateQueries(trpc.meetup.getPendingIncoming.queryOptions());
-    void queryClient.invalidateQueries(trpc.meetup.list.queryOptions({ status: "pending" }));
-    void queryClient.invalidateQueries(trpc.meetup.pendingCount.queryOptions());
-    void queryClient.invalidateQueries(trpc.matching.getMyMatches.queryOptions());
-  }
-
-  const acceptMutation = useMutation(
-    trpc.meetup.acceptProposal.mutationOptions({
-      onSuccess: () => {
-        invalidateQueries();
-        if (proposal) {
-          setConfirmed({ venueName: proposal.venue.name, scheduledAt: proposal.scheduledAt });
-        } else {
-          onDismiss();
-        }
-      },
-      onError: (err) => setError(err.message),
-    }),
-  );
-
-  const counterMutation = useMutation(
-    trpc.meetup.counterPropose.mutationOptions({
-      onSuccess: () => {
-        Alert.alert("Counter-proposal sent!", "Your counter-proposal has been sent.");
-        invalidateQueries();
-        onDismiss();
-      },
-      onError: (err) => setError(err.message),
-    }),
-  );
-
-  const declineMutation = useMutation(
-    trpc.meetup.declineProposal.mutationOptions({
-      onSuccess: () => {
-        invalidateQueries();
-        if (!proposal?.canCounterPropose) {
-          Alert.alert(
-            "No match found",
-            "Oops, you couldn't find a suitable timeslot to meet. You can try to propose a meeting again.",
-            [{ text: "OK", onPress: onDismiss }],
-          );
-        } else {
-          Alert.alert("Proposal declined", "The proposal has been declined.");
-          onDismiss();
-        }
-      },
-      onError: (err) => setError(err.message),
-    }),
-  );
-
-  if (confirmed) {
+  if (f.confirmed) {
     return (
       <MeetupConfirmedModal
         visible
-        venueName={confirmed.venueName}
-        scheduledAt={confirmed.scheduledAt}
-        onDismiss={() => { setConfirmed(null); onDismiss(); }}
+        venueName={f.confirmed.venueName}
+        scheduledAt={f.confirmed.scheduledAt}
+        onDismiss={f.dismissConfirmed}
       />
     );
   }
 
-  if (proposalQuery.isPending) {
+  if (f.isLoading) {
     return (
       <View className="flex-1 items-center justify-center py-20">
         <Spinner />
@@ -515,7 +368,7 @@ export function RespondContent({
     );
   }
 
-  if (!proposal || !activeMeetupId) {
+  if (!f.hasProposal || !f.proposal) {
     return (
       <View testID="no-proposal-state" className="flex-1 items-center justify-center p-6 py-20">
         <Text className="text-foreground text-lg font-manrope-bold text-center mb-2">
@@ -528,44 +381,9 @@ export function RespondContent({
     );
   }
 
-  const isPending = acceptMutation.isPending || counterMutation.isPending || declineMutation.isPending;
+  const proposal = f.proposal;
 
-  function handleAccept() {
-    setError(null);
-    acceptMutation.mutate({ meetupId: activeMeetupId! });
-  }
-
-  function handleDecline() {
-    setError(null);
-    Alert.alert(
-      "Decline proposal",
-      "Are you sure you want to decline this meetup proposal?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Decline",
-          style: "destructive",
-          onPress: () => declineMutation.mutate({ meetupId: activeMeetupId! }),
-        },
-      ],
-    );
-  }
-
-  function handleCounterSubmit() {
-    setError(null);
-    if (!selectedVenueId) { setError("Please select a location"); return; }
-    const result = validateScheduledAt(date, time);
-    if (!result.ok) { setError(result.error); return; }
-    counterMutation.mutate({
-      meetupId: activeMeetupId!,
-      venueId: selectedVenueId,
-      scheduledAt: result.scheduledAt.toISOString(),
-    });
-  }
-
-  const counterFreeSlots = date ? freeSlotsFor(date, slotsQuery.data ?? []) : [];
-
-  if (counterMode) {
+  if (f.counterMode) {
     return (
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32 }}>
         <Text className="text-foreground text-2xl font-manrope-bold mb-1">Counter-propose</Text>
@@ -577,10 +395,10 @@ export function RespondContent({
           Location
         </Text>
         <VenuePicker
-          venues={venuesQuery.data ?? []}
-          loading={venuesQuery.isPending}
-          selectedId={selectedVenueId}
-          onSelect={setSelectedVenueId}
+          venues={f.venues}
+          loading={f.venuesLoading}
+          selectedId={f.selectedVenueId}
+          onSelect={f.selectVenue}
         />
 
         <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>
@@ -590,25 +408,22 @@ export function RespondContent({
           testID="counter-date-input"
           className="rounded-2xl px-5 py-4 mb-3"
           style={{ backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: MUTED_BORDER }}
-          onPress={() => setShowDatePicker(true)}
+          onPress={() => f.setShowDatePicker(true)}
         >
           <Text className="text-foreground font-manrope">
-            {date ? formatLongDate(date) : "Select a date"}
+            {f.date ? formatLongDate(f.date) : "Select a date"}
           </Text>
         </TouchableOpacity>
-        {showDatePicker && (
+        {f.showDatePicker && (
           <DateTimePicker
             testID="counter-date-picker"
-            value={toDate(date) ?? new Date()}
+            value={toDate(f.date) ?? new Date()}
             mode="date"
             minimumDate={new Date()}
             display={Platform.OS === "ios" ? "inline" : "default"}
             onChange={(_event, picked) => {
-              setShowDatePicker(Platform.OS === "ios");
-              if (picked) {
-                setDate(toIsoDate(picked));
-                setError(null);
-              }
+              f.setShowDatePicker(Platform.OS === "ios");
+              if (picked) f.pickCounterDate(picked);
             }}
           />
         )}
@@ -616,23 +431,23 @@ export function RespondContent({
         <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2 mt-4" style={{ color: MUTED }}>
           Time
         </Text>
-        {date && slotsQuery.data ? (
+        {f.counterSlotsLoaded ? (
           <View className="flex flex-row flex-wrap gap-2 mb-6">
-            {counterFreeSlots.map((slot) => (
+            {f.counterFreeSlots.map((slot) => (
               <TouchableOpacity
                 key={slot}
                 testID="time-slot"
-                onPress={() => setTime(slot)}
+                onPress={() => f.setTime(slot)}
                 className="rounded-xl px-4 py-2"
                 style={{
-                  backgroundColor: time === slot ? GOLD : "#F5EFE8",
+                  backgroundColor: f.time === slot ? GOLD : "#F5EFE8",
                   borderWidth: 1.5,
-                  borderColor: time === slot ? GOLD : MUTED_BORDER,
+                  borderColor: f.time === slot ? GOLD : MUTED_BORDER,
                 }}
               >
                 <Text
                   className="font-manrope-semi"
-                  style={{ fontSize: 14, color: time === slot ? DARK : "#5C4A3F" }}
+                  style={{ fontSize: 14, color: f.time === slot ? DARK : "#5C4A3F" }}
                 >
                   {slot}
                 </Text>
@@ -645,16 +460,16 @@ export function RespondContent({
           </Text>
         )}
 
-        <ErrorBanner error={error} testID="counter-error" />
+        <ErrorBanner error={f.error} testID="counter-error" />
         <GoldButton
           testID="submit-counter-btn"
-          onPress={handleCounterSubmit}
-          disabled={isPending}
-          loading={counterMutation.isPending}
+          onPress={f.submitCounter}
+          disabled={f.isPending}
+          loading={f.countering}
           label="Send counter-proposal →"
         />
         <Pressable
-          onPress={() => { setCounterMode(false); setError(null); setShowDatePicker(false); }}
+          onPress={f.exitCounter}
           className="items-center py-4"
         >
           <Text className="font-manrope" style={{ fontSize: 14, color: MUTED }}>Back</Text>
@@ -663,7 +478,7 @@ export function RespondContent({
     );
   }
 
-  const proposalScheduled = toDate(proposal.scheduledAt);
+  const proposalScheduled = f.proposalScheduled;
 
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32 }}>
@@ -695,26 +510,20 @@ export function RespondContent({
         </View>
       </View>
 
-      <ErrorBanner error={error} testID="response-error" />
+      <ErrorBanner error={f.error} testID="response-error" />
       <View className="gap-3">
         <GoldButton
           testID="accept-btn"
-          onPress={handleAccept}
-          disabled={isPending}
-          loading={acceptMutation.isPending}
-          label={acceptMutation.isPending ? "Accepting…" : "Accept →"}
+          onPress={f.accept}
+          disabled={f.isPending}
+          loading={f.accepting}
+          label={f.accepting ? "Accepting…" : "Accept →"}
         />
         {proposal.canCounterPropose && (
           <Pressable
             testID="counter-propose-btn"
-            onPress={() => {
-              const at = proposalScheduled ?? new Date();
-              setSelectedVenueId(proposal.venue.id);
-              setDate(toIsoDate(at));
-              setTime(timeFromDate(at));
-              setCounterMode(true);
-            }}
-            disabled={isPending}
+            onPress={f.startCounter}
+            disabled={f.isPending}
             className="rounded-full items-center"
             style={{ paddingVertical: 18, backgroundColor: "#F5EFE8", borderWidth: 1.5, borderColor: MUTED_BORDER }}
           >
@@ -723,12 +532,12 @@ export function RespondContent({
         )}
         <Pressable
           testID="decline-btn"
-          onPress={handleDecline}
-          disabled={isPending}
+          onPress={f.decline}
+          disabled={f.isPending}
           className="items-center py-4"
         >
           <Text className="font-manrope" style={{ fontSize: 14, color: MUTED }}>
-            {declineMutation.isPending ? "Declining…" : "Decline"}
+            {f.declining ? "Declining…" : "Decline"}
           </Text>
         </Pressable>
       </View>
@@ -749,37 +558,7 @@ function RescheduleContent({
   currentScheduledAt: Date | string;
   onDismiss: () => void;
 }) {
-  const initial = toDate(currentScheduledAt) ?? new Date();
-  const [venueId, setVenueId] = useState(currentVenueId);
-  const [date, setDate] = useState(toIsoDate(initial));
-  const [time, setTime] = useState(timeFromDate(initial));
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const venuesQuery = useQuery(trpc.venue.listForPicker.queryOptions());
-
-  const rescheduleMutation = useMutation(
-    trpc.meetup.proposeReschedule.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.meetup.getConfirmed.queryOptions());
-        Alert.alert(
-          "Reschedule proposed",
-          "Your reschedule request has been sent to your buddy.",
-          [{ text: "OK", onPress: onDismiss }],
-        );
-      },
-      onError: (err) => setError(err.message),
-    }),
-  );
-
-  function handleSubmit() {
-    setError(null);
-    if (!venueId) { setError("Please select a location"); return; }
-    const result = validateScheduledAt(date, time);
-    if (!result.ok) { setError(result.error); return; }
-    rescheduleMutation.mutate({ meetupId, venueId, scheduledAt: result.scheduledAt.toISOString() });
-  }
+  const f = useRescheduleFlow({ meetupId, currentVenueId, currentScheduledAt, onDismiss });
 
   return (
     <ScrollView
@@ -801,27 +580,27 @@ function RescheduleContent({
       <Text className="font-manrope-semi tracking-[2px] uppercase mb-3" style={{ fontSize: 11, color: MUTED }}>
         PICK A VENUE
       </Text>
-      {venuesQuery.isPending ? (
+      {f.venuesLoading ? (
         <View className="items-center py-6"><Spinner /></View>
       ) : (
         <View className="gap-3 mb-6">
-          {(venuesQuery.data ?? []).map((v) => (
+          {f.venues.map((v) => (
             <TouchableOpacity
               key={v.id}
               testID="reschedule-venue-option"
-              onPress={() => setVenueId(v.id)}
+              onPress={() => f.selectVenue(v.id)}
               activeOpacity={0.85}
               className="rounded-2xl px-5 py-4 flex-row items-center"
               style={{
                 backgroundColor: "#FFFFFF",
-                borderWidth: venueId === v.id ? 2 : 1.5,
-                borderColor: venueId === v.id ? GOLD : MUTED_BORDER,
+                borderWidth: f.venueId === v.id ? 2 : 1.5,
+                borderColor: f.venueId === v.id ? GOLD : MUTED_BORDER,
               }}
             >
               <View className="flex-1 pr-3">
                 <Text className="font-manrope-bold text-foreground" style={{ fontSize: 16 }}>{v.name}</Text>
               </View>
-              {venueId === v.id ? (
+              {f.venueId === v.id ? (
                 <View className="rounded-full px-3 py-1" style={{ backgroundColor: GOLD }}>
                   <Text className="font-manrope-semi text-[12px]" style={{ color: DARK }}>picked</Text>
                 </View>
@@ -840,24 +619,22 @@ function RescheduleContent({
         testID="reschedule-date-input"
         className="rounded-2xl px-5 py-4 mb-4"
         style={{ backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: MUTED_BORDER }}
-        onPress={() => setShowDatePicker(true)}
+        onPress={() => f.setShowDatePicker(true)}
       >
         <Text className="font-manrope text-foreground">
-          {date ? formatLongDayDate(date) : "Select a date"}
+          {f.date ? formatLongDayDate(f.date) : "Select a date"}
         </Text>
       </TouchableOpacity>
-      {showDatePicker && (
+      {f.showDatePicker && (
         <DateTimePicker
           testID="reschedule-date-picker"
-          value={toDate(date) ?? new Date()}
+          value={toDate(f.date) ?? new Date()}
           mode="date"
           minimumDate={new Date()}
           display={Platform.OS === "ios" ? "inline" : "default"}
           onChange={(_event, picked) => {
-            setShowDatePicker(Platform.OS === "ios");
-            if (picked) {
-              setDate(toIsoDate(picked));
-            }
+            f.setShowDatePicker(Platform.OS === "ios");
+            if (picked) f.pickDate(picked);
           }}
         />
       )}
@@ -869,31 +646,29 @@ function RescheduleContent({
         testID="reschedule-time-input"
         className="rounded-2xl px-5 py-4 mb-6"
         style={{ backgroundColor: "#FFFFFF", borderWidth: 1.5, borderColor: MUTED_BORDER }}
-        onPress={() => setShowTimePicker(true)}
+        onPress={() => f.setShowTimePicker(true)}
       >
-        <Text className="font-manrope text-foreground">{time ? formatTime(combineLocal(date || "2000-01-01", time)) : "Select a time"}</Text>
+        <Text className="font-manrope text-foreground">{f.time ? formatTime(combineLocal(f.date || "2000-01-01", f.time)) : "Select a time"}</Text>
       </TouchableOpacity>
-      {showTimePicker && (
+      {f.showTimePicker && (
         <DateTimePicker
           testID="reschedule-time-picker"
-          value={(time ? combineLocal(date || "2000-01-01", time) : null) ?? new Date()}
+          value={(f.time ? combineLocal(f.date || "2000-01-01", f.time) : null) ?? new Date()}
           mode="time"
           display={Platform.OS === "ios" ? "inline" : "default"}
           onChange={(_event, picked) => {
-            setShowTimePicker(Platform.OS === "ios");
-            if (picked) {
-              setTime(timeFromDate(picked));
-            }
+            f.setShowTimePicker(Platform.OS === "ios");
+            if (picked) f.pickTime(picked);
           }}
         />
       )}
 
-      <ErrorBanner error={error} testID="reschedule-error" />
+      <ErrorBanner error={f.error} testID="reschedule-error" />
       <GoldButton
         testID="reschedule-submit-btn"
-        onPress={handleSubmit}
-        disabled={rescheduleMutation.isPending}
-        loading={rescheduleMutation.isPending}
+        onPress={f.submit}
+        disabled={f.submitting}
+        loading={f.submitting}
         label="Propose reschedule →"
       />
       <Pressable onPress={onDismiss} className="items-center py-4">
