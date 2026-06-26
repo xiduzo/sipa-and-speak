@@ -93,6 +93,24 @@ export const OnboardingProgression = {
   },
 
   /**
+   * Profile-edit guard: every category must always retain at least one
+   * language. Mirrors the onboarding invariant (`assertCanSubmit` requires ≥1
+   * spoken AND ≥1 learning) for post-onboarding edits.
+   *
+   * `remainingCount` is the number of languages currently of the given `type`
+   * (i.e. before the removal). Throws if removing the last one would empty the
+   * category.
+   */
+  assertCanRemoveLanguage(_type: "spoken" | "learning", remainingCount: number): void {
+    if (remainingCount <= 1) {
+      throw new OnboardingRuleError(
+        "BAD_REQUEST",
+        "You must have at least one language in this category",
+      );
+    }
+  },
+
+  /**
    * Reject any learning language that the Student also speaks natively.
    * Throws on conflict; returns silently otherwise.
    */

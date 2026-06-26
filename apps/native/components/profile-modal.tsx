@@ -214,6 +214,22 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
   const savedInterests = profileQuery.data?.interests ?? [];
   const allSelectedLanguages = languages.map((l) => l.language);
 
+  // Each category must always retain at least one language (mirrors the
+  // onboarding invariant + the server guard in removeLanguage). Block the
+  // removal of the last one and explain why.
+  function handleRemoveLanguage(language: string, type: "spoken" | "learning") {
+    const remaining =
+      type === "spoken" ? spokenLanguages.length : learningLanguages.length;
+    if (remaining <= 1) {
+      Alert.alert(
+        "Keep at least one language",
+        "You should always have at least one language in this category",
+      );
+      return;
+    }
+    removeLangMutation.mutate({ language, type });
+  }
+
   return (
     <Modal
       visible={visible}
@@ -372,10 +388,7 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
                       </View>
                       <Pressable
                         onPress={() =>
-                          removeLangMutation.mutate({
-                            language: sl.language,
-                            type: "spoken",
-                          })
+                          handleRemoveLanguage(sl.language, "spoken")
                         }
                       >
                         <Text
@@ -481,10 +494,7 @@ export function ProfileModal({ visible, onDismiss }: ProfileModalProps) {
                       </View>
                       <Pressable
                         onPress={() =>
-                          removeLangMutation.mutate({
-                            language: ll.language,
-                            type: "learning",
-                          })
+                          handleRemoveLanguage(ll.language, "learning")
                         }
                       >
                         <Text

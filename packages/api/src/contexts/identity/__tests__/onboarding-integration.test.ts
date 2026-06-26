@@ -98,3 +98,55 @@ describe("onboarding integration — submitProfile", () => {
     expect(capture.events.map((e) => e.name)).toContain("ProfileCompleted");
   });
 });
+
+describe("profile integration — removeLanguage min-one guard", () => {
+  beforeEach(() => {
+    resetDb();
+  });
+
+  it("rejects removing the last spoken language", async () => {
+    await seedUser({ name: "Ada", surname: "Lovelace" });
+    await db.insert(userLanguage).values([
+      { userId: USER_ID, language: "en", proficiency: "native", type: "spoken" },
+      { userId: USER_ID, language: "nl", proficiency: "beginner", type: "learning" },
+    ]);
+
+    const caller = appRouter.createCaller(buildSessionContext(USER_ID));
+    await expect(
+      caller.profile.removeLanguage({ language: "en", type: "spoken" }),
+    ).rejects.toThrow(/at least one language in this category/);
+
+    const remaining = await db.select().from(userLanguage);
+    expect(remaining.some((r) => r.language === "en" && r.type === "spoken")).toBe(true);
+  });
+
+  it("rejects removing the last learning language", async () => {
+    await seedUser({ name: "Ada", surname: "Lovelace" });
+    await db.insert(userLanguage).values([
+      { userId: USER_ID, language: "en", proficiency: "native", type: "spoken" },
+      { userId: USER_ID, language: "nl", proficiency: "beginner", type: "learning" },
+    ]);
+
+    const caller = appRouter.createCaller(buildSessionContext(USER_ID));
+    await expect(
+      caller.profile.removeLanguage({ language: "nl", type: "learning" }),
+    ).rejects.toThrow(/at least one language in this category/);
+  });
+
+  it("allows removing one when several remain in the category", async () => {
+    await seedUser({ name: "Ada", surname: "Lovelace" });
+    await db.insert(userLanguage).values([
+      { userId: USER_ID, language: "en", proficiency: "native", type: "spoken" },
+      { userId: USER_ID, language: "de", proficiency: "advanced", type: "spoken" },
+      { userId: USER_ID, language: "nl", proficiency: "beginner", type: "learning" },
+    ]);
+
+    const caller = appRouter.createCaller(buildSessionContext(USER_ID));
+    const result = await caller.profile.removeLanguage({ language: "de", type: "spoken" });
+    expect(result.success).toBe(true);
+
+    const remaining = await db.select().from(userLanguage);
+    expect(remaining.some((r) => r.language === "de")).toBe(false);
+    expect(remaining.filter((r) => r.type === "spoken")).toHaveLength(1);
+  });
+});
