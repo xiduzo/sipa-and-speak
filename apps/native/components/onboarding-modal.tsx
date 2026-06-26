@@ -20,6 +20,12 @@ import { authClient } from "@/lib/auth-client";
 import { queryClient, trpc } from "@/utils/trpc";
 import { pickAndEncodeProfilePicture } from "@/utils/profile-picture";
 import { INTERESTS } from "@/utils/interest-labels";
+import {
+  ONBOARDING_INTEREST_MIN,
+  ONBOARDING_INTEREST_MAX,
+  validateOnboardingStep,
+  isOnboardingStepComplete,
+} from "@/utils/onboarding-flow";
 
 const GOLD = "#F2C94C";
 const MUTED_BORDER = "#D9C9BC";
@@ -101,7 +107,7 @@ const STEP_SUBTITLES = [
   "So your buddy can spot you across the café.",
   "Languages you can hold a conversation in.",
   "We'll pair you with native speakers.",
-  "Pick 3–7. Seeds your first match.",
+  `Pick ${ONBOARDING_INTEREST_MIN}–${ONBOARDING_INTEREST_MAX}. Seeds your first match.`,
 ];
 
 export function OnboardingModal() {
@@ -129,6 +135,13 @@ export function OnboardingModal() {
   const [interests, setInterests] = useState<InterestValue[]>([]);
   const [pickerTarget, setPickerTarget] = useState<"spoken" | "learning" | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Counts the wizard's gate rules (in @/utils/onboarding-flow) operate on.
+  const onboardingCounts = {
+    spoken: spokenLanguages.length,
+    learning: learningLanguages.length,
+    interests: interests.length,
+  };
 
   const needsFullOnboarding = onboardingStatus.data?.complete === false;
   const totalSteps = needsFullOnboarding ? 5 : 2;
@@ -214,28 +227,22 @@ export function OnboardingModal() {
   }
 
   function handleStep3Continue() {
-    if (spokenLanguages.length === 0) {
-      setValidationError("Add at least one language you speak.");
-      return;
-    }
+    const v = validateOnboardingStep(3, onboardingCounts);
+    if (!v.ok) { setValidationError(v.error); return; }
     setValidationError(null);
     setStep(4);
   }
 
   function handleStep4Continue() {
-    if (learningLanguages.length === 0) {
-      setValidationError("Add at least one language to learn.");
-      return;
-    }
+    const v = validateOnboardingStep(4, onboardingCounts);
+    if (!v.ok) { setValidationError(v.error); return; }
     setValidationError(null);
     setStep(5);
   }
 
   async function handleFinish() {
-    if (interests.length < 3) {
-      setValidationError("Pick at least 3 topics.");
-      return;
-    }
+    const v = validateOnboardingStep(5, onboardingCounts);
+    if (!v.ok) { setValidationError(v.error); return; }
     setValidationError(null);
     try {
       await upsertMutation.mutateAsync({ spokenLanguages, learningLanguages, interests });
@@ -554,7 +561,7 @@ export function OnboardingModal() {
                     <Text className="font-manrope text-[14px]" style={{ color: "#8A7570" }}>
                       {interests.length} picked
                     </Text>
-                    {interests.length >= 3 && (
+                    {isOnboardingStepComplete(5, onboardingCounts) && (
                       <Text className="font-manrope-semi text-[14px]" style={{ color: GOLD }}>ready ✓</Text>
                     )}
                   </View>
@@ -597,7 +604,7 @@ export function OnboardingModal() {
                   <>
                     <GoldButton
                       onPress={handleStep3Continue}
-                      disabled={spokenLanguages.length === 0}
+                      disabled={!isOnboardingStepComplete(3, onboardingCounts)}
                       label="Continue →"
                     />
                     <Pressable onPress={() => setStep(2)} className="items-center py-2.5">
@@ -609,7 +616,7 @@ export function OnboardingModal() {
                   <>
                     <GoldButton
                       onPress={handleStep4Continue}
-                      disabled={learningLanguages.length === 0}
+                      disabled={!isOnboardingStepComplete(4, onboardingCounts)}
                       label="Continue →"
                     />
                     <Pressable onPress={() => setStep(3)} className="items-center py-2.5">
@@ -622,7 +629,7 @@ export function OnboardingModal() {
                     <GoldButton
                       onPress={handleFinish}
                       loading={upsertMutation.isPending}
-                      disabled={interests.length < 3}
+                      disabled={!isOnboardingStepComplete(5, onboardingCounts)}
                       label="Finish — find matches →"
                     />
                     <Pressable onPress={() => setStep(4)} className="items-center py-2.5">
