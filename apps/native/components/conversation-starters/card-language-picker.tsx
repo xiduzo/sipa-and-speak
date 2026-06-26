@@ -65,7 +65,7 @@ export function CardLanguagePicker({
               accessibilityState={{ selected: isActive }}
               onPress={() => onSelect(language)}
               className={`flex-row items-center gap-3 rounded-2xl px-4 py-3 ${
-                isActive ? "bg-primary" : "bg-muted"
+                isActive ? "bg-primary" : "bg-brand-gold"
               }`}
             >
               <Text style={{ fontSize: 24 }}>{getLanguageFlag(language)}</Text>

@@ -99,7 +99,7 @@ function DeckBrowser({
         accessibilityState={{ expanded: canTranslate ? showTranslation : false }}
         disabled={!canTranslate}
         onPress={toggleReveal}
-        className="w-full items-center justify-center rounded-3xl bg-muted px-6 py-12"
+        className="w-full items-center justify-center rounded-3xl bg-brand-gold px-6 py-12"
       >
         <Text
           testID="card-deck-text"
