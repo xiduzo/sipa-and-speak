@@ -409,7 +409,7 @@ export default function EnrolmentScreen() {
               <Text className="font-manrope text-[13px] text-brand-muted-foreground text-center leading-5">
                 By joining you agree to our{" "}
                 <Text className="underline" onPress={() => openLegal("/terms")}>
-                  Terms
+                  Terms of Use
                 </Text>{" "}
                 and{" "}
                 <Text
