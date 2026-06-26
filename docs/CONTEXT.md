@@ -60,3 +60,46 @@ and replaces `@sip-and-speak/db` with the test DB at import time, so router
 code uses it transparently. Helpers: `resetDb()` (restore the
 post-migration snapshot), `captureEvents()` (subscribe to `domainEvents`),
 `buildSessionContext(userId)` (produce a fake tRPC context).
+
+### MatchRequest aggregate
+
+The pure state machine for the Matching context, mirroring the Meetup
+aggregate. Lives at
+`packages/api/src/contexts/matching/match-request-aggregate.ts`. Each method
+takes a loaded snapshot + actor input and returns the next state plus the
+domain events to emit. Lifecycle:
+
+- `send` → `MatchRequestSent`
+- `accept` → `MatchRequestAccepted`, plus a StudentMatch to create
+- `decline` → `MatchRequestDeclined`
+- `withdraw` (pending → row hard-deleted; no event)
+- `unmatch` (→ `voided`, plus the StudentMatch to drop)
+
+`MatchRuleError` is its invariant-violation error; the tRPC router translates
+it into a `TRPCError` with the matching code.
+
+### Unit of work (`commitAndEmit`)
+
+`packages/api/src/unit-of-work.ts`. The single seam where persistence and
+event emission happen together: it runs a transition's writes in one
+transaction and emits the buffered domain events only after the transaction
+commits, so a rolled-back transition emits nothing. Both the Meetup and
+Matching routers persist through it. (The transactional rollback of the writes
+themselves is a Postgres guarantee; pg-mem does not emulate it — see ADR-0002.)
+
+### Meetup read model
+
+The query side of the Meetup Scheduling context:
+`packages/api/src/contexts/scheduling/meetup-read-model.ts`. Owns the
+multi-join read queries and view shaping (`listMeetupsForUser`,
+`getConfirmedMeetupsForUser`) that the `list` / `getConfirmed` procedures used
+to inline. The Meetup aggregate owns the write side; the read model owns the
+read side.
+
+### Onboarding wizard gates
+
+Client-side, `apps/native/utils/onboarding-flow.ts`. The onboarding wizard
+requires **3–7 interests** (plus ≥1 spoken and ≥1 learning language) to finish
+— deliberately STRICTER than the server's matching-eligibility rule (≥1
+interest, owned by OnboardingProgression). The server stays the source of truth
+for whether a profile is matchable; these gates govern only the wizard UX.

@@ -1,14 +1,12 @@
-import type { EventEmitter } from "events";
-import { and, eq, or, sql, count, gte, lt, inArray, desc } from "drizzle-orm";
+import { and, eq, or, sql, count, gte, lt, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
 import { meetup, venue, attendanceReport } from "@sip-and-speak/db/schema/scheduling";
 import { studentMatch } from "@sip-and-speak/db/schema/matching";
-import { getMessagingStateForUserMeetups } from "../conversation";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
-import { domainEvents } from "../../domain-events";
+import { commitAndEmit, type BufferedEvent } from "../../unit-of-work";
 import {
   Meetup,
   MeetupRuleError,
@@ -16,6 +14,10 @@ import {
   type MeetupSnapshot,
   type VenueSnapshot,
 } from "./meetup-aggregate";
+import {
+  listMeetupsForUser,
+  getConfirmedMeetupsForUser,
+} from "./meetup-read-model";
 
 /**
  * Format a UTC Date as wall-clock parts in the given IANA timezone.
@@ -72,10 +74,7 @@ async function assertPartnerActive(partnerId: string): Promise<void> {
 }
 
 /**
- * Replay aggregate events through the global domain-events emitter. We dodge
- * the per-event generic by routing through the base `EventEmitter.emit`.
- *
- * For events that carry `scheduledAt` (Date), we also enrich the payload with
+ * For events that carry `scheduledAt` (Date), enrich the payload with
  * `date`/`time` strings formatted in the canonical zone so notification
  * builders can keep using string interpolation without timezone work.
  */
@@ -99,11 +98,19 @@ function enrichPayload(payload: Record<string, unknown>): Record<string, unknown
   return out;
 }
 
-function emit(events: DomainEventToEmit[], extraPayload: Record<string, unknown> = {}): void {
-  const emitter = domainEvents as unknown as EventEmitter;
-  for (const e of events) {
-    emitter.emit(e.name, enrichPayload({ ...e.payload, ...extraPayload }));
-  }
+/**
+ * Map aggregate events to buffered events, applying payload enrichment. The
+ * buffer is handed to `commitAndEmit`, which fires them only after the
+ * transaction commits — so a rolled-back transition emits nothing.
+ */
+function toBuffered(
+  events: DomainEventToEmit[],
+  extraPayload: Record<string, unknown> = {},
+): BufferedEvent[] {
+  return events.map((e) => ({
+    name: e.name,
+    payload: enrichPayload({ ...e.payload, ...extraPayload }),
+  }));
 }
 
 /** Load the venue snapshot the aggregate needs for proposal-style transitions. */
@@ -216,9 +223,13 @@ export const meetupRouter = router({
         toTrpcError(err);
       }
 
-      const [created] = await db.insert(meetup).values(decision.row).returning();
-      emit(decision.events, { meetupId: created!.id });
-      return created;
+      return commitAndEmit(async (tx) => {
+        const [created] = await tx.insert(meetup).values(decision.row).returning();
+        return {
+          result: created,
+          events: toBuffered(decision.events, { meetupId: created!.id }),
+        };
+      });
     }),
 
   /**
@@ -272,13 +283,14 @@ export const meetupRouter = router({
         } catch (err) {
           toTrpcError(err);
         }
-        const [updated] = await db
-          .update(meetup)
-          .set({ status: decision.state.status })
-          .where(eq(meetup.id, existing.id))
-          .returning();
-        emit(decision.events);
-        return updated;
+        return commitAndEmit(async (tx) => {
+          const [updated] = await tx
+            .update(meetup)
+            .set({ status: decision.state.status })
+            .where(eq(meetup.id, existing.id))
+            .returning();
+          return { result: updated, events: toBuffered(decision.events) };
+        });
       }
 
       // decline path
@@ -288,13 +300,14 @@ export const meetupRouter = router({
       } catch (err) {
         toTrpcError(err);
       }
-      const [updated] = await db
-        .update(meetup)
-        .set({ status: decision.state.status })
-        .where(eq(meetup.id, existing.id))
-        .returning();
-      emit(decision.events);
-      return updated;
+      return commitAndEmit(async (tx) => {
+        const [updated] = await tx
+          .update(meetup)
+          .set({ status: decision.state.status })
+          .where(eq(meetup.id, existing.id))
+          .returning();
+        return { result: updated, events: toBuffered(decision.events) };
+      });
     }),
 
   // #75 — Accept a pending proposal → confirm meetup, emit MeetupConfirmed
@@ -324,13 +337,14 @@ export const meetupRouter = router({
         toTrpcError(err);
       }
 
-      const [updated] = await db
-        .update(meetup)
-        .set({ status: decision.state.status })
-        .where(eq(meetup.id, existing.id))
-        .returning();
-      emit(decision.events);
-      return updated;
+      return commitAndEmit(async (tx) => {
+        const [updated] = await tx
+          .update(meetup)
+          .set({ status: decision.state.status })
+          .where(eq(meetup.id, existing.id))
+          .returning();
+        return { result: updated, events: toBuffered(decision.events) };
+      });
     }),
 
   // #77 — Decline a pending proposal → reset to Matched state, emit MeetupDeclined
@@ -350,13 +364,14 @@ export const meetupRouter = router({
         toTrpcError(err);
       }
 
-      const [updated] = await db
-        .update(meetup)
-        .set({ status: decision.state.status })
-        .where(eq(meetup.id, existing.id))
-        .returning();
-      emit(decision.events);
-      return updated;
+      return commitAndEmit(async (tx) => {
+        const [updated] = await tx
+          .update(meetup)
+          .set({ status: decision.state.status })
+          .where(eq(meetup.id, existing.id))
+          .returning();
+        return { result: updated, events: toBuffered(decision.events) };
+      });
     }),
 
   // #76 — Counter-propose: swap roles, update details, increment round, emit MeetupCounterProposed
@@ -391,19 +406,20 @@ export const meetupRouter = router({
       }
 
       const next = decision.state;
-      const [updated] = await db
-        .update(meetup)
-        .set({
-          proposerId: next.proposerId,
-          receiverId: next.receiverId,
-          venueId: next.venueId,
-          scheduledAt: next.scheduledAt,
-          round: next.round,
-        })
-        .where(eq(meetup.id, existing.id))
-        .returning();
-      emit(decision.events);
-      return updated;
+      return commitAndEmit(async (tx) => {
+        const [updated] = await tx
+          .update(meetup)
+          .set({
+            proposerId: next.proposerId,
+            receiverId: next.receiverId,
+            venueId: next.venueId,
+            scheduledAt: next.scheduledAt,
+            round: next.round,
+          })
+          .where(eq(meetup.id, existing.id))
+          .returning();
+        return { result: updated, events: toBuffered(decision.events) };
+      });
     }),
 
   list: protectedProcedure
@@ -415,79 +431,7 @@ export const meetupRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
-
-      const conditions = [
-        or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
-      ];
-
-      if (input.status !== "all") {
-        conditions.push(eq(meetup.status, input.status));
-      }
-
-      // #367 — A pending proposal whose currently-proposed datetime has passed
-      // is dead: hide it so the "Waiting for reply" card clears. scheduledAt
-      // always reflects the latest round (counter-proposals overwrite it), so
-      // this guards against the current datetime, never a stale earlier round.
-      // Confirmed/declined rows are unaffected — they still surface in history
-      // regardless of date.
-      if (input.status === "pending") {
-        conditions.push(gte(meetup.scheduledAt, new Date()));
-      }
-
-      const rows = await db
-        .select({
-          meetup: meetup,
-          venue: {
-            id: venue.id,
-            name: venue.name,
-            photoUrl: venue.photoUrl,
-          },
-          proposer: {
-            id: sql<string>`proposer.id`.as("proposer_id_alias"),
-            name: sql<string>`proposer.name`.as("proposer_name"),
-            image: sql<string | null>`proposer.image`.as("proposer_image"),
-            deletedAt: sql<Date | null>`proposer.deleted_at`.as("proposer_deleted_at"),
-          },
-          receiver: {
-            id: sql<string>`receiver.id`.as("receiver_id_alias"),
-            name: sql<string>`receiver.name`.as("receiver_name"),
-            image: sql<string | null>`receiver.image`.as("receiver_image"),
-            deletedAt: sql<Date | null>`receiver.deleted_at`.as("receiver_deleted_at"),
-          },
-        })
-        .from(meetup)
-        .innerJoin(venue, eq(meetup.venueId, venue.id))
-        .innerJoin(
-          sql`"user" as proposer`,
-          sql`proposer.id = ${meetup.proposerId}`,
-        )
-        .innerJoin(
-          sql`"user" as receiver`,
-          sql`receiver.id = ${meetup.receiverId}`,
-        )
-        .where(and(...conditions))
-        .orderBy(desc(meetup.createdAt));
-
-      return rows.map((row) => {
-        const isProposer = row.meetup.proposerId === userId;
-        const partner = isProposer ? row.receiver : row.proposer;
-
-        const partnerDeleted = partner.deletedAt !== null;
-
-        return {
-          ...row.meetup,
-          isProposer,
-          venue: row.venue,
-          partner: {
-            id: partner.id,
-            // #447 — render deleted partners as an unavailable placeholder.
-            name: partnerDeleted ? "Deleted user" : partner.name,
-            image: partnerDeleted ? null : partner.image,
-          },
-          partnerDeleted,
-        };
-      });
+      return listMeetupsForUser(ctx.session.user.id, input.status);
     }),
 
   /**
@@ -610,13 +554,14 @@ export const meetupRouter = router({
         toTrpcError(err);
       }
 
-      const [updated] = await db
-        .update(meetup)
-        .set({ status: decision.state.status })
-        .where(eq(meetup.id, existing.id))
-        .returning();
-      emit(decision.events);
-      return updated;
+      return commitAndEmit(async (tx) => {
+        const [updated] = await tx
+          .update(meetup)
+          .set({ status: decision.state.status })
+          .where(eq(meetup.id, existing.id))
+          .returning();
+        return { result: updated, events: toBuffered(decision.events) };
+      });
     }),
 
   // #399 — Withdraw a still-pending proposal (proposer-only) → cancelled status,
@@ -639,103 +584,19 @@ export const meetupRouter = router({
         toTrpcError(err);
       }
 
-      const [updated] = await db
-        .update(meetup)
-        .set({ status: decision.state.status })
-        .where(eq(meetup.id, existing.id))
-        .returning();
-      emit(decision.events);
-      return updated;
+      return commitAndEmit(async (tx) => {
+        const [updated] = await tx
+          .update(meetup)
+          .set({ status: decision.state.status })
+          .where(eq(meetup.id, existing.id))
+          .returning();
+        return { result: updated, events: toBuffered(decision.events) };
+      });
     }),
 
   // Query confirmed meetups for the current user
   getConfirmed: protectedProcedure.query(async ({ ctx }) => {
-    const userId = ctx.session.user.id;
-
-    const [rows, myReports, messagingState] = await Promise.all([
-      db
-        .select({
-          meetup: meetup,
-          venue: {
-            id: venue.id,
-            name: venue.name,
-            description: venue.description,
-            photoUrl: venue.photoUrl,
-          },
-          partner: {
-            id: sql<string>`partner.id`.as("gc_partner_id"),
-            name: sql<string>`partner.name`.as("gc_partner_name"),
-            image: sql<string | null>`partner.image`.as("gc_partner_image"),
-            deletedAt: sql<Date | null>`partner.deleted_at`.as("gc_partner_deleted_at"),
-          },
-        })
-        .from(meetup)
-        .innerJoin(venue, eq(meetup.venueId, venue.id))
-        .innerJoin(
-          sql`"user" as partner`,
-          sql`partner.id = CASE WHEN ${meetup.proposerId} = ${userId} THEN ${meetup.receiverId} ELSE ${meetup.proposerId} END`,
-        )
-        .where(
-          and(
-            or(eq(meetup.status, "confirmed"), eq(meetup.status, "completed")),
-            or(eq(meetup.proposerId, userId), eq(meetup.receiverId, userId)),
-          ),
-        )
-        .orderBy(desc(meetup.scheduledAt)),
-      // #97 — Fetch this user's attendance reports
-      db
-        .select({
-          meetupId: attendanceReport.meetupId,
-          attended: attendanceReport.attended,
-          rating: attendanceReport.rating,
-        })
-        .from(attendanceReport)
-        .where(eq(attendanceReport.studentId, userId)),
-      // Conversation context owns its own data — Scheduling consumes the surface
-      getMessagingStateForUserMeetups(userId),
-    ]);
-
-    const myReportMap = new Map(myReports.map((r) => [r.meetupId, r]));
-    const now = new Date();
-
-    return rows.map((row) => {
-      const myReport = myReportMap.get(row.meetup.id);
-      const messaging = messagingState.get(row.meetup.id) ?? { mine: null, partner: null, conversationId: null };
-      const partnerDeleted = row.partner.deletedAt !== null;
-      return {
-        meetupId: row.meetup.id,
-        scheduledAt: row.meetup.scheduledAt,
-        status: row.meetup.status,
-        isPast: row.meetup.scheduledAt <= now,
-        venue: row.venue,
-        // #447 — render deleted partners as an unavailable placeholder.
-        partner: {
-          id: row.partner.id,
-          name: partnerDeleted ? "Deleted user" : row.partner.name,
-          image: partnerDeleted ? null : row.partner.image,
-        },
-        partnerDeleted,
-        // #86 — Reschedule proposal state
-        reschedulePending: row.meetup.rescheduleProposerId !== null,
-        rescheduleIsFromMe: row.meetup.rescheduleProposerId === userId,
-        reschedule: row.meetup.rescheduleProposerId !== null && row.meetup.rescheduleScheduledAt
-          ? {
-              venueId: row.meetup.rescheduleVenueId!,
-              scheduledAt: row.meetup.rescheduleScheduledAt,
-            }
-          : null,
-        // #97 — Attendance report state
-        hasReported: myReport !== undefined,
-        myAttendance: myReport?.attended ?? null,
-        myRating: myReport?.rating ?? null,
-        // Messaging opt-in state for post-meetup hero
-        optIn: {
-          mine: messaging.mine,
-          partner: messaging.partner,
-          conversationId: messaging.conversationId,
-        },
-      };
-    });
+    return getConfirmedMeetupsForUser(ctx.session.user.id);
   }),
 
   // #86 — Propose a reschedule for a confirmed meetup
@@ -770,17 +631,18 @@ export const meetupRouter = router({
       }
 
       const next = decision.state;
-      const [updated] = await db
-        .update(meetup)
-        .set({
-          rescheduleProposerId: next.rescheduleProposerId,
-          rescheduleVenueId: next.rescheduleVenueId,
-          rescheduleScheduledAt: next.rescheduleScheduledAt,
-        })
-        .where(eq(meetup.id, existing.id))
-        .returning();
-      emit(decision.events);
-      return updated;
+      return commitAndEmit(async (tx) => {
+        const [updated] = await tx
+          .update(meetup)
+          .set({
+            rescheduleProposerId: next.rescheduleProposerId,
+            rescheduleVenueId: next.rescheduleVenueId,
+            rescheduleScheduledAt: next.rescheduleScheduledAt,
+          })
+          .where(eq(meetup.id, existing.id))
+          .returning();
+        return { result: updated, events: toBuffered(decision.events) };
+      });
     }),
 
   // #91 — Accept a reschedule proposal → update meetup details, emit MeetupRescheduled, notify both
@@ -815,29 +677,30 @@ export const meetupRouter = router({
 
       const next = decision.state;
       // Atomic guard preserved — only commit if reschedule is still pending.
-      const [updated] = await db
-        .update(meetup)
-        .set({
-          venueId: next.venueId,
-          scheduledAt: next.scheduledAt,
-          rescheduleProposerId: null,
-          rescheduleVenueId: null,
-          rescheduleScheduledAt: null,
-        })
-        .where(
-          and(eq(meetup.id, existing.id), sql`${meetup.rescheduleProposerId} IS NOT NULL`),
-        )
-        .returning();
+      return commitAndEmit(async (tx) => {
+        const [updated] = await tx
+          .update(meetup)
+          .set({
+            venueId: next.venueId,
+            scheduledAt: next.scheduledAt,
+            rescheduleProposerId: null,
+            rescheduleVenueId: null,
+            rescheduleScheduledAt: null,
+          })
+          .where(
+            and(eq(meetup.id, existing.id), sql`${meetup.rescheduleProposerId} IS NOT NULL`),
+          )
+          .returning();
 
-      if (!updated) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "The reschedule proposal was already handled by another request",
-        });
-      }
+        if (!updated) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "The reschedule proposal was already handled by another request",
+          });
+        }
 
-      emit(decision.events);
-      return updated;
+        return { result: updated, events: toBuffered(decision.events) };
+      });
     }),
 
   // #93 — Decline a reschedule proposal → retain original details, emit MeetupRescheduleDeclined, notify both
@@ -866,27 +729,28 @@ export const meetupRouter = router({
         toTrpcError(err);
       }
 
-      const [updated] = await db
-        .update(meetup)
-        .set({
-          rescheduleProposerId: null,
-          rescheduleVenueId: null,
-          rescheduleScheduledAt: null,
-        })
-        .where(
-          and(eq(meetup.id, existing.id), sql`${meetup.rescheduleProposerId} IS NOT NULL`),
-        )
-        .returning();
+      return commitAndEmit(async (tx) => {
+        const [updated] = await tx
+          .update(meetup)
+          .set({
+            rescheduleProposerId: null,
+            rescheduleVenueId: null,
+            rescheduleScheduledAt: null,
+          })
+          .where(
+            and(eq(meetup.id, existing.id), sql`${meetup.rescheduleProposerId} IS NOT NULL`),
+          )
+          .returning();
 
-      if (!updated) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "The reschedule proposal was already handled by another request",
-        });
-      }
+        if (!updated) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "The reschedule proposal was already handled by another request",
+          });
+        }
 
-      emit(decision.events);
-      return updated;
+        return { result: updated, events: toBuffered(decision.events) };
+      });
     }),
 
   // #97 — Record each Student's attendance report independently
@@ -929,7 +793,7 @@ export const meetupRouter = router({
       // cross-context match promotion must all commit or all roll back. A
       // mid-sequence failure previously left the report recorded while the
       // meetup/match state stayed inconsistent.
-      const { created, promotedMatch } = await db.transaction(async (tx) => {
+      const created = await commitAndEmit(async (tx) => {
         const [created] = await tx
           .insert(attendanceReport)
           .values({
@@ -976,35 +840,37 @@ export const meetupRouter = router({
           }
         }
 
-        return { created, promotedMatch };
+        // Enrich AttendanceReported with the freshly-persisted report id.
+        const attendanceReportedIdx = decision.events.findIndex(
+          (e) => e.name === "AttendanceReported",
+        );
+        if (attendanceReportedIdx !== -1 && created) {
+          decision.events[attendanceReportedIdx]!.payload.reportId = created.id;
+          decision.events[attendanceReportedIdx]!.payload.reportedAt = created.reportedAt;
+        }
+        const events = toBuffered(decision.events);
+
+        if (promotedMatch) {
+          // #138 — Prompt both Students to opt in to messaging after a completed meetup
+          const [studentARow, studentBRow] = await Promise.all([
+            tx.select({ name: user.name }).from(user).where(eq(user.id, existing.proposerId)).limit(1),
+            tx.select({ name: user.name }).from(user).where(eq(user.id, existing.receiverId)).limit(1),
+          ]);
+          events.push({
+            name: "MessagingOptInPrompted",
+            payload: {
+              meetupId: input.meetupId,
+              studentAId: existing.proposerId,
+              studentAName: studentARow[0]?.name ?? "Your match",
+              studentBId: existing.receiverId,
+              studentBName: studentBRow[0]?.name ?? "Your match",
+              promptedAt: new Date(),
+            },
+          });
+        }
+
+        return { result: created, events };
       });
-
-      // Side effects fire only after the transaction commits.
-      // Enrich AttendanceReported with the freshly-persisted report id.
-      const attendanceReportedIdx = decision.events.findIndex(
-        (e) => e.name === "AttendanceReported",
-      );
-      if (attendanceReportedIdx !== -1 && created) {
-        decision.events[attendanceReportedIdx]!.payload.reportId = created.id;
-        decision.events[attendanceReportedIdx]!.payload.reportedAt = created.reportedAt;
-      }
-      emit(decision.events);
-
-      if (promotedMatch) {
-        const [studentARow, studentBRow] = await Promise.all([
-          db.select({ name: user.name }).from(user).where(eq(user.id, existing.proposerId)).limit(1),
-          db.select({ name: user.name }).from(user).where(eq(user.id, existing.receiverId)).limit(1),
-        ]);
-        // #138 — Prompt both Students to opt in to messaging after a completed meetup
-        domainEvents.emit("MessagingOptInPrompted", {
-          meetupId: input.meetupId,
-          studentAId: existing.proposerId,
-          studentAName: studentARow[0]?.name ?? "Your match",
-          studentBId: existing.receiverId,
-          studentBName: studentBRow[0]?.name ?? "Your match",
-          promptedAt: new Date(),
-        });
-      }
 
       return created;
     }),

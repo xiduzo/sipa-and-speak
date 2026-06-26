@@ -7,8 +7,37 @@ import { matchRequest, studentMatch } from "@sip-and-speak/db/schema/matching";
 import { meetup, attendanceReport } from "@sip-and-speak/db/schema/scheduling";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
-import { domainEvents } from "../../domain-events";
 import { buildExcludedUserIds, scoreCandidates } from "./matching-utils";
+import {
+  MatchRequest,
+  MatchRuleError,
+  type MatchRequestSnapshot,
+} from "./match-request-aggregate";
+import { commitAndEmit } from "../../unit-of-work";
+
+/** Convert aggregate rule violations into the right tRPC error code. */
+function toTrpcError(err: unknown): never {
+  if (err instanceof MatchRuleError) {
+    throw new TRPCError({ code: err.code, message: err.message });
+  }
+  throw err;
+}
+
+/** Load the MatchRequest snapshot the aggregate needs for status transitions. */
+async function loadMatchRequestSnapshot(
+  id: string,
+): Promise<MatchRequestSnapshot | null> {
+  const row = await db.query.matchRequest.findFirst({
+    where: eq(matchRequest.id, id),
+  });
+  if (!row) return null;
+  return {
+    id: row.id,
+    requesterId: row.requesterId,
+    receiverId: row.receiverId,
+    status: row.status,
+  };
+}
 
 // --- Router ---
 
@@ -398,78 +427,75 @@ export const matchingRouter = router({
     .mutation(async ({ ctx, input }) => {
       const requesterId = ctx.session.user.id;
 
-      if (requesterId === input.receiverId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "You cannot send a match request to yourself.",
-        });
-      }
+      // Load the preconditions the aggregate needs: receiver existence, a
+      // conflicting active request, and the requester's display name + offered/
+      // targeted languages for the MatchRequestSent payload.
+      const [receiverProfile, existing, requesterRow, requesterLanguages] =
+        await Promise.all([
+          db.query.languageProfile.findFirst({
+            where: eq(languageProfile.userId, input.receiverId),
+          }),
+          db.query.matchRequest.findFirst({
+            where: and(
+              eq(matchRequest.requesterId, requesterId),
+              eq(matchRequest.receiverId, input.receiverId),
+              // pending or accepted only — declined allows re-request
+              inArray(matchRequest.status, ["pending", "accepted"]),
+            ),
+          }),
+          db.select({ name: user.name }).from(user).where(eq(user.id, requesterId)).limit(1),
+          db
+            .select({ language: userLanguage.language, type: userLanguage.type })
+            .from(userLanguage)
+            .where(eq(userLanguage.userId, requesterId)),
+        ]);
 
-      // Check receiver exists
-      const receiverProfile = await db.query.languageProfile.findFirst({
-        where: eq(languageProfile.userId, input.receiverId),
-      });
-      if (!receiverProfile) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "This profile is no longer available.",
-        });
-      }
-
-      // Check for existing active request (pending or accepted only — declined allows re-request)
-      const existing = await db.query.matchRequest.findFirst({
-        where: and(
-          eq(matchRequest.requesterId, requesterId),
-          eq(matchRequest.receiverId, input.receiverId),
-          inArray(matchRequest.status, ["pending", "accepted"]),
-        ),
-      });
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "A match request to this candidate already exists.",
-        });
-      }
-
-      const rows = await db
-        .insert(matchRequest)
-        .values({
+      let decision;
+      try {
+        decision = MatchRequest.send({
           requesterId,
+          requesterName: requesterRow[0]?.name ?? "Someone",
           receiverId: input.receiverId,
-          status: "pending",
-        })
-        .returning({ id: matchRequest.id });
-
-      const created = rows[0];
-      if (!created) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create match request." });
+          receiverExists: receiverProfile != null,
+          offeredLanguage:
+            requesterLanguages.find((l) => l.type === "spoken")?.language ?? null,
+          targetedLanguage:
+            requesterLanguages.find((l) => l.type === "learning")?.language ?? null,
+          hasActiveRequest: existing != null,
+          now: new Date(),
+        });
+      } catch (err) {
+        toTrpcError(err);
       }
+
+      const matchRequestId = await commitAndEmit(async (tx) => {
+        const [created] = await tx
+          .insert(matchRequest)
+          .values(decision.row)
+          .returning({ id: matchRequest.id });
+        if (!created) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create match request.",
+          });
+        }
+        return {
+          result: created.id,
+          // The aggregate cannot know the id until the row exists — graft it on.
+          events: decision.events.map((e) => ({
+            name: e.name,
+            payload: { ...e.payload, matchRequestId: created.id },
+          })),
+        };
+      });
 
       console.info("[MatchRequestSent]", {
-        matchRequestId: created.id,
+        matchRequestId,
         requesterId,
         receiverId: input.receiverId,
       });
 
-      const [requesterRow, requesterLanguages] = await Promise.all([
-        db.select({ name: user.name }).from(user).where(eq(user.id, requesterId)).limit(1),
-        db.select({ language: userLanguage.language, type: userLanguage.type }).from(userLanguage).where(eq(userLanguage.userId, requesterId)),
-      ]);
-      const requesterName = requesterRow[0]?.name ?? "Someone";
-      const offeredLanguage = requesterLanguages.find((l) => l.type === "spoken")?.language ?? null;
-      const targetedLanguage = requesterLanguages.find((l) => l.type === "learning")?.language ?? null;
-
-      domainEvents.emit("MatchRequestSent", {
-        matchRequestId: created.id,
-        requesterId,
-        requesterName,
-        offeredLanguage,
-        targetedLanguage,
-        receiverId: input.receiverId,
-        sentAt: new Date(),
-      });
-
-      return { matchRequestId: created.id, status: "pending" as const };
+      return { matchRequestId, status: "pending" as const };
     }),
 
   acceptMatchRequest: protectedProcedure
@@ -477,56 +503,51 @@ export const matchingRouter = router({
     .mutation(async ({ ctx, input }) => {
       const receiverId = ctx.session.user.id;
 
-      const request = await db.query.matchRequest.findFirst({
-        where: eq(matchRequest.id, input.matchRequestId),
-      });
-
-      if (!request) {
+      const existing = await loadMatchRequestSnapshot(input.matchRequestId);
+      if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Match request not found." });
       }
 
-      if (request.receiverId !== receiverId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only the designated receiver may accept this request." });
+      const [receiverRow] = await db
+        .select({ name: user.name })
+        .from(user)
+        .where(eq(user.id, receiverId))
+        .limit(1);
+
+      let decision;
+      try {
+        decision = MatchRequest.accept(existing, {
+          actorId: receiverId,
+          receiverName: receiverRow?.name ?? "Someone",
+          now: new Date(),
+        });
+      } catch (err) {
+        toTrpcError(err);
       }
 
-      if (request.status !== "pending") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending requests can be accepted." });
-      }
-
-      // Atomic: marking the request accepted and creating the match must both
-      // commit or both roll back, else we get an accepted request with no match
-      // (or an orphan match).
-      await db.transaction(async (tx) => {
+      // Marking the request accepted and creating the match commit together —
+      // the aggregate hands both writes to one unit of work, so we can never get
+      // an accepted request with no match (or an orphan match).
+      await commitAndEmit(async (tx) => {
         await tx
           .update(matchRequest)
-          .set({ status: "accepted" })
-          .where(eq(matchRequest.id, input.matchRequestId));
-
+          .set({ status: decision.state.status })
+          .where(eq(matchRequest.id, existing.id));
         await tx.insert(studentMatch).values({
-          studentAId: request.requesterId,
-          studentBId: receiverId,
-          matchRequestId: input.matchRequestId,
+          studentAId: decision.createMatch.studentAId,
+          studentBId: decision.createMatch.studentBId,
+          matchRequestId: existing.id,
         });
+        return { result: undefined, events: decision.events };
       });
 
       console.info("[MatchRequestAccepted]", {
-        matchRequestId: input.matchRequestId,
-        requesterId: request.requesterId,
+        matchRequestId: existing.id,
+        requesterId: existing.requesterId,
         receiverId,
       });
 
-      const [receiverRow] = await db.select({ name: user.name }).from(user).where(eq(user.id, receiverId)).limit(1);
-      const receiverName = receiverRow?.name ?? "Someone";
-
-      domainEvents.emit("MatchRequestAccepted", {
-        matchRequestId: input.matchRequestId,
-        requesterId: request.requesterId,
-        receiverId,
-        receiverName,
-        acceptedAt: new Date(),
-      });
-
-      return { status: "accepted" as const, matchedWithUserId: request.requesterId };
+      return { status: "accepted" as const, matchedWithUserId: existing.requesterId };
     }),
 
   declineMatchRequest: protectedProcedure
@@ -534,38 +555,33 @@ export const matchingRouter = router({
     .mutation(async ({ ctx, input }) => {
       const receiverId = ctx.session.user.id;
 
-      const request = await db.query.matchRequest.findFirst({
-        where: eq(matchRequest.id, input.matchRequestId),
-      });
-
-      if (!request) {
+      const existing = await loadMatchRequestSnapshot(input.matchRequestId);
+      if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Match request not found." });
       }
 
-      if (request.receiverId !== receiverId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only the designated receiver may decline this request." });
+      let decision;
+      try {
+        decision = MatchRequest.decline(existing, {
+          actorId: receiverId,
+          now: new Date(),
+        });
+      } catch (err) {
+        toTrpcError(err);
       }
 
-      if (request.status !== "pending") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending requests can be declined." });
-      }
-
-      await db
-        .update(matchRequest)
-        .set({ status: "declined" })
-        .where(eq(matchRequest.id, input.matchRequestId));
-
-      console.info("[MatchRequestDeclined]", {
-        matchRequestId: input.matchRequestId,
-        requesterId: request.requesterId,
-        receiverId,
+      await commitAndEmit(async (tx) => {
+        await tx
+          .update(matchRequest)
+          .set({ status: decision.state.status })
+          .where(eq(matchRequest.id, existing.id));
+        return { result: undefined, events: decision.events };
       });
 
-      domainEvents.emit("MatchRequestDeclined", {
-        matchRequestId: input.matchRequestId,
-        requesterId: request.requesterId,
+      console.info("[MatchRequestDeclined]", {
+        matchRequestId: existing.id,
+        requesterId: existing.requesterId,
         receiverId,
-        declinedAt: new Date(),
       });
 
       return { status: "declined" as const };
@@ -579,26 +595,26 @@ export const matchingRouter = router({
     .mutation(async ({ ctx, input }) => {
       const requesterId = ctx.session.user.id;
 
-      const request = await db.query.matchRequest.findFirst({
-        where: eq(matchRequest.id, input.matchRequestId),
-      });
-
-      if (!request) {
+      const existing = await loadMatchRequestSnapshot(input.matchRequestId);
+      if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found." });
       }
-      if (request.requesterId !== requesterId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Only the sender may withdraw this invitation." });
-      }
-      if (request.status !== "pending") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Only pending invitations can be withdrawn." });
+
+      try {
+        MatchRequest.withdraw(existing, { actorId: requesterId });
+      } catch (err) {
+        toTrpcError(err);
       }
 
-      await db.delete(matchRequest).where(eq(matchRequest.id, input.matchRequestId));
+      await commitAndEmit(async (tx) => {
+        await tx.delete(matchRequest).where(eq(matchRequest.id, existing.id));
+        return { result: undefined, events: [] };
+      });
 
       console.info("[MatchRequestWithdrawn]", {
-        matchRequestId: input.matchRequestId,
+        matchRequestId: existing.id,
         requesterId,
-        receiverId: request.receiverId,
+        receiverId: existing.receiverId,
       });
 
       return { success: true as const };
@@ -610,10 +626,6 @@ export const matchingRouter = router({
     .input(z.object({ partnerId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-
-      if (userId === input.partnerId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot unmatch yourself." });
-      }
 
       const match = await db.query.studentMatch.findFirst({
         where: or(
@@ -628,20 +640,30 @@ export const matchingRouter = router({
         ),
       });
 
-      if (!match) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "You are not matched with this person." });
+      try {
+        MatchRequest.unmatch({
+          actorId: userId,
+          partnerId: input.partnerId,
+          matchExists: match != null,
+        });
+      } catch (err) {
+        toTrpcError(err);
       }
 
-      await db
-        .update(matchRequest)
-        .set({ status: "voided" })
-        .where(eq(matchRequest.id, match.matchRequestId));
-      await db.delete(studentMatch).where(eq(studentMatch.id, match.id));
+      // Voiding the request and dropping the match commit together.
+      await commitAndEmit(async (tx) => {
+        await tx
+          .update(matchRequest)
+          .set({ status: "voided" })
+          .where(eq(matchRequest.id, match!.matchRequestId));
+        await tx.delete(studentMatch).where(eq(studentMatch.id, match!.id));
+        return { result: undefined, events: [] };
+      });
 
       console.info("[Unmatched]", {
         userId,
         partnerId: input.partnerId,
-        matchId: match.id,
+        matchId: match!.id,
       });
 
       return { success: true as const };
