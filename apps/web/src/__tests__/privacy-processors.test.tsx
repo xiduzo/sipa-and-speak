@@ -61,3 +61,35 @@ describe("#458 — privacy statement names every confirmed processor", () => {
     expect(screen.getByText(/Article 46/i)).toBeInTheDocument();
   });
 });
+
+describe("#460 — sub-processors & international-transfer section", () => {
+  it("names the underlying push services, not just Expo (Apple APNs + Google FCM)", () => {
+    render(<PrivacyPage />);
+
+    expect(screen.getByText(/Apple\s+APNs on iOS/i)).toBeInTheDocument();
+    expect(screen.getByText(/Google FCM on Android/i)).toBeInTheDocument();
+  });
+
+  it("discloses that the push chain receives a device push token", () => {
+    render(<PrivacyPage />);
+
+    expect(
+      screen.getByText(/receive a device push token/i),
+    ).toBeInTheDocument();
+  });
+
+  it("states the US-based providers transfer data outside the EEA under SCCs (Art. 46)", () => {
+    render(<PrivacyPage />);
+
+    expect(
+      screen.getByText(/based in the United States/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/transferred outside the European Economic Area/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Standard Contractual Clauses/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Article 46/i)).toBeInTheDocument();
+  });
+});
