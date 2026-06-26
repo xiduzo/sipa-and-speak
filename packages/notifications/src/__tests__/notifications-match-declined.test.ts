@@ -5,82 +5,17 @@
  *   - Notification sent to requester when their match request is declined
  *   - Notification body does not identify the declining receiver
  *   - No notification sent when requester has no registered device token
+ *
+ * Uses the dispatch seam (InMemoryDelivery + InMemoryTokenStore) — no DB,
+ * drizzle, or fetch mocking.
  */
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-
-// ── Fetch mock ────────────────────────────────────────────────────────────────
-
-interface CapturedFetchCall {
-  url: string;
-  messages: Array<{ to: string; title?: string; body?: string; data?: Record<string, unknown> }>;
-}
-
-const fetchCalls: CapturedFetchCall[] = [];
-
-(global as unknown as { fetch: unknown }).fetch = mock(async (url: string, options: RequestInit) => {
-  fetchCalls.push({
-    url,
-    messages: JSON.parse(options.body as string) as CapturedFetchCall["messages"],
-  });
-  return {
-    json: async () => ({ data: [{ status: "ok", id: "ticket-1" }] }),
-  };
-});
-
-// ── Schema mocks ──────────────────────────────────────────────────────────────
-
-const DEVICE_TOKEN_TABLE = "userDeviceToken";
-
-mock.module("@sip-and-speak/db/schema/identity", () => ({
-  userDeviceToken: DEVICE_TOKEN_TABLE,
-  userLanguage: "userLanguage",
-}));
-
-mock.module("@sip-and-speak/db/schema/auth", () => ({
-  user: "user",
-}));
-
-// ── drizzle-orm mock ──────────────────────────────────────────────────────────
-
-mock.module("drizzle-orm", () => ({
-  eq: (_col: unknown, val: unknown) => ({ _val: val }),
-}));
-
-// ── DB mock ───────────────────────────────────────────────────────────────────
-
-let mockTokenRows: Array<{ id: string; token: string }> = [];
-
-mock.module("@sip-and-speak/db", () => ({
-  db: {
-    select: (_fields: Record<string, unknown>) => ({
-      from: (_table: unknown) => ({
-        where: (_cond: unknown) => ({
-          limit: (_n: number) => Promise.resolve(mockTokenRows),
-          then: (
-            resolve: (v: unknown) => unknown,
-            reject?: (e: unknown) => unknown,
-          ) => Promise.resolve(mockTokenRows).then(resolve, reject),
-        }),
-      }),
-    }),
-    delete: (_table: unknown) => ({
-      where: (_cond: unknown) => Promise.resolve(),
-    }),
-  },
-}));
-
-// ── Import under test (after mocks) ──────────────────────────────────────────
-
-// ── Domain events mock ────────────────────────────────────────────────────────
-
-mock.module("@sip-and-speak/api/domain-events", () => ({
-  domainEvents: { on: mock((_evt: string, _fn: unknown) => undefined), emit: mock(() => undefined), removeAllListeners: mock(() => undefined) },
-}));
-
-// eslint-disable-next-line import/first
+import { beforeEach, describe, expect, it } from "bun:test";
+import { InMemoryDelivery, setDelivery } from "../delivery";
+import { InMemoryTokenStore, setTokenStore } from "../recipe";
 import { handleMatchRequestDeclined } from "../dispatcher";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const delivery = new InMemoryDelivery();
+const tokens = new InMemoryTokenStore();
 
 function makeDeclinedEvent(
   overrides: Partial<{ requesterId: string; receiverId: string; matchRequestId: string }> = {},
@@ -94,27 +29,25 @@ function makeDeclinedEvent(
 }
 
 beforeEach(() => {
-  fetchCalls.length = 0;
-  mockTokenRows = [];
+  delivery.reset();
+  tokens.reset();
+  setDelivery(delivery);
+  setTokenStore(tokens);
 });
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("#135 — Push notification on MatchRequestDeclined", () => {
   it("sends a push notification to the requester when their request is declined", async () => {
-    mockTokenRows = [{ id: "tok-2", token: "ExponentPushToken[def]" }];
+    tokens.set("requester-id", [{ id: "tok-2", token: "ExponentPushToken[def]" }]);
 
     await handleMatchRequestDeclined(makeDeclinedEvent());
 
-    expect(fetchCalls).toHaveLength(1);
+    expect(delivery.sent).toHaveLength(1);
 
-    const call = fetchCalls[0];
-    if (!call) throw new Error("Expected a fetch call");
+    const messages = delivery.sent[0];
+    if (!messages) throw new Error("Expected a delivery batch");
+    expect(messages).toHaveLength(1);
 
-    expect(call.url).toBe("https://exp.host/--/api/v2/push/send");
-    expect(call.messages).toHaveLength(1);
-
-    const msg = call.messages[0];
+    const msg = messages[0];
     if (!msg) throw new Error("Expected a message");
 
     expect(msg.to).toBe("ExponentPushToken[def]");
@@ -124,11 +57,11 @@ describe("#135 — Push notification on MatchRequestDeclined", () => {
   });
 
   it("does not include the receiver's name in the notification body", async () => {
-    mockTokenRows = [{ id: "tok-2", token: "ExponentPushToken[def]" }];
+    tokens.set("requester-id", [{ id: "tok-2", token: "ExponentPushToken[def]" }]);
 
     await handleMatchRequestDeclined(makeDeclinedEvent({ receiverId: "receiver-xyz" }));
 
-    const msg = fetchCalls[0]?.messages[0];
+    const msg = delivery.sent[0]?.[0];
     if (!msg) throw new Error("Expected a message");
 
     // Body must not reference the receiver identity — privacy invariant
@@ -137,10 +70,8 @@ describe("#135 — Push notification on MatchRequestDeclined", () => {
   });
 
   it("does not send a push notification when the requester has no registered device token", async () => {
-    mockTokenRows = [];
-
     await handleMatchRequestDeclined(makeDeclinedEvent());
 
-    expect(fetchCalls).toHaveLength(0);
+    expect(delivery.sent).toHaveLength(0);
   });
 });

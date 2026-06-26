@@ -4,82 +4,40 @@
  * Covers:
  *   - Original proposer (now the new receiver) notified when a counter-proposal arrives
  *   - No notification sent when the new receiver has no device token
+ *
+ * Drives the real `domainEvents` wiring via `registerNotificationHandlers`, with
+ * the dispatch seam (InMemoryDelivery + InMemoryTokenStore) replacing DB,
+ * drizzle, and fetch mocks.
  */
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { domainEvents } from "@sip-and-speak/api/domain-events";
+import { InMemoryDelivery, setDelivery } from "../delivery";
+import { InMemoryTokenStore, setTokenStore } from "../recipe";
+import { registerNotificationHandlers } from "../dispatcher";
 
-// ── Fetch mock ────────────────────────────────────────────────────────────────
-
-interface CapturedFetchCall {
-  url: string;
-  messages: Array<{ to: string; title?: string; body?: string; data?: Record<string, unknown> }>;
-}
-
-const fetchCalls: CapturedFetchCall[] = [];
-
-(global as unknown as { fetch: unknown }).fetch = mock(async (url: string, options: RequestInit) => {
-  fetchCalls.push({
-    url,
-    messages: JSON.parse(options.body as string) as CapturedFetchCall["messages"],
-  });
-  return {
-    json: async () => ({ data: [{ status: "ok", id: "ticket-1" }] }),
-  };
-});
-
-// ── Schema mocks ──────────────────────────────────────────────────────────────
-
-mock.module("@sip-and-speak/db/schema/identity", () => ({
-  userDeviceToken: "userDeviceToken",
-  userLanguage: "userLanguage",
-}));
-
-mock.module("@sip-and-speak/db/schema/auth", () => ({
-  user: "user",
-}));
-
-// ── drizzle-orm mock ──────────────────────────────────────────────────────────
-
-mock.module("drizzle-orm", () => ({
-  eq: (_col: unknown, val: unknown) => ({ _val: val }),
-}));
-
-// ── DB mock ───────────────────────────────────────────────────────────────────
-
-let mockTokenRows: Array<{ id: string; token: string }> = [];
 const ORIGINAL_PROPOSER_ID = "orig-proposer-123"; // becomes newReceiverId after counter
 
-mock.module("@sip-and-speak/db", () => ({
-  db: {
-    select: () => ({
-      from: () => ({
-        where: () => Promise.resolve(mockTokenRows),
-      }),
-    }),
-  },
-}));
+const delivery = new InMemoryDelivery();
+const tokens = new InMemoryTokenStore();
 
-// ── Domain events mock ────────────────────────────────────────────────────────
-
-mock.module("@sip-and-speak/api/domain-events", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { EventEmitter } = require("events") as typeof import("events");
-  return { domainEvents: new EventEmitter() };
-});
-
-// ── Subject under test ────────────────────────────────────────────────────────
-
-import { registerNotificationHandlers } from "../dispatcher";
-import { domainEvents } from "@sip-and-speak/api/domain-events";
+const flush = () => new Promise((r) => setTimeout(r, 10));
 
 describe("handleMeetupCounterProposed", () => {
   beforeEach(() => {
-    fetchCalls.length = 0;
-    mockTokenRows = [];
+    delivery.reset();
+    tokens.reset();
+    setDelivery(delivery);
+    setTokenStore(tokens);
+    domainEvents.removeAllListeners();
     registerNotificationHandlers();
   });
 
+  afterEach(() => {
+    domainEvents.removeAllListeners();
+  });
+
   it("notifies the original proposer (new receiver) of the counter-proposal", async () => {
-    mockTokenRows = [{ id: "token-1", token: "ExponentPushToken[orig-proposer]" }];
+    tokens.set(ORIGINAL_PROPOSER_ID, [{ id: "token-1", token: "ExponentPushToken[orig-proposer]" }]);
 
     domainEvents.emit("MeetupCounterProposed", {
       meetupId: "meetup-1",
@@ -92,18 +50,16 @@ describe("handleMeetupCounterProposed", () => {
       counterProposedAt: new Date(),
     });
 
-    await new Promise((r) => setTimeout(r, 20));
+    await flush();
 
-    expect(fetchCalls.length).toBe(1);
-    const msg = fetchCalls[0]!.messages[0]!;
+    expect(delivery.sent.length).toBe(1);
+    const msg = delivery.sent[0]![0]!;
     expect(msg.to).toBe("ExponentPushToken[orig-proposer]");
     expect(msg.title).toContain("round 2");
     expect(msg.body).toContain("Vertigo");
   });
 
   it("sends no notification when new receiver has no device token", async () => {
-    mockTokenRows = [];
-
     domainEvents.emit("MeetupCounterProposed", {
       meetupId: "meetup-2",
       newProposerId: "counter-proposer-456",
@@ -115,8 +71,8 @@ describe("handleMeetupCounterProposed", () => {
       counterProposedAt: new Date(),
     });
 
-    await new Promise((r) => setTimeout(r, 20));
+    await flush();
 
-    expect(fetchCalls.length).toBe(0);
+    expect(delivery.sent.length).toBe(0);
   });
 });

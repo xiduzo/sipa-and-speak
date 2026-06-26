@@ -19,4 +19,15 @@ export {
   setDelivery,
 } from "./delivery";
 
-export { type Recipe, dispatch } from "./recipe";
+export {
+  type Recipe,
+  type TokenRow,
+  type TokenStore,
+  dispatch,
+  toDeliveryMessages,
+  staleTokenIds,
+  getTokenStore,
+  setTokenStore,
+  DbTokenStore,
+  InMemoryTokenStore,
+} from "./recipe";

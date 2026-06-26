@@ -1,4 +1,4 @@
-import { and, eq, ne, inArray, notInArray, or, sql, isNull } from "drizzle-orm";
+import { and, eq, ne, inArray, or, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "@sip-and-speak/db";
@@ -7,7 +7,7 @@ import { matchRequest, studentMatch } from "@sip-and-speak/db/schema/matching";
 import { meetup, attendanceReport } from "@sip-and-speak/db/schema/scheduling";
 import { user } from "@sip-and-speak/db/schema/auth";
 import { protectedProcedure, router } from "../../index";
-import { buildExcludedUserIds, scoreCandidates } from "./matching-utils";
+import { getRankedCandidates } from "./matching-read-model";
 import {
   MatchRequest,
   MatchRuleError,
@@ -51,148 +51,7 @@ export const matchingRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
-
-      const myLanguages = await db
-        .select()
-        .from(userLanguage)
-        .where(eq(userLanguage.userId, userId));
-
-      const mySpoken = myLanguages
-        .filter((l) => l.type === "spoken")
-        .map((l) => l.language);
-      const myLearning = myLanguages
-        .filter((l) => l.type === "learning")
-        .map((l) => l.language);
-
-      // #125 — Build exclusion list: candidates with an active request in either direction
-      const activeRequests = await db
-        .select({
-          requesterId: matchRequest.requesterId,
-          receiverId: matchRequest.receiverId,
-        })
-        .from(matchRequest)
-        .where(
-          and(
-            or(
-              eq(matchRequest.requesterId, userId),
-              eq(matchRequest.receiverId, userId),
-            ),
-            // "voided" = an unmatch (#7) — keep that pair out of discover for good.
-            inArray(matchRequest.status, ["pending", "accepted", "voided"]),
-          ),
-        );
-
-      const excludedUserIds = buildExcludedUserIds(userId, activeRequests);
-
-      // Fetch all other users who have completed onboarding
-      const otherProfiles = await db
-        .select()
-        .from(languageProfile)
-        .where(
-          and(
-            ne(languageProfile.userId, userId),
-            eq(languageProfile.onboardingComplete, true),
-            excludedUserIds.length > 0
-              ? notInArray(languageProfile.userId, excludedUserIds)
-              : undefined,
-          ),
-        );
-
-      if (otherProfiles.length === 0) {
-        return { partners: [], nextCursor: undefined };
-      }
-
-      const otherUserIds = otherProfiles.map((p) => p.userId);
-
-      // Batch-fetch languages and interests for all candidates
-      const allLanguages = await db
-        .select()
-        .from(userLanguage)
-        .where(inArray(userLanguage.userId, otherUserIds));
-
-      const allInterests = await db
-        .select()
-        .from(userInterest)
-        .where(inArray(userInterest.userId, otherUserIds));
-
-      // Fetch user info (name, image) for candidates — exclude suspended AND
-      // permanently removed Students (#100/#108) and soft-deleted accounts (#447)
-      const allUsers = await db
-        .select({ id: user.id, name: user.name, image: user.image })
-        .from(user)
-        .where(
-          and(
-            inArray(user.id, otherUserIds),
-            notInArray(user.studentStatus, ["suspended", "removed"]),
-            isNull(user.deletedAt),
-          ),
-        );
-
-      const userMap = new Map(allUsers.map((u) => [u.id, u]));
-
-      // Group languages and interests by userId
-      const langByUser = new Map<string, typeof allLanguages>();
-      for (const l of allLanguages) {
-        const arr = langByUser.get(l.userId) ?? [];
-        arr.push(l);
-        langByUser.set(l.userId, arr);
-      }
-
-      const interestByUser = new Map<string, typeof allInterests>();
-      for (const i of allInterests) {
-        const arr = interestByUser.get(i.userId) ?? [];
-        arr.push(i);
-        interestByUser.set(i.userId, arr);
-      }
-
-      // Build candidate list (suspended users absent from userMap are excluded)
-      const candidates = otherProfiles
-        .filter((profile) => userMap.has(profile.userId))
-        .map((profile) => {
-          const langs = langByUser.get(profile.userId) ?? [];
-          const interests = interestByUser.get(profile.userId) ?? [];
-          const userInfo = userMap.get(profile.userId)!;
-          return {
-            userId: profile.userId,
-            name: userInfo.name ?? "Unknown",
-            image: userInfo.image ?? null,
-            bio: profile.bio,
-            university: profile.university,
-            age: profile.age,
-            spokenLanguages: langs
-              .filter((l) => l.type === "spoken")
-              .map((l) => ({ language: l.language, proficiency: l.proficiency })),
-            learningLanguages: langs
-              .filter((l) => l.type === "learning")
-              .map((l) => l.language),
-            interests: interests.map((i) => i.interest),
-          };
-        });
-
-      const scored = scoreCandidates(
-        { spoken: mySpoken, learning: myLearning },
-        candidates,
-        input.filterLanguage ? { language: input.filterLanguage } : undefined,
-      );
-
-      // Cursor-based pagination (cursor = index offset as string)
-      const startIndex = input.cursor ? parseInt(input.cursor, 10) : 0;
-      const page = scored.slice(startIndex, startIndex + input.limit).map((candidate) => {
-        const partnerSpoken = candidate.spokenLanguages.map((l) => l.language);
-        const compatibleLanguages = Array.from(new Set([
-          ...myLearning.filter((lang) => partnerSpoken.includes(lang)),
-          ...mySpoken.filter((lang) => candidate.learningLanguages.includes(lang)),
-          ...myLearning.filter((lang) => candidate.learningLanguages.includes(lang)),
-        ]));
-        return { ...candidate, compatibleLanguages };
-      });
-      const nextCursor =
-        startIndex + input.limit < scored.length
-          ? String(startIndex + input.limit)
-          : undefined;
-
-      return { partners: page, nextCursor };
+      return getRankedCandidates(ctx.session.user.id, input);
     }),
 
   getIncomingRequests: protectedProcedure

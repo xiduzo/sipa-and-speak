@@ -1,6 +1,5 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
-import { addDays, startOfDay } from "date-fns";
 import { Spinner } from "heroui-native";
 import { useMemo, useState } from "react";
 import {
@@ -20,15 +19,20 @@ import { MeetupConfirmedModal } from "@/components/meetup-confirmed-modal";
 import {
   combineLocal,
   dayBoundsIso,
-  formatDayFull,
   formatDayTime,
   formatLongDate,
   formatLongDayDate,
   formatTime,
-  isFuture,
   toDate,
   toIsoDate,
 } from "@/lib/dates";
+import {
+  buildSuggestions,
+  freeSlotsFor,
+  timeFromDate,
+  validateProposedScheduledAt,
+  validateScheduledAt,
+} from "@/utils/meetup-flow";
 import { trpc, queryClient } from "@/utils/trpc";
 
 const GOLD = "#F2C94C";
@@ -41,37 +45,8 @@ export type MeetupFlowMode =
   | { type: "respond"; meetupId?: string }
   | { type: "reschedule"; meetupId: string; currentVenueId: string; currentScheduledAt: Date | string };
 
-// ── shared helpers ────────────────────────────────────────────────────────────
-
-/** All bookable half-hour slots from 08:00 to 20:00 (wall-clock in device tz). */
-const ALL_SLOTS = Array.from({ length: 25 }, (_, i) => {
-  const totalMinutes = 8 * 60 + i * 30;
-  const h = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
-  const m = String(totalMinutes % 60).padStart(2, "0");
-  return `${h}:${m}`;
-});
-
-type Suggestion = { date: string; time: string; weekday: string; hint?: string };
-
-function timeFromDate(d: Date): string {
-  return formatTime(d);
-}
-
-function buildSuggestions(): Suggestion[] {
-  const today = startOfDay(new Date());
-  const offsets = [1, 2, 4];
-  const times = ["10:30", "14:00", "15:00"];
-  const hints = ["your usual coffee slot", undefined, undefined];
-  return offsets.map((off, i) => {
-    const d = addDays(today, off);
-    return {
-      date: toIsoDate(d),
-      time: times[i] ?? "10:30",
-      weekday: formatDayFull(d),
-      hint: hints[i],
-    };
-  });
-}
+// ── presentational sub-components ──────────────────────────────────────────────
+// Pure date/slot/validation logic lives in `@/utils/meetup-flow`.
 
 function GoldButton({
   onPress, disabled, label, loading, testID,
@@ -186,18 +161,6 @@ function VenuePicker({
   );
 }
 
-/** Given a list of blocked UTC instants (Date|string), return the HH:MM slots
- *  on `date` (local) that don't collide. Used to render the slot picker. */
-function freeSlotsFor(date: string, blocked: Array<Date | string>): string[] {
-  const blockedMs = new Set(
-    blocked.map((b) => toDate(b)?.getTime()).filter((n): n is number => typeof n === "number"),
-  );
-  return ALL_SLOTS.filter((slot) => {
-    const at = combineLocal(date, slot);
-    return at !== null && !blockedMs.has(at.getTime());
-  });
-}
-
 // ── propose content ───────────────────────────────────────────────────────────
 
 export function ProposeContent({
@@ -253,26 +216,22 @@ export function ProposeContent({
     }),
   );
 
-  function pickedScheduledAt(): Date | null {
-    if (customMode) {
-      if (!customDateIso || !customTime.match(/^\d{2}:\d{2}$/)) return null;
-      return combineLocal(customDateIso, customTime);
-    }
-    if (selectedSuggestionIdx === null) return null;
-    const s = suggestions[selectedSuggestionIdx];
-    return s ? combineLocal(s.date, s.time) : null;
-  }
-
   function handleSubmit() {
     setError(null);
     if (!selectedVenueId) { setError("Please pick a venue"); return; }
-    const dt = pickedScheduledAt();
-    if (!dt) {
-      setError(customMode ? "Please pick a date and time (HH:MM)" : "Please pick a suggested time");
-      return;
-    }
-    if (!isFuture(dt)) { setError("The selected date and time must be in the future"); return; }
-    proposeMutation.mutate({ partnerId, venueId: selectedVenueId, scheduledAt: dt.toISOString() });
+    const result = validateProposedScheduledAt({
+      customMode,
+      customDateIso,
+      customTime,
+      selectedSuggestionIdx,
+      suggestions,
+    });
+    if (!result.ok) { setError(result.error); return; }
+    proposeMutation.mutate({
+      partnerId,
+      venueId: selectedVenueId,
+      scheduledAt: result.scheduledAt.toISOString(),
+    });
   }
 
   const venues = venuesQuery.data ?? [];
@@ -595,13 +554,12 @@ export function RespondContent({
   function handleCounterSubmit() {
     setError(null);
     if (!selectedVenueId) { setError("Please select a location"); return; }
-    const proposed = combineLocal(date, time);
-    if (!proposed) { setError("Enter a valid date and time"); return; }
-    if (!isFuture(proposed)) { setError("Date and time must be in the future"); return; }
+    const result = validateScheduledAt(date, time);
+    if (!result.ok) { setError(result.error); return; }
     counterMutation.mutate({
       meetupId: activeMeetupId!,
       venueId: selectedVenueId,
-      scheduledAt: proposed.toISOString(),
+      scheduledAt: result.scheduledAt.toISOString(),
     });
   }
 
@@ -818,10 +776,9 @@ function RescheduleContent({
   function handleSubmit() {
     setError(null);
     if (!venueId) { setError("Please select a location"); return; }
-    const proposed = combineLocal(date, time);
-    if (!proposed) { setError("Enter a valid date and time"); return; }
-    if (!isFuture(proposed)) { setError("Date and time must be in the future"); return; }
-    rescheduleMutation.mutate({ meetupId, venueId, scheduledAt: proposed.toISOString() });
+    const result = validateScheduledAt(date, time);
+    if (!result.ok) { setError(result.error); return; }
+    rescheduleMutation.mutate({ meetupId, venueId, scheduledAt: result.scheduledAt.toISOString() });
   }
 
   return (
