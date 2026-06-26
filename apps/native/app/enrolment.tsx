@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -16,12 +15,8 @@ import { useToast } from "heroui-native";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
+import { openLegal } from "@/utils/open-legal";
 import { queryClient } from "@/utils/trpc";
-
-const LEGAL_BASE_URL = "https://sipandspeak.nl";
-const openLegal = (path: string) => {
-  void Linking.openURL(`${LEGAL_BASE_URL}${path}`);
-};
 
 const OTP_RESEND_COOLDOWN = 60;
 const GOLD = "#F2C94C";
@@ -408,18 +403,30 @@ export default function EnrolmentScreen() {
 
               <Text className="font-manrope text-[13px] text-brand-muted-foreground text-center leading-5">
                 By joining you agree to our{" "}
-                <Text className="underline" onPress={() => openLegal("/terms")}>
-                  Terms
+                <Text
+                  className="underline"
+                  onPress={() => {
+                    void openLegal("/terms");
+                  }}
+                >
+                  Terms of Use
                 </Text>{" "}
                 and{" "}
                 <Text
                   className="underline"
-                  onPress={() => openLegal("/community-code")}
+                  onPress={() => {
+                    void openLegal("/community-code");
+                  }}
                 >
                   Community Code
                 </Text>
                 , and acknowledge our{" "}
-                <Text className="underline" onPress={() => openLegal("/privacy")}>
+                <Text
+                  className="underline"
+                  onPress={() => {
+                    void openLegal("/privacy");
+                  }}
+                >
                   Privacy Statement
                 </Text>
                 .
