@@ -154,11 +154,23 @@ two pure transforms and two adapters:
 
 ### Meetup flow view-model
 
-Client-side, `apps/native/utils/meetup-flow.ts`. Pure transition/validation/date
-helpers for the propose / counter-propose / reschedule flows
-(`validateProposedScheduledAt`, `validateScheduledAt`, `buildSuggestions`,
-`freeSlotsFor`, `pickProposedScheduledAt`, `isValidTimeFormat`), extracted from
-the `MeetupFlowModal` render body so the rules are testable in isolation —
-mirroring `onboarding-flow.ts`. Server-driven rules (`canCounterPropose`, round
-limits, available slots) stay server-owned; the modal keeps its state and
-mutations.
+The client meetup flow is split into three layers so each is testable on its own:
+
+1. **Pure rules** — `apps/native/utils/meetup-flow.ts`. Transition/validation/date
+   helpers for propose / counter-propose / reschedule
+   (`validateProposedScheduledAt`, `validateScheduledAt`, `buildSuggestions`,
+   `freeSlotsFor`, `pickProposedScheduledAt`, `isValidTimeFormat`) — no React.
+2. **Headless view-models** — `apps/native/hooks/use-meetup-flow.ts`
+   (`useProposeFlow`, `useRespondFlow`, `useRescheduleFlow`). Each owns the
+   flow's state, tRPC queries, and the mutation cascades — which queries
+   invalidate, which `Alert` fires, dismiss-vs-confirm, the decline branch on
+   `canCounterPropose`, the counter pre-fill — and returns a small view-model.
+   Driven directly with `renderHook`, so the orchestration is tested without
+   rendering the modal.
+3. **Presentation** — `apps/native/components/meetup-flow-modal.tsx`. Pure JSX
+   over the hooks (plus the `GoldButton` / `ErrorBanner` / `VenuePicker`
+   sub-components).
+
+Server-driven rules (`canCounterPropose`, round limits, available slots) stay
+server-owned; the hooks only orchestrate the client calls and the local
+date/slot math. Mirrors `onboarding-flow.ts`.
