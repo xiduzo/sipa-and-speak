@@ -10,7 +10,7 @@
  *   - Provider identity is a populated real name, never a blank or company
  *     placeholder (matches the Privacy Statement controller)
  */
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -32,7 +32,9 @@ describe("#454 — Terms of Use content", () => {
     // Provider identity is shown and matches the Privacy Statement controller.
     expect(screen.getByText(/V\.J\.O\.C\./)).toBeInTheDocument();
 
-    const link = screen.getByRole("link", { name: /hello@sipandspeak\.nl/i });
+    const link = within(screen.getByRole("main")).getByRole("link", {
+      name: /hello@sipandspeak\.nl/i,
+    });
     expect(link).toHaveAttribute("href", "mailto:hello@sipandspeak.nl");
   });
 
@@ -50,7 +52,9 @@ describe("#454 — Terms of Use content", () => {
       screen.getByText(/responsible for activity under your account/i),
     ).toBeInTheDocument();
 
-    const communityLink = screen.getByRole("link", { name: /community code/i });
+    const communityLink = within(screen.getByRole("main")).getByRole("link", {
+      name: /community code/i,
+    });
     expect(communityLink).toHaveAttribute("href", "/community-code");
 
     expect(
@@ -73,7 +77,7 @@ describe("#454 — Terms of Use content", () => {
   it("links to the Privacy Statement", () => {
     render(<TermsPage />);
 
-    const privacyLink = screen.getByRole("link", {
+    const privacyLink = within(screen.getByRole("main")).getByRole("link", {
       name: /privacy statement/i,
     });
     expect(privacyLink).toHaveAttribute("href", "/privacy");
@@ -83,15 +87,16 @@ describe("#454 — Terms of Use content", () => {
 describe("#455 — /terms cross-links resolve to live pages", () => {
   it("exposes cross-links to the Privacy Statement, Community Code, and account deletion", () => {
     render(<TermsPage />);
+    const main = within(screen.getByRole("main"));
 
     expect(
-      screen.getByRole("link", { name: /privacy statement/i }),
+      main.getByRole("link", { name: /privacy statement/i }),
     ).toHaveAttribute("href", "/privacy");
     expect(
-      screen.getByRole("link", { name: /community code/i }),
+      main.getByRole("link", { name: /community code/i }),
     ).toHaveAttribute("href", "/community-code");
     expect(
-      screen.getByRole("link", { name: /delete your account/i }),
+      main.getByRole("link", { name: /delete your account/i }),
     ).toHaveAttribute("href", "/delete-account");
   });
 

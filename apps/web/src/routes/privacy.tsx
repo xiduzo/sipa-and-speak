@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { PublicShell } from "@/components/site-shell";
+
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
 });
@@ -16,7 +18,8 @@ const LAST_UPDATED = "25 June 2026";
 
 export function PrivacyPage() {
   return (
-    <main className="container mx-auto max-w-2xl break-words px-4 py-8 leading-relaxed">
+    <PublicShell>
+      <main className="container mx-auto max-w-2xl break-words px-4 py-12 leading-relaxed">
       <h1 className="mb-4 text-2xl font-bold sm:text-3xl">Privacy Statement</h1>
 
       <p className="mb-6 text-muted-foreground">
@@ -168,6 +171,7 @@ export function PrivacyPage() {
           “last updated” date above.
         </p>
       </section>
-    </main>
+      </main>
+    </PublicShell>
   );
 }

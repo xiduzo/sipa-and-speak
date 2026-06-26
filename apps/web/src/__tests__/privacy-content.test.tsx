@@ -11,7 +11,7 @@
  *   - GDPR rights including the right to complain to the Autoriteit Persoonsgegevens
  *   - A visible "last updated" date
  */
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -80,7 +80,7 @@ describe("#459 — privacy statement core content", () => {
       screen.getByText(/we keep your data for as long as your account exists/i),
     ).toBeInTheDocument();
 
-    const deleteLink = screen.getByRole("link", {
+    const deleteLink = within(screen.getByRole("main")).getByRole("link", {
       name: /delete your account/i,
     });
     expect(deleteLink).toHaveAttribute("href", "/delete-account");

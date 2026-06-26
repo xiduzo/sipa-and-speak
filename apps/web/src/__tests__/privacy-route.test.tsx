@@ -8,7 +8,7 @@
  *   - The deletion link resolves to /delete-account (Gherkin: "The deletion link
  *     resolves from the published page").
  */
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 
 // Capture the path passed to createFileRoute so we can assert the route is
@@ -28,7 +28,9 @@ describe("#462 — /privacy route registration & reachability", () => {
   it("resolves the deletion link to the account-deletion page", () => {
     render(<PrivacyPage />);
 
-    const link = screen.getByRole("link", { name: /delete your account/i });
+    const link = within(screen.getByRole("main")).getByRole("link", {
+      name: /delete your account/i,
+    });
     expect(link.getAttribute("href")).toBe("/delete-account");
   });
 });

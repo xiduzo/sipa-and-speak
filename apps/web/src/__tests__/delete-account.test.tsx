@@ -67,7 +67,7 @@ describe("#423 — email fallback for members who cannot access the app", () => 
   it("offers an email path to request deletion", () => {
     render(<DeleteAccountPage />);
 
-    const link = screen.getByRole("link", {
+    const link = within(screen.getByRole("main")).getByRole("link", {
       name: /hello@sipandspeak\.nl/i,
     });
     expect(link).toHaveAttribute("href", "mailto:hello@sipandspeak.nl");
@@ -106,7 +106,9 @@ describe("#420 — responsive & accessible deletion page", () => {
   it("renders the email link as a keyboard-focusable anchor with a visible focus style", () => {
     render(<DeleteAccountPage />);
 
-    const link = screen.getByRole("link", { name: /hello@sipandspeak\.nl/i });
+    const link = within(screen.getByRole("main")).getByRole("link", {
+      name: /hello@sipandspeak\.nl/i,
+    });
     expect(link.tagName).toBe("A");
     expect(link).toHaveAttribute("href", "mailto:hello@sipandspeak.nl");
     expect(link.className).toMatch(/focus-visible:ring/);

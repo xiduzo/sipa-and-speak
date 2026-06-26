@@ -108,7 +108,9 @@ describe("#463 — /community-code route is published and discoverable", () => {
   it("is linked from the Terms page", () => {
     render(<TermsPage />);
 
-    const link = screen.getByRole("link", { name: /community code/i });
+    const link = within(screen.getByRole("main")).getByRole("link", {
+      name: /community code/i,
+    });
     expect(link).toHaveAttribute("href", "/community-code");
   });
 });

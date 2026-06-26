@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { PublicShell } from "@/components/site-shell";
+
 export const Route = createFileRoute("/delete-account")({
   component: DeleteAccountPage,
 });
@@ -15,7 +17,8 @@ const SUPPORT_EMAIL = "hello@sipandspeak.nl";
 
 export function DeleteAccountPage() {
   return (
-    <main className="container mx-auto max-w-2xl break-words px-4 py-8 leading-relaxed">
+    <PublicShell>
+      <main className="container mx-auto max-w-2xl break-words px-4 py-12 leading-relaxed">
       <h1 className="mb-4 text-2xl font-bold sm:text-3xl">
         Delete your Sip &amp; Speak account and data
       </h1>
@@ -96,6 +99,7 @@ export function DeleteAccountPage() {
           re-registration.
         </p>
       </section>
-    </main>
+      </main>
+    </PublicShell>
   );
 }

@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { PublicShell } from "@/components/site-shell";
+
 export const Route = createFileRoute("/terms")({
   component: TermsPage,
 });
@@ -16,7 +18,8 @@ const LAST_UPDATED = "25 June 2026";
 
 export function TermsPage() {
   return (
-    <main className="container mx-auto max-w-2xl break-words px-4 py-8 leading-relaxed">
+    <PublicShell>
+      <main className="container mx-auto max-w-2xl break-words px-4 py-12 leading-relaxed">
       <h1 className="mb-4 text-2xl font-bold sm:text-3xl">Terms of Use</h1>
 
       <p className="mb-6 text-muted-foreground">
@@ -117,6 +120,7 @@ export function TermsPage() {
           jurisdiction of the competent court in the Netherlands.
         </p>
       </section>
-    </main>
+      </main>
+    </PublicShell>
   );
 }

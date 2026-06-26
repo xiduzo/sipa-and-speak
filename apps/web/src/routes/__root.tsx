@@ -42,12 +42,20 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   }),
 });
 
+// Public, customer-facing routes carry their own branded shell (header +
+// footer) and always render in the warm light "Barista Blend" theme — they must
+// not show the in-app dev header or the dark app theme a logged-in user picked.
+const PUBLIC_ROUTES = new Set([
+  "/",
+  "/privacy",
+  "/terms",
+  "/community-code",
+  "/delete-account",
+]);
+
 function RootComponent() {
-  // The landing page (/) is a full-bleed public marketing page with its own
-  // header and footer, so the app chrome (Home/Dashboard nav, user menu) and
-  // the fixed-height app shell are skipped there.
-  const isLanding = useRouterState({
-    select: (state) => state.location.pathname === "/",
+  const isPublic = useRouterState({
+    select: (state) => PUBLIC_ROUTES.has(state.location.pathname),
   });
 
   return (
@@ -56,10 +64,11 @@ function RootComponent() {
       <ThemeProvider
         attribute="class"
         defaultTheme="dark"
+        forcedTheme={isPublic ? "light" : undefined}
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
-        {isLanding ? (
+        {isPublic ? (
           <Outlet />
         ) : (
           <div className="grid grid-rows-[auto_1fr] h-svh">
