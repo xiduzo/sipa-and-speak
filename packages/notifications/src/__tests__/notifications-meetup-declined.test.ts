@@ -4,89 +4,42 @@
  * Covers:
  *   - Both Students notified when a proposal is declined
  *   - No notification sent when neither Student has a device token
+ *
+ * Drives the real `domainEvents` wiring via `registerNotificationHandlers`, with
+ * the dispatch seam (InMemoryDelivery + InMemoryTokenStore) replacing DB,
+ * drizzle, and fetch mocks.
  */
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { domainEvents } from "@sip-and-speak/api/domain-events";
+import { InMemoryDelivery, setDelivery } from "../delivery";
+import { InMemoryTokenStore, setTokenStore } from "../recipe";
+import { registerNotificationHandlers } from "../dispatcher";
 
-// ── Fetch mock ────────────────────────────────────────────────────────────────
-
-interface CapturedFetchCall {
-  url: string;
-  messages: Array<{ to: string; title?: string; body?: string; data?: Record<string, unknown> }>;
-}
-
-const fetchCalls: CapturedFetchCall[] = [];
-
-(global as unknown as { fetch: unknown }).fetch = mock(async (url: string, options: RequestInit) => {
-  fetchCalls.push({
-    url,
-    messages: JSON.parse(options.body as string) as CapturedFetchCall["messages"],
-  });
-  return {
-    json: async () => ({ data: [{ status: "ok", id: "ticket-1" }] }),
-  };
-});
-
-// ── Schema mocks ──────────────────────────────────────────────────────────────
-
-mock.module("@sip-and-speak/db/schema/identity", () => ({
-  userDeviceToken: "userDeviceToken",
-  userLanguage: "userLanguage",
-}));
-
-mock.module("@sip-and-speak/db/schema/auth", () => ({
-  user: "user",
-}));
-
-// ── drizzle-orm mock ──────────────────────────────────────────────────────────
-
-mock.module("drizzle-orm", () => ({
-  eq: (_col: unknown, val: unknown) => ({ _val: val }),
-}));
-
-// ── DB mock ───────────────────────────────────────────────────────────────────
-
-let proposerTokens: Array<{ id: string; token: string }> = [];
-let receiverTokens: Array<{ id: string; token: string }> = [];
 const PROPOSER_ID = "proposer-abc";
 const RECEIVER_ID = "receiver-xyz";
 
-mock.module("@sip-and-speak/db", () => ({
-  db: {
-    select: () => ({
-      from: () => ({
-        where: (clause: { _val: string }) => {
-          const tokens = clause._val === PROPOSER_ID ? proposerTokens : receiverTokens;
-          return Promise.resolve(tokens);
-        },
-      }),
-    }),
-  },
-}));
+const delivery = new InMemoryDelivery();
+const tokens = new InMemoryTokenStore();
 
-// ── Domain events mock ────────────────────────────────────────────────────────
-
-mock.module("@sip-and-speak/api/domain-events", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { EventEmitter } = require("events") as typeof import("events");
-  return { domainEvents: new EventEmitter() };
-});
-
-// ── Subject under test ────────────────────────────────────────────────────────
-
-import { registerNotificationHandlers } from "../dispatcher";
-import { domainEvents } from "@sip-and-speak/api/domain-events";
+const flush = () => new Promise((r) => setTimeout(r, 10));
 
 describe("handleMeetupDeclined", () => {
   beforeEach(() => {
-    fetchCalls.length = 0;
-    proposerTokens = [];
-    receiverTokens = [];
+    delivery.reset();
+    tokens.reset();
+    setDelivery(delivery);
+    setTokenStore(tokens);
+    domainEvents.removeAllListeners();
     registerNotificationHandlers();
   });
 
+  afterEach(() => {
+    domainEvents.removeAllListeners();
+  });
+
   it("notifies both Students when a proposal is declined", async () => {
-    proposerTokens = [{ id: "pt-1", token: "ExponentPushToken[proposer-token]" }];
-    receiverTokens = [{ id: "rt-1", token: "ExponentPushToken[receiver-token]" }];
+    tokens.set(PROPOSER_ID, [{ id: "pt-1", token: "ExponentPushToken[proposer-token]" }]);
+    tokens.set(RECEIVER_ID, [{ id: "rt-1", token: "ExponentPushToken[receiver-token]" }]);
 
     domainEvents.emit("MeetupDeclined", {
       meetupId: "meetup-1",
@@ -95,10 +48,10 @@ describe("handleMeetupDeclined", () => {
       declinedAt: new Date(),
     });
 
-    await new Promise((r) => setTimeout(r, 20));
+    await flush();
 
-    expect(fetchCalls.length).toBe(1);
-    const msgs = fetchCalls[0]!.messages;
+    expect(delivery.sent.length).toBe(1);
+    const msgs = delivery.sent[0]!;
     expect(msgs.length).toBe(2);
     expect(msgs.map((m) => m.to)).toContain("ExponentPushToken[proposer-token]");
     expect(msgs.map((m) => m.to)).toContain("ExponentPushToken[receiver-token]");
@@ -106,9 +59,6 @@ describe("handleMeetupDeclined", () => {
   });
 
   it("sends no notification when neither Student has a device token", async () => {
-    proposerTokens = [];
-    receiverTokens = [];
-
     domainEvents.emit("MeetupDeclined", {
       meetupId: "meetup-2",
       proposerId: PROPOSER_ID,
@@ -116,8 +66,8 @@ describe("handleMeetupDeclined", () => {
       declinedAt: new Date(),
     });
 
-    await new Promise((r) => setTimeout(r, 20));
+    await flush();
 
-    expect(fetchCalls.length).toBe(0);
+    expect(delivery.sent.length).toBe(0);
   });
 });

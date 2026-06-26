@@ -8,95 +8,22 @@
  *   - No push sent when recipient has no registered device token
  *   - DeviceNotRegistered receipt error is handled gracefully (stale token removed)
  *   - Notification payload shape: title = sender name, body = generic, conversationId in data
+ *
+ * Uses the dispatch seam (InMemoryDelivery + InMemoryTokenStore) — no DB,
+ * drizzle, or fetch mocking. Per-token Expo errors are simulated with
+ * `InMemoryDelivery.setNextTickets`; pruned tokens are read from
+ * `InMemoryTokenStore.removed`.
  */
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-
-// ── Fetch mock ────────────────────────────────────────────────────────────────
-
-interface CapturedFetchCall {
-  url: string;
-  messages: Array<{ to: string; title?: string; body?: string; data?: Record<string, unknown> }>;
-}
-
-const fetchCalls: CapturedFetchCall[] = [];
-let mockFetchTickets: Array<{ status: string; id?: string; details?: { error?: string } }> = [
-  { status: "ok", id: "ticket-1" },
-];
-
-(global as unknown as { fetch: unknown }).fetch = mock(async (url: string, options: RequestInit) => {
-  fetchCalls.push({
-    url,
-    messages: JSON.parse(options.body as string) as CapturedFetchCall["messages"],
-  });
-  return {
-    // Expo returns HTTP 200 even when individual tickets carry per-token errors
-    // like DeviceNotRegistered; only non-2xx means the whole request failed.
-    ok: true,
-    status: 200,
-    statusText: "OK",
-    text: async () => "",
-    json: async () => ({ data: mockFetchTickets }),
-  };
-});
-
-// ── Schema mocks ──────────────────────────────────────────────────────────────
-
-const DEVICE_TOKEN_TABLE = "userDeviceToken";
-
-mock.module("@sip-and-speak/db/schema/identity", () => ({
-  userDeviceToken: DEVICE_TOKEN_TABLE,
-  userLanguage: "userLanguage",
-}));
-
-mock.module("@sip-and-speak/db/schema/auth", () => ({
-  user: "user",
-}));
-
-// ── drizzle-orm mock ──────────────────────────────────────────────────────────
-
-mock.module("drizzle-orm", () => ({
-  eq: (_col: unknown, val: unknown) => ({ _val: val }),
-}));
-
-// ── DB mock ───────────────────────────────────────────────────────────────────
+import { beforeEach, describe, expect, it } from "bun:test";
+import { InMemoryDelivery, setDelivery } from "../delivery";
+import { InMemoryTokenStore, setTokenStore } from "../recipe";
+import { handleMessageSent } from "../dispatcher";
 
 const SENDER_ID = "sender-id";
 const RECIPIENT_ID = "recipient-id";
 
-let mockRecipientTokens: Array<{ id: string; token: string }> = [];
-const deletedTokenIds: string[] = [];
-
-mock.module("@sip-and-speak/db", () => ({
-  db: {
-    select: (_fields: Record<string, unknown>) => ({
-      from: (_table: unknown) => ({
-        where: (clause: { _val: string }) => {
-          const rows = clause._val === RECIPIENT_ID ? mockRecipientTokens : [];
-          return Promise.resolve(rows);
-        },
-      }),
-    }),
-    delete: (_table: unknown) => ({
-      where: (clause: { _val: string }) => {
-        deletedTokenIds.push(clause._val);
-        return Promise.resolve([]);
-      },
-    }),
-  },
-}));
-
-// ── Domain events mock ────────────────────────────────────────────────────────
-
-mock.module("@sip-and-speak/api/domain-events", () => ({
-  domainEvents: { on: mock((_evt: string, _fn: unknown) => undefined), emit: mock(() => undefined), removeAllListeners: mock(() => undefined) },
-}));
-
-// ── Import under test (after mocks) ──────────────────────────────────────────
-
-// eslint-disable-next-line import/first
-import { handleMessageSent } from "../dispatcher";
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const delivery = new InMemoryDelivery();
+const tokens = new InMemoryTokenStore();
 
 function makeMessageSentEvent(
   overrides: Partial<{
@@ -117,27 +44,25 @@ function makeMessageSentEvent(
 }
 
 beforeEach(() => {
-  fetchCalls.length = 0;
-  deletedTokenIds.length = 0;
-  mockRecipientTokens = [];
-  mockFetchTickets = [{ status: "ok", id: "ticket-1" }];
+  delivery.reset();
+  tokens.reset();
+  setDelivery(delivery);
+  setTokenStore(tokens);
 });
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("#152 — Send push notification to recipient when a new message arrives", () => {
   it("sends a push to the recipient identifying the sender without message content", async () => {
-    mockRecipientTokens = [{ id: "tok-1", token: "ExponentPushToken[recipient]" }];
+    tokens.set(RECIPIENT_ID, [{ id: "tok-1", token: "ExponentPushToken[recipient]" }]);
 
     await handleMessageSent(makeMessageSentEvent());
 
-    expect(fetchCalls).toHaveLength(1);
+    expect(delivery.sent).toHaveLength(1);
 
-    const call = fetchCalls[0];
-    if (!call) throw new Error("Expected a fetch call");
+    const messages = delivery.sent[0];
+    if (!messages) throw new Error("Expected a delivery batch");
+    expect(messages).toHaveLength(1);
 
-    expect(call.messages).toHaveLength(1);
-    const msg = call.messages[0];
+    const msg = messages[0];
     if (!msg) throw new Error("Expected a message");
 
     expect(msg.to).toBe("ExponentPushToken[recipient]");
@@ -150,21 +75,19 @@ describe("#152 — Send push notification to recipient when a new message arrive
   });
 
   it("sends no notification when recipient has no registered device token", async () => {
-    mockRecipientTokens = [];
-
     await handleMessageSent(makeMessageSentEvent());
 
-    expect(fetchCalls).toHaveLength(0);
+    expect(delivery.sent).toHaveLength(0);
   });
 });
 
 describe("#154 — Notification payload includes sender identity but not message content", () => {
   it("sets title to sender display name and body to a generic string", async () => {
-    mockRecipientTokens = [{ id: "tok-1", token: "ExponentPushToken[recipient]" }];
+    tokens.set(RECIPIENT_ID, [{ id: "tok-1", token: "ExponentPushToken[recipient]" }]);
 
     await handleMessageSent(makeMessageSentEvent({ senderName: "Bob" }));
 
-    const msg = fetchCalls[0]?.messages[0];
+    const msg = delivery.sent[0]?.[0];
     if (!msg) throw new Error("Expected a message");
 
     expect(msg.title).toBe("Bob");
@@ -172,11 +95,11 @@ describe("#154 — Notification payload includes sender identity but not message
   });
 
   it("payload contains conversationId for deep-linking", async () => {
-    mockRecipientTokens = [{ id: "tok-1", token: "ExponentPushToken[recipient]" }];
+    tokens.set(RECIPIENT_ID, [{ id: "tok-1", token: "ExponentPushToken[recipient]" }]);
 
     await handleMessageSent(makeMessageSentEvent({ conversationId: "conv-deep-link" }));
 
-    const msg = fetchCalls[0]?.messages[0];
+    const msg = delivery.sent[0]?.[0];
     if (!msg) throw new Error("Expected a message");
 
     expect(msg.data?.conversationId).toBe("conv-deep-link");
@@ -185,22 +108,17 @@ describe("#154 — Notification payload includes sender identity but not message
 
 describe("#156 — Handle gracefully when recipient has not granted push permissions", () => {
   it("removes stale token and does not throw when Expo returns DeviceNotRegistered", async () => {
-    mockRecipientTokens = [{ id: "stale-tok-id", token: "ExponentPushToken[stale]" }];
-    mockFetchTickets = [{ status: "error", details: { error: "DeviceNotRegistered" } }];
+    tokens.set(RECIPIENT_ID, [{ id: "stale-tok-id", token: "ExponentPushToken[stale]" }]);
+    delivery.setNextTickets([{ status: "error", details: { error: "DeviceNotRegistered" } }]);
 
     await expect(handleMessageSent(makeMessageSentEvent())).resolves.toBeUndefined();
 
-    expect(deletedTokenIds).toContain("stale-tok-id");
+    expect(tokens.removed).toContain("stale-tok-id");
   });
 
-  it("still resolves when fetch returns DeviceNotRegistered for all tokens", async () => {
-    mockRecipientTokens = [{ id: "tok-bad", token: "ExponentPushToken[bad]" }];
-    mockFetchTickets = [{ status: "error", details: { error: "DeviceNotRegistered" } }];
-
-    // Second call — token already removed, no tokens left, so no push attempt
-    mockRecipientTokens = [];
-
+  it("still resolves when the recipient has no tokens left", async () => {
+    // Token already pruned on a prior send — no tokens left, so no push attempt.
     await expect(handleMessageSent(makeMessageSentEvent())).resolves.toBeUndefined();
-    expect(fetchCalls).toHaveLength(0);
+    expect(delivery.sent).toHaveLength(0);
   });
 });

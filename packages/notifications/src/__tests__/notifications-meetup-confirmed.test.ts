@@ -4,94 +4,42 @@
  * Covers:
  *   - Both Students notified when a meetup is confirmed
  *   - No notification sent when neither Student has a device token
+ *
+ * Drives the real `domainEvents` wiring via `registerNotificationHandlers`, with
+ * the dispatch seam (InMemoryDelivery + InMemoryTokenStore) replacing DB,
+ * drizzle, and fetch mocks.
  */
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { domainEvents } from "@sip-and-speak/api/domain-events";
+import { InMemoryDelivery, setDelivery } from "../delivery";
+import { InMemoryTokenStore, setTokenStore } from "../recipe";
+import { registerNotificationHandlers } from "../dispatcher";
 
-// ── Fetch mock ────────────────────────────────────────────────────────────────
-
-interface CapturedFetchCall {
-  url: string;
-  messages: Array<{ to: string; title?: string; body?: string; data?: Record<string, unknown> }>;
-}
-
-const fetchCalls: CapturedFetchCall[] = [];
-
-(global as unknown as { fetch: unknown }).fetch = mock(async (url: string, options: RequestInit) => {
-  fetchCalls.push({
-    url,
-    messages: JSON.parse(options.body as string) as CapturedFetchCall["messages"],
-  });
-  return {
-    json: async () => ({ data: [{ status: "ok", id: "ticket-1" }] }),
-  };
-});
-
-// ── Schema mocks ──────────────────────────────────────────────────────────────
-
-const DEVICE_TOKEN_TABLE = "userDeviceToken";
-
-mock.module("@sip-and-speak/db/schema/identity", () => ({
-  userDeviceToken: DEVICE_TOKEN_TABLE,
-  userLanguage: "userLanguage",
-}));
-
-mock.module("@sip-and-speak/db/schema/auth", () => ({
-  user: "user",
-}));
-
-// ── drizzle-orm mock ──────────────────────────────────────────────────────────
-
-mock.module("drizzle-orm", () => ({
-  eq: (_col: unknown, val: unknown) => ({ _val: val }),
-}));
-
-// ── DB mock ───────────────────────────────────────────────────────────────────
-
-// Track which userId is queried to return the right tokens
-let proposerTokens: Array<{ id: string; token: string }> = [];
-let receiverTokens: Array<{ id: string; token: string }> = [];
-let lastQueriedUserId = "";
 const PROPOSER_ID = "proposer-123";
 const RECEIVER_ID = "receiver-456";
 
-mock.module("@sip-and-speak/db", () => ({
-  db: {
-    select: () => ({
-      from: () => ({
-        where: (clause: { _val: string }) => {
-          lastQueriedUserId = clause._val;
-          const tokens = clause._val === PROPOSER_ID ? proposerTokens : receiverTokens;
-          return Promise.resolve(tokens);
-        },
-      }),
-    }),
-  },
-}));
+const delivery = new InMemoryDelivery();
+const tokens = new InMemoryTokenStore();
 
-// ── Domain events mock ────────────────────────────────────────────────────────
-
-mock.module("@sip-and-speak/api/domain-events", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { EventEmitter } = require("events") as typeof import("events");
-  return { domainEvents: new EventEmitter() };
-});
-
-// ── Subject under test ────────────────────────────────────────────────────────
-
-import { registerNotificationHandlers } from "../dispatcher";
-import { domainEvents } from "@sip-and-speak/api/domain-events";
+const flush = () => new Promise((r) => setTimeout(r, 10));
 
 describe("handleMeetupConfirmed", () => {
   beforeEach(() => {
-    fetchCalls.length = 0;
-    proposerTokens = [];
-    receiverTokens = [];
+    delivery.reset();
+    tokens.reset();
+    setDelivery(delivery);
+    setTokenStore(tokens);
+    domainEvents.removeAllListeners();
     registerNotificationHandlers();
   });
 
+  afterEach(() => {
+    domainEvents.removeAllListeners();
+  });
+
   it("notifies both Students when a meetup is confirmed", async () => {
-    proposerTokens = [{ id: "pt-1", token: "ExponentPushToken[proposer-token]" }];
-    receiverTokens = [{ id: "rt-1", token: "ExponentPushToken[receiver-token]" }];
+    tokens.set(PROPOSER_ID, [{ id: "pt-1", token: "ExponentPushToken[proposer-token]" }]);
+    tokens.set(RECEIVER_ID, [{ id: "rt-1", token: "ExponentPushToken[receiver-token]" }]);
 
     domainEvents.emit("MeetupConfirmed", {
       meetupId: "meetup-1",
@@ -103,11 +51,10 @@ describe("handleMeetupConfirmed", () => {
       confirmedAt: new Date(),
     });
 
-    // Allow async handler to flush
-    await new Promise((r) => setTimeout(r, 20));
+    await flush();
 
-    expect(fetchCalls.length).toBe(1);
-    const sentMessages = fetchCalls[0]!.messages;
+    expect(delivery.sent.length).toBe(1);
+    const sentMessages = delivery.sent[0]!;
     expect(sentMessages.length).toBe(2);
     expect(sentMessages.map((m) => m.to)).toContain("ExponentPushToken[proposer-token]");
     expect(sentMessages.map((m) => m.to)).toContain("ExponentPushToken[receiver-token]");
@@ -116,9 +63,6 @@ describe("handleMeetupConfirmed", () => {
   });
 
   it("sends no notification when neither Student has a device token", async () => {
-    proposerTokens = [];
-    receiverTokens = [];
-
     domainEvents.emit("MeetupConfirmed", {
       meetupId: "meetup-2",
       proposerId: PROPOSER_ID,
@@ -129,8 +73,8 @@ describe("handleMeetupConfirmed", () => {
       confirmedAt: new Date(),
     });
 
-    await new Promise((r) => setTimeout(r, 20));
+    await flush();
 
-    expect(fetchCalls.length).toBe(0);
+    expect(delivery.sent.length).toBe(0);
   });
 });

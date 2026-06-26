@@ -7,79 +7,21 @@
  * Covers:
  *   - No push sent when recipientIsPresent is true
  *   - Push sent when recipientIsPresent is false
+ *
+ * Uses the dispatch seam (InMemoryDelivery + InMemoryTokenStore) — no DB,
+ * drizzle, or fetch mocking.
  */
-import { describe, it, expect, mock, beforeEach } from "bun:test";
-
-// ── Fetch mock ────────────────────────────────────────────────────────────────
-
-interface CapturedFetchCall {
-  url: string;
-  messages: Array<{ to: string; title?: string; body?: string; data?: Record<string, unknown> }>;
-}
-
-const fetchCalls: CapturedFetchCall[] = [];
-
-(global as unknown as { fetch: unknown }).fetch = mock(async (url: string, options: RequestInit) => {
-  fetchCalls.push({
-    url,
-    messages: JSON.parse(options.body as string) as CapturedFetchCall["messages"],
-  });
-  return {
-    json: async () => ({ data: [{ status: "ok", id: "ticket-1" }] }),
-  };
-});
-
-// ── Schema mocks ──────────────────────────────────────────────────────────────
-
-mock.module("@sip-and-speak/db/schema/identity", () => ({
-  userDeviceToken: "userDeviceToken",
-  userLanguage: "userLanguage",
-}));
-
-mock.module("@sip-and-speak/db/schema/auth", () => ({
-  user: "user",
-}));
-
-// ── drizzle-orm mock ──────────────────────────────────────────────────────────
-
-mock.module("drizzle-orm", () => ({
-  eq: (_col: unknown, val: unknown) => ({ _col: _col, _val: val }),
-  and: (...args: unknown[]) => ({ _and: args }),
-}));
-
-// ── DB mock ───────────────────────────────────────────────────────────────────
+import { beforeEach, describe, expect, it } from "bun:test";
+import { InMemoryDelivery, setDelivery } from "../delivery";
+import { InMemoryTokenStore, setTokenStore } from "../recipe";
+import { handleMessageSent } from "../dispatcher";
 
 const RECIPIENT_ID = "recipient-id";
 const SENDER_ID = "sender-id";
 const CONVERSATION_ID = "conv-1";
 
-const RECIPIENT_TOKEN = [{ id: "tok-1", token: "ExponentPushToken[recipient]" }];
-
-mock.module("@sip-and-speak/db", () => ({
-  db: {
-    select: (_fields: Record<string, unknown>) => ({
-      from: (_table: unknown) => ({
-        where: (_clause: unknown) => Promise.resolve(RECIPIENT_TOKEN),
-      }),
-    }),
-    delete: (_table: unknown) => ({
-      where: (_clause: unknown) => Promise.resolve([]),
-    }),
-  },
-}));
-
-// ── Import under test (after mocks) ──────────────────────────────────────────
-
-// ── Domain events mock ────────────────────────────────────────────────────────
-
-mock.module("@sip-and-speak/api/domain-events", () => ({
-  domainEvents: { on: mock((_evt: string, _fn: unknown) => undefined), emit: mock(() => undefined), removeAllListeners: mock(() => undefined) },
-}));
-
-// eslint-disable-next-line import/first
-import { handleMessageSent } from "../dispatcher";
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const delivery = new InMemoryDelivery();
+const tokens = new InMemoryTokenStore();
 
 function makeEvent(recipientIsPresent = false) {
   return {
@@ -92,21 +34,24 @@ function makeEvent(recipientIsPresent = false) {
 }
 
 beforeEach(() => {
-  fetchCalls.length = 0;
+  delivery.reset();
+  tokens.reset();
+  setDelivery(delivery);
+  setTokenStore(tokens);
+  // Recipient always has a registered device — suppression must be the only reason no push is sent.
+  tokens.set(RECIPIENT_ID, [{ id: "tok-1", token: "ExponentPushToken[recipient]" }]);
 });
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("#153 — Suppress push when recipient is actively viewing", () => {
   it("suppresses push when recipientIsPresent is true", async () => {
     await handleMessageSent(makeEvent(true));
 
-    expect(fetchCalls).toHaveLength(0);
+    expect(delivery.sent).toHaveLength(0);
   });
 
   it("sends push when recipientIsPresent is false", async () => {
     await handleMessageSent(makeEvent(false));
 
-    expect(fetchCalls).toHaveLength(1);
+    expect(delivery.sent).toHaveLength(1);
   });
 });
