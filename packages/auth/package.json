@@ -21,6 +21,7 @@
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
+    "emailmd": "^0.3.4",
     "resend": "^6.14.0",
     "zod": "catalog:"
   },

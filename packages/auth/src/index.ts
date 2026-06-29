@@ -9,6 +9,7 @@ import { emailOTP } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 import { Resend } from "resend";
 
+import { renderVerificationOtpEmail } from "./emails";
 import { polarClient } from "./lib/payments";
 
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
@@ -108,11 +109,13 @@ export function createAuth() {
           }
 
           try {
+            const rendered = await renderVerificationOtpEmail(otp);
             await resend.emails.send({
               from: env.RESEND_FROM,
               to: email,
-              subject: "Your Sip & Speak verification code",
-              text: `Your verification code is ${otp}. It expires in 10 minutes.`,
+              subject: rendered.subject,
+              html: rendered.html,
+              text: rendered.text,
             });
           } catch (e) {
             console.error("[resend] OTP send failed for", email, e instanceof Error ? e.message : e);
