@@ -2,6 +2,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { createContext } from "@sip-and-speak/api/context";
 import { appRouter } from "@sip-and-speak/api/routers/index";
 import { isEmailBlocklisted, registerModerationHandlers } from "@sip-and-speak/api/contexts/moderation";
+import { isModeratorEmail } from "@sip-and-speak/api";
 import { auth } from "@sip-and-speak/auth";
 import { isAlumniEmail, ALUMNI_REGISTRY_ERROR, ALUMNI_REGISTRY_UNAVAILABLE_ERROR } from "@sip-and-speak/auth/alumni-registry";
 import { validateTueDomain } from "@sip-and-speak/auth/domain-validation";
@@ -43,8 +44,10 @@ async function handleSendOtp(c: Context): Promise<Response> {
     return c.json({ message: "This email is not eligible for registration" }, 400);
   }
 
-  if (validateTueDomain(email)) {
-    // Valid TU/e institutional email — proceed to OTP dispatch
+  if (validateTueDomain(email) || isModeratorEmail(email)) {
+    // Valid TU/e institutional email, or a moderator on the allowlist —
+    // proceed to OTP dispatch. Moderators bypass the domain gate so they
+    // can always reach an authenticated session for admin actions.
     const newReq = new Request(c.req.raw, { body: rawBody });
     return auth.handler(newReq);
   }
