@@ -10,9 +10,11 @@ COPY packages ./packages
 # Install dependencies for the whole monorepo (use lockfile)
 RUN bun install --frozen-lockfile
 
-# Build the API server
+# Run the server directly from TypeScript source. Bun executes TS natively and
+# resolves the full (transitive) dependency tree at runtime — bundling with
+# tsdown externalized deep transitive deps like emailmd→mjml→lodash/fp that the
+# container could not resolve, crashing the server on boot.
 WORKDIR /app/apps/server
-RUN bun run build
 
 ENV NODE_ENV=production
 EXPOSE 3000
