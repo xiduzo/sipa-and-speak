@@ -96,6 +96,19 @@ export function TermsPage() {
       </section>
 
       <section className="mb-6">
+        <h2 className="mb-2 text-xl font-semibold">Use at your own risk</h2>
+        <p>
+          By using the platform, users agree to using the platform under their
+          own risk. Users are responsible for evaluating and determining whether
+          use of the platform is appropriate for their own circumstances. To the
+          fullest extent permitted by applicable law, Sip and Speak, its owners,
+          employees, affiliates, and partners shall not be liable for any damages
+          arising out of or related to the use of, inability to use, or reliance
+          on the Sip &amp; Speak.
+        </p>
+      </section>
+
+      <section className="mb-6">
         <h2 className="mb-2 text-xl font-semibold">Privacy</h2>
         <p>
           How we handle your personal data is described in our{" "}
