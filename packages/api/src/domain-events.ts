@@ -228,7 +228,9 @@ export interface StudentWarnedEvent {
 
 // #100
 export interface StudentSuspendedEvent {
-  flagId: string;
+  // null when a Moderator suspends a Student directly from the admin Users list
+  // (i.e. not by resolving a specific report). Cascade handlers ignore flagId.
+  flagId: string | null;
   targetId: string;
   moderatorId: string;
   suspendedAt: Date;
@@ -243,7 +245,9 @@ export interface SuspensionLiftedEvent {
 
 // #108
 export interface StudentRemovedEvent {
-  flagId: string;
+  // null when a Moderator removes a Student directly from the admin Users list
+  // (i.e. not by resolving a specific report). Cascade handlers ignore flagId.
+  flagId: string | null;
   targetId: string;
   moderatorId: string;
   removedAt: Date;

@@ -6,6 +6,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { PageHeader } from "@/components/page-header";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 
@@ -430,18 +431,20 @@ function RouteComponent() {
   const venues = venuesQuery.data ?? [];
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-foreground text-2xl font-bold">
-          Location catalog
-        </h1>
-        <Button
-          data-testid="add-location-btn"
-          onClick={() => setFormMode({ type: "add" })}
-        >
-          Add location
-        </Button>
-      </div>
+    <div className="mx-auto max-w-3xl p-6 sm:p-8">
+      <PageHeader
+        eyebrow="back of house"
+        title="Location catalog"
+        description="Create, edit, and deactivate the venues where meetups happen."
+        action={
+          <Button
+            data-testid="add-location-btn"
+            onClick={() => setFormMode({ type: "add" })}
+          >
+            Add location
+          </Button>
+        }
+      />
 
       {venuesQuery.isPending ? (
         <div className="flex items-center justify-center py-16">

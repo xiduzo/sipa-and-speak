@@ -4,3 +4,4 @@ export * from "./matching";
 export * from "./scheduling";
 export * from "./conversation";
 export * from "./moderation";
+export * from "./alumni";

@@ -1,61 +1,29 @@
 import { describe, expect, it } from "bun:test";
 
-import { ALUMNI_REGISTRY, isAlumniEmail } from "../alumni-registry";
+import { normalizeAlumniEmail } from "../alumni-registry";
 
-describe("isAlumniEmail", () => {
-  describe("email is in registry", () => {
-    it("returns true for an exact match", () => {
-      const [first] = ALUMNI_REGISTRY;
-      if (!first) throw new Error("ALUMNI_REGISTRY must not be empty for tests");
-      expect(isAlumniEmail(first)).toBe(true);
-    });
-
-    it("is case-insensitive", () => {
-      const [first] = ALUMNI_REGISTRY;
-      if (!first) throw new Error("ALUMNI_REGISTRY must not be empty for tests");
-      expect(isAlumniEmail(first.toUpperCase())).toBe(true);
-    });
-
-    it("trims surrounding whitespace before checking", () => {
-      const [first] = ALUMNI_REGISTRY;
-      if (!first) throw new Error("ALUMNI_REGISTRY must not be empty for tests");
-      expect(isAlumniEmail(`  ${first}  `)).toBe(true);
-    });
+// The alumni registry is now DB-backed (see alumni-registry.ts). Exact-match
+// lookup is delegated to the `alumni` table's unique constraint, identical to
+// the blocklist pattern. These unit tests cover the normalization contract
+// that both writes and lookups rely on for case-insensitive, trimmed matching.
+describe("normalizeAlumniEmail", () => {
+  it("lowercases the address", () => {
+    expect(normalizeAlumniEmail("J.Doe@Gmail.com")).toBe("j.doe@gmail.com");
   });
 
-  describe("email is not in registry", () => {
-    it("returns false for a TU/e student email", () => {
-      expect(isAlumniEmail("s.janssen@student.tue.nl")).toBe(false);
-    });
-
-    it("returns false for a partial domain match", () => {
-      expect(isAlumniEmail("doe@alumni.tue.nl")).toBe(false);
-    });
-
-    it("returns false for an empty string", () => {
-      expect(isAlumniEmail("")).toBe(false);
-    });
-
-    it("returns false for a completely unknown email", () => {
-      expect(isAlumniEmail("unknown@example.com")).toBe(false);
-    });
-
-    it("does not match on substring overlap", () => {
-      // Ensure prefix tricks don't pass
-      expect(isAlumniEmail("evil@j.doe@alumni.tue.nl")).toBe(false);
-    });
+  it("trims surrounding whitespace", () => {
+    expect(normalizeAlumniEmail("  a.smith@gmail.com  ")).toBe(
+      "a.smith@gmail.com",
+    );
   });
 
-  describe("ALUMNI_REGISTRY list", () => {
-    it("contains at least one entry", () => {
-      expect(ALUMNI_REGISTRY.length).toBeGreaterThan(0);
-    });
+  it("lowercases and trims together", () => {
+    expect(normalizeAlumniEmail("  M.Van.Den.Berg@GMAIL.com ")).toBe(
+      "m.van.den.berg@gmail.com",
+    );
+  });
 
-    it("all entries are lowercase emails containing @", () => {
-      for (const entry of ALUMNI_REGISTRY) {
-        expect(entry).toContain("@");
-        expect(entry).toBe(entry.toLowerCase());
-      }
-    });
+  it("returns an empty string for blank input", () => {
+    expect(normalizeAlumniEmail("   ")).toBe("");
   });
 });

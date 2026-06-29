@@ -155,6 +155,13 @@
       "when": 1778972299818,
       "tag": "0021_soft_delete_user",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1778972299819,
+      "tag": "0022_alumni_registry",
+      "breakpoints": true
     }
   ]
 }
