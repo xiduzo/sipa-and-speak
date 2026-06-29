@@ -62,11 +62,11 @@ Pop the code below into your open Sip & Speak window and you're signed in.
 No password to remember, no fuss.
 
 ::: highlight center bg=#fff3e0 border-radius=16px
-Your verification code
+**Your verification code is**
 
 # ${otp}
 
-Valid for **10 minutes**
+Expires in **10 minutes**
 :::
 
 ::: callout compact
