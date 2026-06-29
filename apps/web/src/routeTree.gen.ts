@@ -18,9 +18,13 @@ import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CommunityCodeRouteImport } from './routes/community-code'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as PartnerIdRouteImport } from './routes/partner/$id'
 import { Route as ModeratorFlagsRouteImport } from './routes/moderator/flags'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminLocationsRouteImport } from './routes/admin/locations'
+import { Route as AdminAlumniRouteImport } from './routes/admin/alumni'
 import { Route as ModeratorFlagsFlagIdRouteImport } from './routes/moderator/flags.$flagId'
 
 const TermsRoute = TermsRouteImport.update({
@@ -68,6 +72,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PartnerIdRoute = PartnerIdRouteImport.update({
   id: '/partner/$id',
   path: '/partner/$id',
@@ -78,9 +87,24 @@ const ModeratorFlagsRoute = ModeratorFlagsRouteImport.update({
   path: '/moderator/flags',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLocationsRoute = AdminLocationsRouteImport.update({
   id: '/admin/locations',
   path: '/admin/locations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAlumniRoute = AdminAlumniRouteImport.update({
+  id: '/admin/alumni',
+  path: '/admin/alumni',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ModeratorFlagsFlagIdRoute = ModeratorFlagsFlagIdRouteImport.update({
@@ -99,9 +123,13 @@ export interface FileRoutesByFullPath {
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
   '/terms': typeof TermsRoute
+  '/admin/alumni': typeof AdminAlumniRoute
   '/admin/locations': typeof AdminLocationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/moderator/flags': typeof ModeratorFlagsRouteWithChildren
   '/partner/$id': typeof PartnerIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/moderator/flags/$flagId': typeof ModeratorFlagsFlagIdRoute
 }
 export interface FileRoutesByTo {
@@ -114,9 +142,13 @@ export interface FileRoutesByTo {
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
   '/terms': typeof TermsRoute
+  '/admin/alumni': typeof AdminAlumniRoute
   '/admin/locations': typeof AdminLocationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/moderator/flags': typeof ModeratorFlagsRouteWithChildren
   '/partner/$id': typeof PartnerIdRoute
+  '/admin': typeof AdminIndexRoute
   '/moderator/flags/$flagId': typeof ModeratorFlagsFlagIdRoute
 }
 export interface FileRoutesById {
@@ -130,9 +162,13 @@ export interface FileRoutesById {
   '/success': typeof SuccessRoute
   '/suggestions': typeof SuggestionsRoute
   '/terms': typeof TermsRoute
+  '/admin/alumni': typeof AdminAlumniRoute
   '/admin/locations': typeof AdminLocationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/moderator/flags': typeof ModeratorFlagsRouteWithChildren
   '/partner/$id': typeof PartnerIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/moderator/flags/$flagId': typeof ModeratorFlagsFlagIdRoute
 }
 export interface FileRouteTypes {
@@ -147,9 +183,13 @@ export interface FileRouteTypes {
     | '/success'
     | '/suggestions'
     | '/terms'
+    | '/admin/alumni'
     | '/admin/locations'
+    | '/admin/reports'
+    | '/admin/users'
     | '/moderator/flags'
     | '/partner/$id'
+    | '/admin/'
     | '/moderator/flags/$flagId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -162,9 +202,13 @@ export interface FileRouteTypes {
     | '/success'
     | '/suggestions'
     | '/terms'
+    | '/admin/alumni'
     | '/admin/locations'
+    | '/admin/reports'
+    | '/admin/users'
     | '/moderator/flags'
     | '/partner/$id'
+    | '/admin'
     | '/moderator/flags/$flagId'
   id:
     | '__root__'
@@ -177,9 +221,13 @@ export interface FileRouteTypes {
     | '/success'
     | '/suggestions'
     | '/terms'
+    | '/admin/alumni'
     | '/admin/locations'
+    | '/admin/reports'
+    | '/admin/users'
     | '/moderator/flags'
     | '/partner/$id'
+    | '/admin/'
     | '/moderator/flags/$flagId'
   fileRoutesById: FileRoutesById
 }
@@ -193,9 +241,13 @@ export interface RootRouteChildren {
   SuccessRoute: typeof SuccessRoute
   SuggestionsRoute: typeof SuggestionsRoute
   TermsRoute: typeof TermsRoute
+  AdminAlumniRoute: typeof AdminAlumniRoute
   AdminLocationsRoute: typeof AdminLocationsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   ModeratorFlagsRoute: typeof ModeratorFlagsRouteWithChildren
   PartnerIdRoute: typeof PartnerIdRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -263,6 +315,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/partner/$id': {
       id: '/partner/$id'
       path: '/partner/$id'
@@ -277,11 +336,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModeratorFlagsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/locations': {
       id: '/admin/locations'
       path: '/admin/locations'
       fullPath: '/admin/locations'
       preLoaderRoute: typeof AdminLocationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/alumni': {
+      id: '/admin/alumni'
+      path: '/admin/alumni'
+      fullPath: '/admin/alumni'
+      preLoaderRoute: typeof AdminAlumniRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/moderator/flags/$flagId': {
@@ -316,9 +396,13 @@ const rootRouteChildren: RootRouteChildren = {
   SuccessRoute: SuccessRoute,
   SuggestionsRoute: SuggestionsRoute,
   TermsRoute: TermsRoute,
+  AdminAlumniRoute: AdminAlumniRoute,
   AdminLocationsRoute: AdminLocationsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminUsersRoute: AdminUsersRoute,
   ModeratorFlagsRoute: ModeratorFlagsRouteWithChildren,
   PartnerIdRoute: PartnerIdRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

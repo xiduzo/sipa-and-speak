@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, eq, count, asc, ne } from "drizzle-orm";
+import { and, eq, count, asc, desc, ne, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { moderatorProcedure, protectedProcedure, router } from "../../index";
 import { db } from "@sip-and-speak/db";
@@ -390,5 +391,156 @@ export const moderationRouter = router({
       });
 
       return { ok: true as const };
+    }),
+
+  /**
+   * Admin — list every report ever filed (open and resolved), newest first.
+   * Joins both the reporter and the target so the admin Reports view can show
+   * "who reported whom". Unlike `listOpenFlags`, this is not limited to open.
+   */
+  listAllFlags: moderatorProcedure.query(async () => {
+    const reporter = alias(user, "reporter");
+    const target = alias(user, "target");
+
+    const rows = await db
+      .select({
+        id: userFlag.id,
+        reporterId: userFlag.reporterId,
+        reporterName: reporter.name,
+        targetId: userFlag.targetId,
+        targetName: target.name,
+        targetStatus: target.studentStatus,
+        reason: userFlag.reason,
+        detail: userFlag.detail,
+        status: userFlag.status,
+        outcome: userFlag.outcome,
+        createdAt: userFlag.createdAt,
+        resolvedAt: userFlag.resolvedAt,
+      })
+      .from(userFlag)
+      .leftJoin(reporter, eq(userFlag.reporterId, reporter.id))
+      .leftJoin(target, eq(userFlag.targetId, target.id))
+      .orderBy(desc(userFlag.createdAt));
+
+    return rows;
+  }),
+
+  /**
+   * Admin — list all active (non-deleted) Students with their moderation
+   * status and a count of open reports filed against each, newest first.
+   */
+  listUsers: moderatorProcedure.query(async () => {
+    const users = await db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        studentStatus: user.studentStatus,
+        createdAt: user.createdAt,
+      })
+      .from(user)
+      .where(isNull(user.deletedAt))
+      .orderBy(desc(user.createdAt));
+
+    const flagCounts = await db
+      .select({ targetId: userFlag.targetId, openCount: count() })
+      .from(userFlag)
+      .where(eq(userFlag.status, "open"))
+      .groupBy(userFlag.targetId);
+
+    const openByTarget = new Map(
+      flagCounts.map((row) => [row.targetId, Number(row.openCount)]),
+    );
+
+    return users.map((u) => ({
+      ...u,
+      openFlagCount: openByTarget.get(u.id) ?? 0,
+    }));
+  }),
+
+  /**
+   * Admin — suspend a Student directly from the Users list (no report needed).
+   * Mirrors `suspendStudent` minus the flag resolution: sets studentStatus to
+   * 'suspended' and emits StudentSuspended (flagId null) so the same cascade
+   * handlers cancel proposals and suspend conversations.
+   */
+  suspendUser: moderatorProcedure
+    .input(z.object({ targetId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const moderatorId = ctx.session.user.id;
+
+      const rows = await db
+        .select({ id: user.id, studentStatus: user.studentStatus })
+        .from(user)
+        .where(eq(user.id, input.targetId))
+        .limit(1);
+
+      const target = rows[0];
+      if (!target) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Student not found." });
+      }
+      if (target.studentStatus === "removed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Student has been removed." });
+      }
+      if (target.studentStatus === "suspended") {
+        throw new TRPCError({ code: "CONFLICT", message: "Student is already suspended." });
+      }
+
+      const suspendedAt = new Date();
+      await db
+        .update(user)
+        .set({ studentStatus: "suspended" })
+        .where(eq(user.id, input.targetId));
+
+      domainEvents.emit("StudentSuspended", {
+        flagId: null,
+        targetId: input.targetId,
+        moderatorId,
+        suspendedAt,
+      });
+
+      return { success: true as const };
+    }),
+
+  /**
+   * Admin — permanently remove a Student directly from the Users list.
+   * Mirrors `removeStudent` minus the flag resolution. Idempotent. Emits
+   * StudentRemoved (flagId null); the cascade blocklists the email and closes
+   * conversations.
+   */
+  removeUser: moderatorProcedure
+    .input(z.object({ targetId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const moderatorId = ctx.session.user.id;
+
+      const rows = await db
+        .select({ id: user.id, studentStatus: user.studentStatus })
+        .from(user)
+        .where(eq(user.id, input.targetId))
+        .limit(1);
+
+      const target = rows[0];
+      if (!target) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Student not found." });
+      }
+      if (target.studentStatus === "removed") {
+        // Idempotent — already removed, no side effects
+        return { success: true as const };
+      }
+
+      const removedAt = new Date();
+      await db
+        .update(user)
+        .set({ studentStatus: "removed" })
+        .where(eq(user.id, input.targetId));
+
+      domainEvents.emit("StudentRemoved", {
+        flagId: null,
+        targetId: input.targetId,
+        moderatorId,
+        removedAt,
+      });
+
+      return { success: true as const };
     }),
 });

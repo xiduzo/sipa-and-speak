@@ -55,7 +55,7 @@ async function handleSendOtp(c: Context): Promise<Response> {
   // Not a TU/e domain — check the alumni registry
   let isAlumni: boolean;
   try {
-    isAlumni = isAlumniEmail(email);
+    isAlumni = await isAlumniEmail(email);
   } catch {
     return c.json({ message: ALUMNI_REGISTRY_UNAVAILABLE_ERROR }, 503);
   }

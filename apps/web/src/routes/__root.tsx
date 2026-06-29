@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
-import Header from "@/components/header";
+import { AppShell } from "@/components/app-shell";
 import { ThemeProvider } from "@/components/theme-provider";
 import type { trpc } from "@/utils/trpc";
 
@@ -71,10 +71,9 @@ function RootComponent() {
         {isPublic ? (
           <Outlet />
         ) : (
-          <div className="grid grid-rows-[auto_1fr] h-svh">
-            <Header />
+          <AppShell>
             <Outlet />
-          </div>
+          </AppShell>
         )}
         <Toaster richColors />
       </ThemeProvider>
