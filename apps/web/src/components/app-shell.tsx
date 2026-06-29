@@ -83,11 +83,15 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void 
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  // Open report count powers the live badge on the Reports station. Tolerates
-  // failure (e.g. a non-moderator session) by simply showing no badge.
+  // Only moderators see the back-of-house station. This also gates the badge
+  // query below so a normal member never triggers a forbidden request.
+  const isModerator =
+    useQuery(trpc.moderation.amIModerator.queryOptions()).data ?? false;
+
+  // Open report count powers the live badge on the Reports station.
   const openFlags = useQuery({
     ...trpc.moderation.listOpenFlags.queryOptions(),
-    retry: false,
+    enabled: isModerator,
     staleTime: 30_000,
   });
   const openCount = Array.isArray(openFlags.data) ? openFlags.data.length : 0;
@@ -99,21 +103,25 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       ],
     },
-    {
-      eyebrow: "back of house",
-      items: [
-        { to: "/admin", label: "Overview", icon: ShieldCheck, exact: true },
-        { to: "/admin/locations", label: "Locations", icon: MapPin },
-        { to: "/admin/users", label: "Users", icon: Users },
-        {
-          to: "/admin/reports",
-          label: "Reports",
-          icon: Flag,
-          badge: openCount || undefined,
-        },
-        { to: "/admin/alumni", label: "Alumni", icon: GraduationCap },
-      ],
-    },
+    ...(isModerator
+      ? [
+          {
+            eyebrow: "back of house",
+            items: [
+              { to: "/admin", label: "Overview", icon: ShieldCheck, exact: true },
+              { to: "/admin/locations", label: "Locations", icon: MapPin },
+              { to: "/admin/users", label: "Users", icon: Users },
+              {
+                to: "/admin/reports",
+                label: "Reports",
+                icon: Flag,
+                badge: openCount || undefined,
+              },
+              { to: "/admin/alumni", label: "Alumni", icon: GraduationCap },
+            ],
+          } satisfies NavGroup,
+        ]
+      : []),
   ];
 
   return (

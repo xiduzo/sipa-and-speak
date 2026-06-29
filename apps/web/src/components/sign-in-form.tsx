@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import z from "zod";
 
 import { authClient } from "@/lib/auth-client";
+import { trpcClient } from "@/utils/trpc";
 
 import Loader from "./loader";
 
@@ -119,7 +120,18 @@ export default function SignInForm() {
         return;
       }
 
-      navigate({ to: "/dashboard" });
+      // Moderators land in the back-of-house admin area; everyone else on the
+      // dashboard. A failed check (network, etc.) falls back to the dashboard.
+      let destination = "/dashboard";
+      try {
+        if (await trpcClient.moderation.amIModerator.query()) {
+          destination = "/admin";
+        }
+      } catch {
+        // keep the dashboard fallback
+      }
+
+      navigate({ to: destination });
       toast.success("Signed in successfully");
     },
   });

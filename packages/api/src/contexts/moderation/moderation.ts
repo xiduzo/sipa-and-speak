@@ -3,7 +3,12 @@ import { TRPCError } from "@trpc/server";
 import { and, eq, count, asc, desc, ne, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
-import { moderatorProcedure, protectedProcedure, router } from "../../index";
+import {
+  isModeratorEmail,
+  moderatorProcedure,
+  protectedProcedure,
+  router,
+} from "../../index";
 import { db } from "@sip-and-speak/db";
 import { userFlag } from "@sip-and-speak/db/schema/moderation";
 import { user } from "@sip-and-speak/db/schema/auth";
@@ -34,6 +39,17 @@ export const flagReasonLabels: Record<FlagReason, string> = {
 };
 
 export const moderationRouter = router({
+  /**
+   * Whether the current session belongs to a moderator (email is in the
+   * MODERATOR_EMAILS allowlist). Unlike the moderator-only procedures this is a
+   * plain protected query — it returns false rather than throwing — so the
+   * signed-in shell can decide whether to show back-of-house navigation and the
+   * post-sign-in redirect can route admins to /admin.
+   */
+  amIModerator: protectedProcedure.query(({ ctx }) =>
+    isModeratorEmail(ctx.session.user.email),
+  ),
+
   /**
    * #78 — List all open flags sorted oldest-first for the Moderator queue.
    * Any authenticated user can call this query; Moderator RBAC is deferred
