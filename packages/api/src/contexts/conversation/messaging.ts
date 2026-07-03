@@ -8,7 +8,12 @@ import { db } from "@sip-and-speak/db";
 import { messagingOptIn, conversation, conversationPresence, message } from "@sip-and-speak/db/schema/conversation";
 import { meetup } from "@sip-and-speak/db/schema/scheduling";
 import { user } from "@sip-and-speak/db/schema/auth";
-import { validateMessageContent, checkConversationAccess } from "./messaging-utils";
+import {
+  validateMessageContent,
+  checkConversationAccess,
+  isMutuallyOptedIn,
+  isOptInDeclineOutcome,
+} from "./messaging-utils";
 
 export const messagingRouter = router({
   /**
@@ -144,7 +149,7 @@ export const messagingRouter = router({
           .from(messagingOptIn)
           .where(eq(messagingOptIn.meetupId, input.meetupId));
 
-        if (allResponses.length === 2 && allResponses.every((r) => r.response === "accept")) {
+        if (isMutuallyOptedIn(allResponses.map((r) => r.response))) {
           // Use INSERT ... ON CONFLICT DO NOTHING to guard against race conditions
           const [newConversation] = await db
             .insert(conversation)
@@ -199,7 +204,7 @@ export const messagingRouter = router({
           .from(messagingOptIn)
           .where(eq(messagingOptIn.meetupId, input.meetupId));
 
-        if (declineResponses.length === 2 && !declineResponses.every((r) => r.response === "accept")) {
+        if (isOptInDeclineOutcome(declineResponses.map((r) => r.response))) {
           domainEvents.emit("MessagingDeclineOutcome", {
             meetupId: input.meetupId,
             studentAId: studentId,
