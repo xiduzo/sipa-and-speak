@@ -55,3 +55,36 @@ export function validateOnboardingStep(
 export function isOnboardingStepComplete(step: GatedStep, counts: OnboardingCounts): boolean {
   return validateOnboardingStep(step, counts).ok;
 }
+
+// ── shared wizard constants ──────────────────────────────────────────────────
+// Single source for the vocabulary both wizard surfaces (the standalone
+// onboarding screen and the overlay OnboardingModal) render. Interest labels
+// live in `interest-labels.ts`, flags in `language-flags.ts`.
+
+export type LearningProficiency = "beginner" | "intermediate" | "advanced";
+
+/** A language selection in the wizard (spoken or learning). */
+export type OnboardingLanguage = { language: string; proficiency: LearningProficiency };
+
+/** CEFR proficiency blocks rendered under each selected language. */
+export const LEVEL_BLOCKS: { value: LearningProficiency; label: string; sub: string }[] = [
+  { value: "beginner", label: "A1–A2", sub: "Beginner" },
+  { value: "intermediate", label: "B1–B2", sub: "Intermediate" },
+  { value: "advanced", label: "C1–C2", sub: "Advanced" },
+];
+
+export const ONBOARDING_STEP_TITLES = [
+  "How should\npeople greet you?",
+  "Add a face\nto your name.",
+  "What do\nyou speak?",
+  "What are\nyou learning?",
+  "Which topics do\nyou want to practice?",
+];
+
+export const ONBOARDING_STEP_SUBTITLES = [
+  "Pulled from TU/e. Change if you go by something else.",
+  "So your buddy can spot you across the café.",
+  "Languages you can hold a conversation in.",
+  "We'll pair you with native speakers.",
+  `Pick ${ONBOARDING_INTEREST_MIN}–${ONBOARDING_INTEREST_MAX}. Seeds your first match.`,
+];
