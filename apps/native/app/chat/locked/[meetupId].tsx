@@ -5,26 +5,10 @@ import { Alert, Text, TouchableOpacity, View } from "react-native";
 
 import { Container } from "@/components/container";
 import { queryClient, trpc } from "@/utils/trpc";
+import type { ConversationPhase, LockedChatEntry } from "@/utils/chat-list";
+import { firstInitial } from "@/utils/profile-presentation";
 
-type LockedPhase =
-  | "scheduled"
-  | "awaiting_attendance"
-  | "awaiting_partner_attendance"
-  | "awaiting_my_optin"
-  | "awaiting_partner_optin"
-  | "declined";
-
-type LockedEntry = {
-  kind: "locked";
-  id: string;
-  meetupId: string;
-  partner: { id: string; name: string; image: string | null };
-  venue: { id: string; name: string; photoUrl: string | null };
-  meetupAt: string;
-  phase: LockedPhase;
-};
-
-function copyForPhase(phase: LockedPhase, partnerFirstName: string) {
+function copyForPhase(phase: ConversationPhase, partnerFirstName: string) {
   switch (phase) {
     case "scheduled":
       return {
@@ -65,7 +49,7 @@ function copyForPhase(phase: LockedPhase, partnerFirstName: string) {
   }
 }
 
-function headerSubtitle(phase: LockedPhase): string {
+function headerSubtitle(phase: ConversationPhase): string {
   if (phase === "scheduled") return "locked · meet first";
   if (phase === "awaiting_attendance") return "locked · awaiting attendance";
   if (phase === "awaiting_partner_attendance") return "locked · waiting on partner";
@@ -88,8 +72,8 @@ export default function LockedChatScreen() {
   const { data: entries = [], isLoading } = useQuery(
     trpc.chat.listEntries.queryOptions(),
   );
-  const entry = (entries as Array<LockedEntry | { kind: "open" }>).find(
-    (e): e is LockedEntry => e.kind === "locked" && e.meetupId === meetupId,
+  const entry = (entries as Array<LockedChatEntry | { kind: "open" }>).find(
+    (e): e is LockedChatEntry => e.kind === "locked" && e.meetupId === meetupId,
   );
 
   const optInMutation = useMutation(
@@ -171,7 +155,7 @@ export default function LockedChatScreen() {
         </TouchableOpacity>
         <View className="w-10 h-10 rounded-full bg-muted items-center justify-center mr-3">
           <Text className="text-foreground font-bold">
-            {entry.partner.name.charAt(0).toUpperCase()}
+            {firstInitial(entry.partner.name)}
           </Text>
         </View>
         <View className="flex-1">

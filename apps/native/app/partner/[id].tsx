@@ -2,13 +2,13 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Spinner } from "heroui-native";
 import { useEffect, useState } from "react";
-import { Alert, Image, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
+import { Avatar } from "@/components/avatar";
 import { Container } from "@/components/container";
 import { FlagUserModal } from "@/components/flag-user-modal";
 import { queryClient, trpc } from "@/utils/trpc";
-import { interestLabel } from "@/utils/interest-labels";
-import { getLanguageFlag } from "@/utils/language-flags";
+import { profileSections } from "@/utils/profile-presentation";
 
 const GOLD = "#F2C94C";
 const BORDER = "#D9C9BC";
@@ -95,6 +95,7 @@ export default function PartnerProfileScreen() {
 
   const profile = profileQuery.data;
   const comments = commentsQuery.data ?? [];
+  const sections = profileSections(profile);
 
   // Show matched-only actions only when actually matched and not in the
   // incoming-request context.
@@ -140,22 +141,17 @@ export default function PartnerProfileScreen() {
         {/* Avatar */}
         <View className="items-center mb-5">
           <View style={{ borderWidth: 2, borderColor: WARM_BROWN, borderRadius: 60, padding: 3, marginBottom: 16 }}>
-            {profile.image ? (
-              <Image
-                testID="profile-photo"
-                source={{ uri: profile.image }}
-                style={{ width: 104, height: 104, borderRadius: 52 }}
-              />
-            ) : (
-              <View
-                testID="profile-photo-placeholder"
-                style={{ width: 104, height: 104, borderRadius: 52, backgroundColor: "#E2C5BD", alignItems: "center", justifyContent: "center" }}
-              >
-                <Text className="font-jakarta" style={{ fontSize: 40, color: WARM_BROWN }}>
-                  {profile.name.charAt(0).toUpperCase()}
-                </Text>
-              </View>
-            )}
+            <Avatar
+              name={profile.name}
+              image={profile.image}
+              size={104}
+              fontSize={40}
+              single
+              tone="#E2C5BD"
+              color={WARM_BROWN}
+              imageTestID="profile-photo"
+              placeholderTestID="profile-photo-placeholder"
+            />
           </View>
 
           {/* Name + age */}
@@ -193,16 +189,16 @@ export default function PartnerProfileScreen() {
         )}
 
         {/* Spoken languages */}
-        {profile.spokenLanguages.length > 0 && (
+        {sections.speaks.items.length > 0 && (
           <View className="mb-4">
             <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>
-              Speaks
+              {sections.speaks.title}
             </Text>
             <View className="flex-row flex-wrap gap-2" testID="profile-offered-languages">
-              {profile.spokenLanguages.map((l) => (
-                <View key={l.language} className="px-3 py-1 rounded-full" style={{ borderWidth: 1.5, borderColor: GOLD, backgroundColor: "#FFF9EC" }}>
+              {sections.speaks.items.map((item) => (
+                <View key={item.value} className="px-3 py-1 rounded-full" style={{ borderWidth: 1.5, borderColor: GOLD, backgroundColor: "#FFF9EC" }}>
                   <Text className="text-xs font-manrope-semi" style={{ color: WARM_BROWN }}>
-                    {getLanguageFlag(l.language)} {l.language}{l.proficiency ? ` · ${l.proficiency}` : ""}
+                    {item.flag} {item.label}{item.detail ? ` · ${item.detail}` : ""}
                   </Text>
                 </View>
               ))}
@@ -211,16 +207,16 @@ export default function PartnerProfileScreen() {
         )}
 
         {/* Learning languages */}
-        {profile.learningLanguages.length > 0 && (
+        {sections.learning.items.length > 0 && (
           <View className="mb-4">
             <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>
-              Learning
+              {sections.learning.title}
             </Text>
             <View className="flex-row flex-wrap gap-2" testID="profile-targeted-languages">
-              {profile.learningLanguages.map((lang) => (
-                <View key={lang} className="px-3 py-1 rounded-full" style={{ borderWidth: 1.5, borderColor: BORDER, backgroundColor: "#F5EFE8" }}>
+              {sections.learning.items.map((item) => (
+                <View key={item.value} className="px-3 py-1 rounded-full" style={{ borderWidth: 1.5, borderColor: BORDER, backgroundColor: "#F5EFE8" }}>
                   <Text className="text-xs font-manrope-semi" style={{ color: MUTED }}>
-                    {getLanguageFlag(lang)} {lang}
+                    {item.flag} {item.label}
                   </Text>
                 </View>
               ))}
@@ -229,15 +225,15 @@ export default function PartnerProfileScreen() {
         )}
 
         {/* Interests */}
-        {profile.interests.length > 0 && (
+        {sections.topics.items.length > 0 && (
           <View className="mb-5">
             <Text className="font-manrope-semi text-[11px] tracking-[2px] uppercase mb-2" style={{ color: MUTED }}>
-              Topics
+              {sections.topics.title}
             </Text>
             <View className="flex-row flex-wrap gap-2" testID="profile-topics">
-              {profile.interests.map((topic) => (
-                <View key={topic} className="px-3 py-1.5 rounded-full" style={{ borderWidth: 1.5, borderColor: BORDER, backgroundColor: "#F5EFE8" }}>
-                  <Text className="text-sm font-manrope" style={{ color: WARM_BROWN }}>{interestLabel(topic)}</Text>
+              {sections.topics.items.map((item) => (
+                <View key={item.value} className="px-3 py-1.5 rounded-full" style={{ borderWidth: 1.5, borderColor: BORDER, backgroundColor: "#F5EFE8" }}>
+                  <Text className="text-sm font-manrope" style={{ color: WARM_BROWN }}>{item.label}</Text>
                 </View>
               ))}
             </View>

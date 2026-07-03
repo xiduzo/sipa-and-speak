@@ -1,5 +1,6 @@
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
+import { Avatar } from "@/components/avatar";
 import { CARD, GOLD } from "./tokens";
 import type { MyMatch } from "./home-state";
 
@@ -10,8 +11,6 @@ type Props = {
 };
 
 export function HeroMatchFound({ match, onPropose, onViewProfile }: Props) {
-  const initial = (match.partnerName || "?").charAt(0).toUpperCase();
-
   return (
     <View>
       <Text
@@ -27,21 +26,14 @@ export function HeroMatchFound({ match, onPropose, onViewProfile }: Props) {
         style={{ backgroundColor: "#FFFFFF" }}
       >
         <View className="flex-row items-center gap-4">
-          <View
-            className="items-center justify-center rounded-full overflow-hidden"
-            style={{ width: 64, height: 64, backgroundColor: "#E2C5BD" }}
-          >
-            {match.partnerPhotoUrl ? (
-              <Image
-                source={{ uri: match.partnerPhotoUrl }}
-                style={{ width: 64, height: 64 }}
-              />
-            ) : (
-              <Text className="font-jakarta" style={{ fontSize: 26 }}>
-                {initial}
-              </Text>
-            )}
-          </View>
+          <Avatar
+            name={match.partnerName}
+            image={match.partnerPhotoUrl}
+            size={64}
+            fontSize={26}
+            single
+            tone="#E2C5BD"
+          />
           <View className="flex-1">
             <Text
               className="text-brand-foreground font-jakarta"

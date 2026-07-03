@@ -1,5 +1,6 @@
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
+import { Avatar } from "@/components/avatar";
 import { CARD, GOLD } from "./tokens";
 import { formatDayTime, formatRelativeTime } from "./format";
 import type { PendingProposal } from "./home-state";
@@ -10,7 +11,6 @@ type Props = {
 };
 
 export function HeroWaiting({ proposal, onRespond }: Props) {
-  const initial = (proposal.partner.name || "?").charAt(0).toUpperCase();
   const dayTime = formatDayTime(proposal.scheduledAt);
   const relative = formatRelativeTime(proposal.createdAt);
 
@@ -30,21 +30,14 @@ export function HeroWaiting({ proposal, onRespond }: Props) {
           style={{ backgroundColor: "#FFFFFF" }}
         >
           <View className="flex-row items-center gap-4">
-            <View
-              className="items-center justify-center rounded-full overflow-hidden"
-              style={{ width: 64, height: 64, backgroundColor: "#E2C5BD" }}
-            >
-              {proposal.partner.image ? (
-                <Image
-                  source={{ uri: proposal.partner.image }}
-                  style={{ width: 64, height: 64 }}
-                />
-              ) : (
-                <Text className="font-jakarta" style={{ fontSize: 26 }}>
-                  {initial}
-                </Text>
-              )}
-            </View>
+            <Avatar
+              name={proposal.partner.name}
+              image={proposal.partner.image}
+              size={64}
+              fontSize={26}
+              single
+              tone="#E2C5BD"
+            />
             <View className="flex-1">
               <Text
                 className="text-brand-foreground font-jakarta"
@@ -110,21 +103,14 @@ export function HeroWaiting({ proposal, onRespond }: Props) {
         style={{ backgroundColor: "#FFFFFF" }}
       >
         <View className="flex-row items-center gap-4">
-          <View
-            className="items-center justify-center rounded-full overflow-hidden"
-            style={{ width: 64, height: 64, backgroundColor: "#E2C5BD" }}
-          >
-            {proposal.partner.image ? (
-              <Image
-                source={{ uri: proposal.partner.image }}
-                style={{ width: 64, height: 64 }}
-              />
-            ) : (
-              <Text className="font-jakarta" style={{ fontSize: 26 }}>
-                {initial}
-              </Text>
-            )}
-          </View>
+          <Avatar
+            name={proposal.partner.name}
+            image={proposal.partner.image}
+            size={64}
+            fontSize={26}
+            single
+            tone="#E2C5BD"
+          />
           <View className="flex-1">
             <Text
               className="text-brand-foreground font-jakarta"

@@ -2,7 +2,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useRef } from "react";
 import {
-  Image,
   type LayoutChangeEvent,
   Pressable,
   ScrollView,
@@ -10,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import { Avatar } from "@/components/avatar";
 import { Container } from "@/components/container";
 import { epochMs } from "@/lib/dates";
 import { trpc, queryClient } from "@/utils/trpc";
@@ -20,35 +20,7 @@ const MUTED = "#8A7570";
 const DIVIDER = "#EFE7DD";
 const CREAM_BORDER = "#FAF6F1";
 
-const AVATAR_PALETTE = [
-  "#E8B5AA", // rose
-  "#B5CFC6", // sage
-  "#D4B59E", // peach
-  "#D6B7C2", // mauve
-  "#E6D4B8", // sand
-  "#C9D5C0", // moss
-  "#E2C5B0", // clay
-];
-
 const NEW_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-function avatarTone(seed: string): string {
-  let h = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    h = (h * 31 + seed.charCodeAt(i)) % 4096;
-  }
-  return AVATAR_PALETTE[h % AVATAR_PALETTE.length]!;
-}
-
-function initials(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return "?";
-  const parts = trimmed.split(/\s+/);
-  if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase();
-  return (
-    parts[0]!.charAt(0) + parts[parts.length - 1]!.charAt(0)
-  ).toUpperCase();
-}
 
 interface MatchEntry {
   matchId: string;
@@ -67,28 +39,17 @@ function MatchAvatar({
   image: string | null;
   isNew?: boolean;
 }) {
-  const tone = avatarTone(name);
   const size = 84;
   return (
     <View style={{ width: size, height: size }}>
-      <View
-        className="items-center justify-center rounded-full"
-        style={{ width: size, height: size, backgroundColor: tone }}
-      >
-        {image ? (
-          <Image
-            source={{ uri: image }}
-            style={{ width: size, height: size, borderRadius: size / 2 }}
-          />
-        ) : (
-          <Text
-            className="font-jakarta"
-            style={{ fontSize: 30, color: DARK, letterSpacing: -0.5 }}
-          >
-            {initials(name)}
-          </Text>
-        )}
-      </View>
+      <Avatar
+        name={name}
+        image={image}
+        size={size}
+        fontSize={30}
+        color={DARK}
+        letterSpacing={-0.5}
+      />
       {isNew && (
         <View
           accessibilityLabel="new match"
@@ -266,7 +227,6 @@ export default function MatchesScreen() {
                 const pending =
                   withdrawMutation.isPending &&
                   withdrawMutation.variables?.matchRequestId === req.matchRequestId;
-                const tone = avatarTone(req.receiverName);
                 return (
                   <View
                     key={req.matchRequestId}
@@ -282,26 +242,13 @@ export default function MatchesScreen() {
                         opacity: pressed ? 0.7 : 1,
                       })}
                     >
-                      <View style={{ width: 52, height: 52 }}>
-                        <View
-                          className="items-center justify-center rounded-full"
-                          style={{ width: 52, height: 52, backgroundColor: tone }}
-                        >
-                          {req.receiverPhotoUrl ? (
-                            <Image
-                              source={{ uri: req.receiverPhotoUrl }}
-                              style={{ width: 52, height: 52, borderRadius: 26 }}
-                            />
-                          ) : (
-                            <Text
-                              className="font-jakarta"
-                              style={{ fontSize: 20, color: DARK }}
-                            >
-                              {initials(req.receiverName)}
-                            </Text>
-                          )}
-                        </View>
-                      </View>
+                      <Avatar
+                        name={req.receiverName}
+                        image={req.receiverPhotoUrl}
+                        size={52}
+                        fontSize={20}
+                        color={DARK}
+                      />
                       <View style={{ flex: 1 }}>
                         <Text
                           className="font-jakarta"
@@ -364,7 +311,6 @@ export default function MatchesScreen() {
                     acceptMutation.variables?.matchRequestId === req.matchRequestId) ||
                   (declineMutation.isPending &&
                     declineMutation.variables?.matchRequestId === req.matchRequestId);
-                const tone = avatarTone(req.requesterName);
                 return (
                   <View
                     key={req.matchRequestId}
@@ -388,30 +334,13 @@ export default function MatchesScreen() {
                         opacity: pressed ? 0.7 : 1,
                       })}
                     >
-                      <View style={{ width: 52, height: 52 }}>
-                        <View
-                          className="items-center justify-center rounded-full"
-                          style={{
-                            width: 52,
-                            height: 52,
-                            backgroundColor: tone,
-                          }}
-                        >
-                          {req.requesterPhotoUrl ? (
-                            <Image
-                              source={{ uri: req.requesterPhotoUrl }}
-                              style={{ width: 52, height: 52, borderRadius: 26 }}
-                            />
-                          ) : (
-                            <Text
-                              className="font-jakarta"
-                              style={{ fontSize: 20, color: DARK }}
-                            >
-                              {initials(req.requesterName)}
-                            </Text>
-                          )}
-                        </View>
-                      </View>
+                      <Avatar
+                        name={req.requesterName}
+                        image={req.requesterPhotoUrl}
+                        size={52}
+                        fontSize={20}
+                        color={DARK}
+                      />
                       <View style={{ flex: 1 }}>
                         <Text
                           className="font-jakarta"

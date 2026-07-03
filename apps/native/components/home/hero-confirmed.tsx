@@ -1,5 +1,7 @@
-import { Image, Linking, Platform, Pressable, Text, View } from "react-native";
+import { Linking, Platform, Pressable, Text, View } from "react-native";
 
+import { Avatar } from "@/components/avatar";
+import { meetupCardStatus } from "@/utils/meetup-card-status";
 import { GOLD } from "./tokens";
 import { formatDayFull, formatTime } from "./format";
 import type { ConfirmedMeetup } from "./home-state";
@@ -21,17 +23,11 @@ function openDirections(venueName: string) {
 }
 
 export function HeroConfirmed({ meetup, onReschedule, onAcceptReschedule }: Props) {
-  const initial = (meetup.partner.name || "?").charAt(0).toUpperCase();
   const dayName = formatDayFull(meetup.scheduledAt).toUpperCase();
   const timeLabel = formatTime(meetup.scheduledAt);
 
-  const rescheduleLabel = meetup.reschedulePending
-    ? meetup.rescheduleIsFromMe
-      ? "Reschedule pending…"
-      : "Answer"
-    : "Reschedule";
-
-  const partnerProposedReschedule = meetup.reschedulePending && !meetup.rescheduleIsFromMe;
+  const { rescheduleLabel, rescheduleDisabled, partnerProposedReschedule } =
+    meetupCardStatus(meetup);
 
   return (
     <View>
@@ -48,21 +44,14 @@ export function HeroConfirmed({ meetup, onReschedule, onAcceptReschedule }: Prop
         style={{ backgroundColor: GOLD }}
       >
         <View className="flex-row items-center gap-4">
-          <View
-            className="items-center justify-center rounded-full overflow-hidden"
-            style={{ width: 64, height: 64, backgroundColor: "#E2C5BD" }}
-          >
-            {meetup.partner.image ? (
-              <Image
-                source={{ uri: meetup.partner.image }}
-                style={{ width: 64, height: 64 }}
-              />
-            ) : (
-              <Text className="font-jakarta" style={{ fontSize: 26 }}>
-                {initial}
-              </Text>
-            )}
-          </View>
+          <Avatar
+            name={meetup.partner.name}
+            image={meetup.partner.image}
+            size={64}
+            fontSize={26}
+            single
+            tone="#E2C5BD"
+          />
           <View className="flex-1">
             <Text
               className="text-brand-foreground font-jakarta"
@@ -121,13 +110,13 @@ export function HeroConfirmed({ meetup, onReschedule, onAcceptReschedule }: Prop
           <Pressable
             testID="reschedule-btn"
             onPress={onReschedule}
-            disabled={meetup.rescheduleIsFromMe && meetup.reschedulePending}
+            disabled={rescheduleDisabled}
             className="flex-1 items-center justify-center rounded-full"
             style={{
               height: 52,
               borderWidth: 1.5,
               borderColor: "#1A1A1A",
-              opacity: meetup.rescheduleIsFromMe && meetup.reschedulePending ? 0.6 : 1,
+              opacity: rescheduleDisabled ? 0.6 : 1,
             }}
           >
             <Text className="font-manrope-bold" style={{ fontSize: 14 }}>

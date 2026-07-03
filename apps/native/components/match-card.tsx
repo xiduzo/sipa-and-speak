@@ -3,7 +3,7 @@ import { Alert, Image, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { trpc } from "@/utils/trpc";
-import { interestLabel } from "@/utils/interest-labels";
+import { firstInitial, profileSections } from "@/utils/profile-presentation";
 import { getLanguageCode, getLanguageFlag } from "@/utils/language-flags";
 
 const GOLD = "#F2C94C";
@@ -48,8 +48,9 @@ export function MatchCard({
   });
 
   const matchPct = Math.round(candidate.score * 100);
-  const initial = (candidate.name?.charAt(0) ?? "?").toUpperCase();
+  const initial = firstInitial(candidate.name ?? "");
   const compatible = new Set(candidate.compatibleLanguages ?? []);
+  const sections = profileSections(candidate);
   const partnerLabel = (candidate.name ?? "They").toUpperCase();
 
   function handleAccept() {
@@ -145,14 +146,14 @@ export function MatchCard({
           style={{ gap: 6 }}
           testID="partner-spoken-languages"
         >
-          {candidate.spokenLanguages.length === 0 ? (
+          {sections.speaks.items.length === 0 ? (
             <Text className="text-white font-manrope" style={{ opacity: 0.8 }}>—</Text>
           ) : (
-            candidate.spokenLanguages.map((l) => {
-              const isMatch = compatible.has(l.language);
+            sections.speaks.items.map((item) => {
+              const isMatch = compatible.has(item.value);
               return (
                 <View
-                  key={l.language}
+                  key={item.value}
                   testID={isMatch ? "partner-spoken-match-chip" : "partner-spoken-chip"}
                   className="px-3 py-1 rounded-full"
                   style={{
@@ -166,8 +167,8 @@ export function MatchCard({
                       color: isMatch ? "#2C1810" : "#FFFFFF",
                     }}
                   >
-                    {getLanguageFlag(l.language)} {l.language}
-                    {l.proficiency ? ` · ${l.proficiency}` : ""}
+                    {item.flag} {item.label}
+                    {item.detail ? ` · ${item.detail}` : ""}
                   </Text>
                 </View>
               );
@@ -175,7 +176,7 @@ export function MatchCard({
           )}
         </View>
 
-        {candidate.learningLanguages.length > 0 && (
+        {sections.learning.items.length > 0 && (
           <>
             <Text
               testID="partner-learning-label"
@@ -189,11 +190,11 @@ export function MatchCard({
               style={{ gap: 6 }}
               testID="partner-learning-languages"
             >
-              {candidate.learningLanguages.map((lang) => {
-                const isMatch = compatible.has(lang);
+              {sections.learning.items.map((item) => {
+                const isMatch = compatible.has(item.value);
                 return (
                   <View
-                    key={lang}
+                    key={item.value}
                     testID={isMatch ? "partner-learning-match-chip" : "partner-learning-chip"}
                     className="px-3 py-1 rounded-full"
                     style={{
@@ -210,7 +211,7 @@ export function MatchCard({
                         color: isMatch ? "#2C1810" : "#FFFFFF",
                       }}
                     >
-                      {getLanguageFlag(lang)} {lang}
+                      {item.flag} {item.label}
                     </Text>
                   </View>
                 );
@@ -276,7 +277,7 @@ export function MatchCard({
         className="px-6 pt-6 pb-2"
         style={{ backgroundColor: CREAM, flex: 5 }}
       >
-        {candidate.interests.length > 0 ? (
+        {sections.topics.items.length > 0 ? (
           <>
             <Text
               testID="partner-interests-label"
@@ -286,9 +287,9 @@ export function MatchCard({
               {partnerLabel} IS INTO
             </Text>
             <View className="flex-row flex-wrap gap-2 mt-3">
-              {candidate.interests.slice(0, 6).map((topic) => (
+              {sections.topics.items.slice(0, 6).map((item) => (
                 <View
-                  key={topic}
+                  key={item.value}
                   testID="interest-chip"
                   className="px-4 py-2 rounded-full"
                   style={{ backgroundColor: CHIP }}
@@ -297,7 +298,7 @@ export function MatchCard({
                     className="font-manrope-semi text-brand-foreground"
                     style={{ fontSize: 16 }}
                   >
-                    {interestLabel(topic)}
+                    {item.label}
                   </Text>
                 </View>
               ))}
