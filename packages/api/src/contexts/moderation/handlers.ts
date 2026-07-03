@@ -10,6 +10,11 @@
  * carrying the affected peer IDs. The notifications package subscribes to
  * that event — no second query needed there.
  *
+ * The proposal cancellation is a deliberate bulk update rather than a per-row
+ * `Meetup.cancel` aggregate call: the aggregate's cancel invariants (confirmed
+ * only, before the meetup time) are participant rules, while the moderation
+ * cascade must also sweep *pending* proposals and past-scheduled rows.
+ *
  * Fire-and-forget: errors are logged in the dispatcher, never thrown to
  * callers.
  */
@@ -18,21 +23,21 @@ import { db } from "@sip-and-speak/db";
 import { meetup } from "@sip-and-speak/db/schema/scheduling";
 import { conversation } from "@sip-and-speak/db/schema/conversation";
 import { user } from "@sip-and-speak/db/schema/auth";
-import {
-  domainEvents,
-  type StudentSuspendedEvent,
-  type SuspensionLiftedEvent,
-  type StudentRemovedEvent,
-} from "../../domain-events";
+import { domainEvents, type StudentRemovedEvent } from "../../domain-events";
 import { addEmailToBlocklist } from "./blocklist";
 
-async function handleStudentSuspendedCancelProposals(event: StudentSuspendedEvent): Promise<void> {
+/**
+ * Cancel every active (pending or confirmed) meetup proposal the Student is
+ * part of, then emit ProposalsCancelledByCascade with the affected peer IDs.
+ * Shared by the suspension and removal cascades — the two are identical.
+ */
+async function cancelActiveProposalsFor(targetId: string): Promise<void> {
   const activeProposals = await db
     .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
     .from(meetup)
     .where(
       and(
-        or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
+        or(eq(meetup.proposerId, targetId), eq(meetup.receiverId, targetId)),
         inArray(meetup.status, ["pending", "confirmed"]),
       ),
     );
@@ -44,125 +49,55 @@ async function handleStudentSuspendedCancelProposals(event: StudentSuspendedEven
     .set({ status: "cancelled" })
     .where(
       and(
-        or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
+        or(eq(meetup.proposerId, targetId), eq(meetup.receiverId, targetId)),
         inArray(meetup.status, ["pending", "confirmed"]),
       ),
     );
 
   const peerIds = [...new Set(
-    activeProposals.map((p) => (p.proposerId === event.targetId ? p.receiverId : p.proposerId)),
+    activeProposals.map((p) => (p.proposerId === targetId ? p.receiverId : p.proposerId)),
   )];
-  domainEvents.emit("ProposalsCancelledByCascade", { targetId: event.targetId, peerIds });
+  domainEvents.emit("ProposalsCancelledByCascade", { targetId, peerIds });
 }
 
-async function handleStudentSuspendedSuspendConversations(event: StudentSuspendedEvent): Promise<void> {
-  const openConversations = await db
+type ConversationStatus = "open" | "suspended" | "closed";
+
+/**
+ * Transition every conversation the Student is part of from `from` to `to`.
+ * Parameterises the three conversation cascades:
+ *   - StudentSuspended:  open → suspended
+ *   - SuspensionLifted:  suspended → open
+ *   - StudentRemoved:    open → closed
+ */
+async function transitionConversations(
+  targetId: string,
+  from: ConversationStatus,
+  to: ConversationStatus,
+  logMessage: string,
+): Promise<void> {
+  const affected = await db
     .select({ id: conversation.id })
     .from(conversation)
     .where(
       and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "open"),
+        or(eq(conversation.user1Id, targetId), eq(conversation.user2Id, targetId)),
+        eq(conversation.status, from),
       ),
     );
 
-  if (openConversations.length === 0) return;
+  if (affected.length === 0) return;
 
   await db
     .update(conversation)
-    .set({ status: "suspended" })
+    .set({ status: to })
     .where(
       and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "open"),
+        or(eq(conversation.user1Id, targetId), eq(conversation.user2Id, targetId)),
+        eq(conversation.status, from),
       ),
     );
 
-  console.info("[moderation] Suspended conversations on student suspension", { targetId: event.targetId, count: openConversations.length });
-}
-
-// If both Students in a shared conversation were suspended and only one is lifted,
-// the conversation re-opens here even though the other party is still suspended.
-// The per-send guard on user.studentStatus catches that case at message time.
-async function handleSuspensionLiftedReopenConversations(event: SuspensionLiftedEvent): Promise<void> {
-  const suspendedConversations = await db
-    .select({ id: conversation.id })
-    .from(conversation)
-    .where(
-      and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "suspended"),
-      ),
-    );
-
-  if (suspendedConversations.length === 0) return;
-
-  await db
-    .update(conversation)
-    .set({ status: "open" })
-    .where(
-      and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "suspended"),
-      ),
-    );
-
-  console.info("[moderation] Re-opened conversations on suspension lift", { targetId: event.targetId, count: suspendedConversations.length });
-}
-
-async function handleStudentRemovedCancelProposals(event: StudentRemovedEvent): Promise<void> {
-  const activeProposals = await db
-    .select({ id: meetup.id, proposerId: meetup.proposerId, receiverId: meetup.receiverId })
-    .from(meetup)
-    .where(
-      and(
-        or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
-        inArray(meetup.status, ["pending", "confirmed"]),
-      ),
-    );
-
-  if (activeProposals.length === 0) return;
-
-  await db
-    .update(meetup)
-    .set({ status: "cancelled" })
-    .where(
-      and(
-        or(eq(meetup.proposerId, event.targetId), eq(meetup.receiverId, event.targetId)),
-        inArray(meetup.status, ["pending", "confirmed"]),
-      ),
-    );
-
-  const peerIds = [...new Set(
-    activeProposals.map((p) => (p.proposerId === event.targetId ? p.receiverId : p.proposerId)),
-  )];
-  domainEvents.emit("ProposalsCancelledByCascade", { targetId: event.targetId, peerIds });
-}
-
-async function handleStudentRemovedCloseConversations(event: StudentRemovedEvent): Promise<void> {
-  const openConversations = await db
-    .select({ id: conversation.id })
-    .from(conversation)
-    .where(
-      and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "open"),
-      ),
-    );
-
-  if (openConversations.length === 0) return;
-
-  await db
-    .update(conversation)
-    .set({ status: "closed" })
-    .where(
-      and(
-        or(eq(conversation.user1Id, event.targetId), eq(conversation.user2Id, event.targetId)),
-        eq(conversation.status, "open"),
-      ),
-    );
-
-  console.info("[moderation] Closed conversations on removal", { targetId: event.targetId, count: openConversations.length });
+  console.info(`[moderation] ${logMessage}`, { targetId, count: affected.length });
 }
 
 // #109 — Block removed Student's email from re-registration
@@ -179,15 +114,34 @@ async function handleStudentRemovedBlocklistEmail(event: StudentRemovedEvent): P
 
 export function registerModerationHandlers(): void {
   domainEvents.on("StudentSuspended", (event) => {
-    void handleStudentSuspendedCancelProposals(event);
-    void handleStudentSuspendedSuspendConversations(event);
+    void cancelActiveProposalsFor(event.targetId);
+    // If both Students in a shared conversation were suspended and only one is
+    // lifted later, the conversation re-opens even though the other party is
+    // still suspended. The per-send guard on user.studentStatus catches that
+    // case at message time.
+    void transitionConversations(
+      event.targetId,
+      "open",
+      "suspended",
+      "Suspended conversations on student suspension",
+    );
   });
   domainEvents.on("SuspensionLifted", (event) => {
-    void handleSuspensionLiftedReopenConversations(event);
+    void transitionConversations(
+      event.targetId,
+      "suspended",
+      "open",
+      "Re-opened conversations on suspension lift",
+    );
   });
   domainEvents.on("StudentRemoved", (event) => {
-    void handleStudentRemovedCancelProposals(event);
-    void handleStudentRemovedCloseConversations(event);
+    void cancelActiveProposalsFor(event.targetId);
+    void transitionConversations(
+      event.targetId,
+      "open",
+      "closed",
+      "Closed conversations on removal",
+    );
     void handleStudentRemovedBlocklistEmail(event);
   });
 }

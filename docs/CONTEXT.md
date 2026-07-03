@@ -78,6 +78,30 @@ domain events to emit. Lifecycle:
 `MatchRuleError` is its invariant-violation error; the tRPC router translates
 it into a `TRPCError` with the matching code.
 
+### StudentAccount aggregate
+
+The pure state machine for the Trust & Moderation context, mirroring the
+Meetup and MatchRequest aggregates. Lives at
+`packages/api/src/contexts/moderation/student-account-aggregate.ts`. Each
+method takes the loaded student snapshot (plus, for flag-driven transitions,
+the flag snapshot) and actor input, and returns the next persistent state,
+the flag resolution to persist alongside it, and the domain events to emit.
+Lifecycle:
+
+- `suspend` (active → suspended) → `StudentSuspended`, plus the driving
+  flag to resolve when acting on a report
+- `liftSuspension` (suspended → active) → `SuspensionLifted`
+- `remove` (active/suspended → removed, terminal) → `StudentRemoved`;
+  idempotent — re-removing is a no-op success with no writes and no events
+
+Guard semantics are canonical across the flag-driven (`suspendStudent` /
+`removeStudent`) and direct-admin (`suspendUser` / `removeUser`) procedures:
+removed → BAD_REQUEST, already-suspended → CONFLICT, missing student/flag →
+NOT_FOUND, resolved flag → CONFLICT (checked before the student guards).
+
+`ModerationRuleError` is its invariant-violation error; the tRPC router
+translates it into a `TRPCError` with the matching code.
+
 ### Unit of work (`commitAndEmit`)
 
 `packages/api/src/unit-of-work.ts`. The single seam where persistence and
