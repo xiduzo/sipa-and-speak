@@ -20,6 +20,18 @@ import { fileURLToPath } from "node:url";
 import * as schema from "@sip-and-speak/db/schema";
 import { domainEvents } from "../domain-events";
 
+/**
+ * moderatorProcedure reads the MODERATOR_EMAILS allowlist ONCE, when
+ * `packages/api/src/index.ts` first evaluates. The harness is imported before
+ * any router in every integration test file, so registering the test
+ * moderator email here guarantees `buildSessionContext(id, TEST_MODERATOR_EMAIL)`
+ * sessions pass the moderator gate regardless of test-file ordering.
+ */
+export const TEST_MODERATOR_EMAIL = "moderator@test.example.com";
+process.env.MODERATOR_EMAILS = [process.env.MODERATOR_EMAILS, TEST_MODERATOR_EMAIL]
+  .filter(Boolean)
+  .join(",");
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = join(HERE, "../../../db/src/migrations");
 

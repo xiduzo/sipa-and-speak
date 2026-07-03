@@ -18,6 +18,15 @@ import {
   buildFlagDetail,
   STUDENT_INACTIVE_MESSAGE,
 } from "./moderation-utils";
+import {
+  StudentAccount,
+  ModerationRuleError,
+  type FlagSnapshot,
+  type ResolveFlag,
+  type StudentAccountSnapshot,
+  type StudentStatus,
+} from "./student-account-aggregate";
+import { commitAndEmit, type Tx } from "../../unit-of-work";
 import { domainEvents } from "../../domain-events";
 
 export const flagReasonSchema = z.enum([
@@ -37,6 +46,67 @@ export const flagReasonLabels: Record<FlagReason, string> = {
   INAPPROPRIATE_BEHAVIOR: "Inappropriate behaviour",
   OTHER: "Other",
 };
+
+/** Convert aggregate rule violations into the right tRPC error code. */
+function toTrpcError(err: unknown): never {
+  if (err instanceof ModerationRuleError) {
+    throw new TRPCError({ code: err.code, message: err.message });
+  }
+  throw err;
+}
+
+async function loadFlagSnapshot(flagId: string): Promise<FlagSnapshot | null> {
+  const rows = await db
+    .select({ id: userFlag.id, status: userFlag.status, targetId: userFlag.targetId })
+    .from(userFlag)
+    .where(eq(userFlag.id, flagId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+async function loadStudentSnapshot(
+  targetId: string,
+): Promise<StudentAccountSnapshot | null> {
+  const rows = await db
+    .select({ id: user.id, studentStatus: user.studentStatus })
+    .from(user)
+    .where(eq(user.id, targetId))
+    .limit(1);
+  const row = rows[0];
+  return row ? { id: row.id, studentStatus: row.studentStatus as StudentStatus } : null;
+}
+
+/**
+ * Persist a StudentAccount transition: write the new studentStatus and, when
+ * the transition resolves a flag, resolve it in the same transaction.
+ */
+async function persistStatusTransition(
+  tx: Tx,
+  args: {
+    targetId: string;
+    status: StudentStatus;
+    resolveFlag: ResolveFlag | null;
+    moderatorId: string;
+    at: Date;
+  },
+): Promise<void> {
+  await tx
+    .update(user)
+    .set({ studentStatus: args.status })
+    .where(eq(user.id, args.targetId));
+
+  if (args.resolveFlag) {
+    await tx
+      .update(userFlag)
+      .set({
+        status: "resolved",
+        outcome: args.resolveFlag.outcome,
+        moderatorId: args.moderatorId,
+        resolvedAt: args.at,
+      })
+      .where(eq(userFlag.id, args.resolveFlag.flagId));
+  }
+}
 
 export const moderationRouter = router({
   /**
@@ -176,172 +246,105 @@ export const moderationRouter = router({
 
   /**
    * #100/#103 — Suspend a flagged Student.
-   * Sets studentStatus to 'suspended', resolves flag with outcome 'suspended',
-   * and emits the StudentSuspended domain event.
-   *
-   * TODO: integration test should verify the db.transaction() atomicity —
-   * partial failure between the user.studentStatus write and the userFlag
-   * resolution write must roll both back. No integration harness exists yet.
+   * Loads the flag + student snapshots, runs the StudentAccount aggregate
+   * transition, then persists the status change and flag resolution in one
+   * unit of work (`commitAndEmit`) — the StudentSuspended event fires only
+   * after the transaction commits, so a rollback emits nothing.
    */
   suspendStudent: moderatorProcedure
     .input(z.object({ flagId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const moderatorId = ctx.session.user.id;
+      const now = new Date();
 
-      const flagRows = await db
-        .select({ id: userFlag.id, status: userFlag.status, targetId: userFlag.targetId })
-        .from(userFlag)
-        .where(eq(userFlag.id, input.flagId))
-        .limit(1);
+      const flag = await loadFlagSnapshot(input.flagId);
+      const student = flag ? await loadStudentSnapshot(flag.targetId) : null;
 
-      if (!flagRows[0]) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Flag not found." });
+      try {
+        const transition = StudentAccount.suspend({ student, flag, moderatorId, now });
+
+        return await commitAndEmit(async (tx) => {
+          await persistStatusTransition(tx, {
+            targetId: student!.id,
+            status: transition.status,
+            resolveFlag: transition.resolveFlag,
+            moderatorId,
+            at: now,
+          });
+          return { result: { success: true as const }, events: transition.events };
+        });
+      } catch (err) {
+        toTrpcError(err);
       }
-      if (flagRows[0].status !== "open") {
-        throw new TRPCError({ code: "CONFLICT", message: "Flag already resolved." });
-      }
-
-      const studentRows = await db
-        .select({ id: user.id, studentStatus: user.studentStatus })
-        .from(user)
-        .where(eq(user.id, flagRows[0].targetId))
-        .limit(1);
-
-      const studentExists = !!studentRows[0];
-      const studentSuspended = studentRows[0]?.studentStatus === "suspended";
-      if (!studentExists || studentSuspended) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: STUDENT_INACTIVE_MESSAGE });
-      }
-
-      const targetId = flagRows[0].targetId;
-      const suspendedAt = new Date();
-
-      const { resolvedTargetId } = await db.transaction(async (tx) => {
-        await tx
-          .update(user)
-          .set({ studentStatus: "suspended" })
-          .where(eq(user.id, targetId));
-
-        const [updated] = await tx
-          .update(userFlag)
-          .set({ status: "resolved", outcome: "suspended", moderatorId, resolvedAt: suspendedAt })
-          .where(eq(userFlag.id, input.flagId))
-          .returning({ targetId: userFlag.targetId });
-
-        return { resolvedTargetId: updated!.targetId };
-      });
-
-      domainEvents.emit("StudentSuspended", {
-        flagId: input.flagId,
-        targetId: resolvedTargetId,
-        moderatorId,
-        suspendedAt,
-      });
-
-      return { success: true as const };
     }),
 
   /**
    * #105 — Lift a Student's suspension.
-   * Resets studentStatus to 'active' and emits SuspensionLifted event.
+   * Runs the StudentAccount aggregate transition (suspended → active) and
+   * persists via `commitAndEmit`, so SuspensionLifted fires only after commit.
    */
   liftSuspension: moderatorProcedure
     .input(z.object({ targetId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const moderatorId = ctx.session.user.id;
+      const now = new Date();
 
-      const studentRows = await db
-        .select({ id: user.id, studentStatus: user.studentStatus })
-        .from(user)
-        .where(eq(user.id, input.targetId))
-        .limit(1);
+      const student = await loadStudentSnapshot(input.targetId);
 
-      if (!studentRows[0]) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Student not found." });
+      try {
+        const transition = StudentAccount.liftSuspension({ student, moderatorId, now });
+
+        return await commitAndEmit(async (tx) => {
+          await persistStatusTransition(tx, {
+            targetId: student!.id,
+            status: transition.status,
+            resolveFlag: null,
+            moderatorId,
+            at: now,
+          });
+          return { result: { success: true as const }, events: transition.events };
+        });
+      } catch (err) {
+        toTrpcError(err);
       }
-      if (studentRows[0].studentStatus !== "suspended") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Student is not suspended." });
-      }
-
-      const liftedAt = new Date();
-      await db
-        .update(user)
-        .set({ studentStatus: "active" })
-        .where(eq(user.id, input.targetId));
-
-      domainEvents.emit("SuspensionLifted", {
-        targetId: input.targetId,
-        moderatorId,
-        liftedAt,
-      });
-
-      return { success: true as const };
     }),
 
   /**
    * #107/#108 — Permanently remove a flagged Student.
-   * Sets studentStatus to 'removed', resolves flag with outcome 'removed',
-   * and emits the StudentRemoved domain event.
-   *
-   * TODO: integration test should verify the db.transaction() atomicity —
-   * partial failure between the user.studentStatus write and the userFlag
-   * resolution write must roll both back. No integration harness exists yet.
+   * Loads the flag + student snapshots, runs the StudentAccount aggregate
+   * transition (idempotent: re-removing is a no-op success), then persists the
+   * status change and flag resolution in one unit of work (`commitAndEmit`) —
+   * the StudentRemoved event fires only after the transaction commits.
    */
   removeStudent: moderatorProcedure
     .input(z.object({ flagId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const moderatorId = ctx.session.user.id;
+      const now = new Date();
 
-      const flagRows = await db
-        .select({ id: userFlag.id, status: userFlag.status, targetId: userFlag.targetId })
-        .from(userFlag)
-        .where(eq(userFlag.id, input.flagId))
-        .limit(1);
+      const flag = await loadFlagSnapshot(input.flagId);
+      const student = flag ? await loadStudentSnapshot(flag.targetId) : null;
 
-      if (!flagRows[0]) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Flag not found." });
+      try {
+        const transition = StudentAccount.remove({ student, flag, moderatorId, now });
+        if (transition.noop) {
+          // Idempotent — already removed, return success without side effects
+          return { success: true as const };
+        }
+
+        return await commitAndEmit(async (tx) => {
+          await persistStatusTransition(tx, {
+            targetId: student!.id,
+            status: transition.status,
+            resolveFlag: transition.resolveFlag,
+            moderatorId,
+            at: now,
+          });
+          return { result: { success: true as const }, events: transition.events };
+        });
+      } catch (err) {
+        toTrpcError(err);
       }
-      if (flagRows[0].status !== "open") {
-        throw new TRPCError({ code: "CONFLICT", message: "Flag already resolved." });
-      }
-
-      const studentRows = await db
-        .select({ id: user.id, studentStatus: user.studentStatus })
-        .from(user)
-        .where(eq(user.id, flagRows[0].targetId))
-        .limit(1);
-
-      if (studentRows[0]?.studentStatus === "removed") {
-        // Idempotent — already removed, return success without side effects
-        return { success: true as const };
-      }
-
-      const targetId = flagRows[0].targetId;
-      const removedAt = new Date();
-
-      const { resolvedTargetId } = await db.transaction(async (tx) => {
-        await tx
-          .update(user)
-          .set({ studentStatus: "removed" })
-          .where(eq(user.id, targetId));
-
-        const [updated] = await tx
-          .update(userFlag)
-          .set({ status: "resolved", outcome: "removed", moderatorId, resolvedAt: removedAt })
-          .where(eq(userFlag.id, input.flagId))
-          .returning({ targetId: userFlag.targetId });
-
-        return { resolvedTargetId: updated!.targetId };
-      });
-
-      domainEvents.emit("StudentRemoved", {
-        flagId: input.flagId,
-        targetId: resolvedTargetId,
-        moderatorId,
-        removedAt,
-      });
-
-      return { success: true as const };
     }),
 
   /**
@@ -484,38 +487,26 @@ export const moderationRouter = router({
     .input(z.object({ targetId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const moderatorId = ctx.session.user.id;
+      const now = new Date();
 
-      const rows = await db
-        .select({ id: user.id, studentStatus: user.studentStatus })
-        .from(user)
-        .where(eq(user.id, input.targetId))
-        .limit(1);
+      const student = await loadStudentSnapshot(input.targetId);
 
-      const target = rows[0];
-      if (!target) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Student not found." });
+      try {
+        const transition = StudentAccount.suspend({ student, moderatorId, now });
+
+        return await commitAndEmit(async (tx) => {
+          await persistStatusTransition(tx, {
+            targetId: student!.id,
+            status: transition.status,
+            resolveFlag: null,
+            moderatorId,
+            at: now,
+          });
+          return { result: { success: true as const }, events: transition.events };
+        });
+      } catch (err) {
+        toTrpcError(err);
       }
-      if (target.studentStatus === "removed") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Student has been removed." });
-      }
-      if (target.studentStatus === "suspended") {
-        throw new TRPCError({ code: "CONFLICT", message: "Student is already suspended." });
-      }
-
-      const suspendedAt = new Date();
-      await db
-        .update(user)
-        .set({ studentStatus: "suspended" })
-        .where(eq(user.id, input.targetId));
-
-      domainEvents.emit("StudentSuspended", {
-        flagId: null,
-        targetId: input.targetId,
-        moderatorId,
-        suspendedAt,
-      });
-
-      return { success: true as const };
     }),
 
   /**
@@ -528,35 +519,29 @@ export const moderationRouter = router({
     .input(z.object({ targetId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const moderatorId = ctx.session.user.id;
+      const now = new Date();
 
-      const rows = await db
-        .select({ id: user.id, studentStatus: user.studentStatus })
-        .from(user)
-        .where(eq(user.id, input.targetId))
-        .limit(1);
+      const student = await loadStudentSnapshot(input.targetId);
 
-      const target = rows[0];
-      if (!target) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Student not found." });
+      try {
+        const transition = StudentAccount.remove({ student, moderatorId, now });
+        if (transition.noop) {
+          // Idempotent — already removed, no side effects
+          return { success: true as const };
+        }
+
+        return await commitAndEmit(async (tx) => {
+          await persistStatusTransition(tx, {
+            targetId: student!.id,
+            status: transition.status,
+            resolveFlag: null,
+            moderatorId,
+            at: now,
+          });
+          return { result: { success: true as const }, events: transition.events };
+        });
+      } catch (err) {
+        toTrpcError(err);
       }
-      if (target.studentStatus === "removed") {
-        // Idempotent — already removed, no side effects
-        return { success: true as const };
-      }
-
-      const removedAt = new Date();
-      await db
-        .update(user)
-        .set({ studentStatus: "removed" })
-        .where(eq(user.id, input.targetId));
-
-      domainEvents.emit("StudentRemoved", {
-        flagId: null,
-        targetId: input.targetId,
-        moderatorId,
-        removedAt,
-      });
-
-      return { success: true as const };
     }),
 });
