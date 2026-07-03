@@ -23,6 +23,9 @@ const INTERESTS = [
   { value: "pronunciation_practice", label: "Pronunciation" },
 ] as const;
 
+/** A server interest slug (the `user_interest.interest` enum in @sip-and-speak/db). */
+export type InterestValue = (typeof INTERESTS)[number]["value"];
+
 export function interestLabel(value: string): string {
   return INTERESTS.find((i) => i.value === value)?.label ?? value;
 }

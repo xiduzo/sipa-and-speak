@@ -13,7 +13,7 @@ const LANGUAGE_FLAGS: Record<string, string> = {
   Polish: "🇵🇱", Portuguese: "🇵🇹", Romanian: "🇷🇴", Russian: "🇷🇺",
   Serbian: "🇷🇸", Slovak: "🇸🇰", Slovenian: "🇸🇮", Spanish: "🇪🇸",
   Swedish: "🇸🇪", Thai: "🇹🇭", Turkish: "🇹🇷", Ukrainian: "🇺🇦",
-  Urdu: "🇵🇰", Vietnamese: "🇻🇳",
+  Urdu: "🇵🇰", Vietnamese: "🇻🇳", Welsh: "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
 };
 
 const LANGUAGE_CODES: Record<string, string> = {
@@ -63,8 +63,8 @@ const LANGUAGE_NATIVE_NAME: Record<string, string> = {
   Indonesian: "Bahasa Indonesia",
 };
 
-export function getLanguageFlag(language: string): string {
-  return LANGUAGE_FLAGS[language] ?? "🏳️";
+export function getLanguageFlag(language: string, fallback = "🏳️"): string {
+  return LANGUAGE_FLAGS[language] ?? fallback;
 }
 
 export function getLanguageCode(language: string): string {

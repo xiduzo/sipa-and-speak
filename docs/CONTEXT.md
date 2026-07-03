@@ -127,6 +127,34 @@ requires **3–7 interests** (plus ≥1 spoken and ≥1 learning language) to fi
 — deliberately STRICTER than the server's matching-eligibility rule (≥1
 interest, owned by OnboardingProgression). The server stays the source of truth
 for whether a profile is matchable; these gates govern only the wizard UX.
+The same module carries the wizard's shared vocabulary (step titles/subtitles,
+CEFR `LEVEL_BLOCKS`); interest labels live in `interest-labels.ts` (canonical —
+display labels for the server's `user_interest` enum slugs) and flags in
+`language-flags.ts`.
+
+### Onboarding view-model
+
+The onboarding wizard is split into three layers so each is testable on its own:
+
+1. **Pure rules** — `apps/native/utils/onboarding-flow.ts` (the gates above,
+   `validateOnboardingStep`, `isOnboardingStepComplete`) — no React.
+2. **Headless view-model** — `apps/native/hooks/use-onboarding-flow.ts`
+   (`useOnboardingFlow`). Owns the step state and per-step advance gates, the
+   identity pre-fill / jump-to-step-3 initialisation, the session reset, and
+   the mutation cascades — `setIdentityProfile`, finish's
+   `upsertProfile` + invalidate + `onFinished`, the header-Skip
+   `savePartialProfile` + `onSkipped` — and returns a small view-model.
+   Driven directly with `renderHook`.
+3. **Presentation** — `apps/native/components/onboarding-wizard.tsx`
+   (`OnboardingWizardBody`, `GoldButton`): pure JSX over the hook. BOTH wizard
+   surfaces render it: the standalone screen (`app/index.tsx` — routing,
+   always-visible partial-save Skip, gold level blocks) and the overlay
+   `OnboardingModal` (`components/onboarding-modal.tsx` — `Modal` chrome,
+   visibility rule incl. the 2-step identity-only run, step-2-only Skip, dark
+   level blocks). Only chrome and genuinely different affordances live in the
+   surfaces.
+
+Mirrors the meetup-flow view-model split below.
 
 ### Matching read model
 
