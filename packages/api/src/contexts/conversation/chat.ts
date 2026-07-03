@@ -1,4 +1,4 @@
-import { and, desc, eq, lt, or } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, or } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { db } from "@sip-and-speak/db";
@@ -8,6 +8,7 @@ import {
   checkReadAccess,
   computeIsUnread,
   computeMarkReadAt,
+  isMutuallyOptedIn,
 } from "./messaging-utils";
 import {
   listConversationsForUser,
@@ -119,18 +120,21 @@ export const chatRouter = router({
         );
 
       let mutuallyOptedIn = false;
-      for (const m of sharedMeetups) {
-        const responses = await db
-          .select({ response: messagingOptIn.response })
+      if (sharedMeetups.length > 0) {
+        // One query for all shared meetups, then the unlock predicate per meetup in JS.
+        const optInRows = await db
+          .select({ meetupId: messagingOptIn.meetupId, response: messagingOptIn.response })
           .from(messagingOptIn)
-          .where(eq(messagingOptIn.meetupId, m.id));
-        if (
-          responses.length === 2 &&
-          responses.every((r) => r.response === "accept")
-        ) {
-          mutuallyOptedIn = true;
-          break;
+          .where(inArray(messagingOptIn.meetupId, sharedMeetups.map((m) => m.id)));
+        const responsesByMeetup = new Map<string, ("accept" | "decline")[]>();
+        for (const row of optInRows) {
+          const list = responsesByMeetup.get(row.meetupId) ?? [];
+          list.push(row.response);
+          responsesByMeetup.set(row.meetupId, list);
         }
+        mutuallyOptedIn = sharedMeetups.some((m) =>
+          isMutuallyOptedIn(responsesByMeetup.get(m.id) ?? []),
+        );
       }
 
       if (!mutuallyOptedIn) {

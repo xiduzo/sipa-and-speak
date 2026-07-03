@@ -126,6 +126,19 @@ phase-rank sort) the `listConversations` / `unreadCount` / `listEntries`
 procedures used to inline. Access control stays in the router and stays split —
 the read model contains **zero** access logic (see ADR-0004).
 
+### Messaging unlock rule
+
+`isMutuallyOptedIn(responses)` in
+`packages/api/src/contexts/conversation/messaging-utils.ts`. Messaging between
+two Students unlocks when BOTH participants of a shared meetup responded to the
+opt-in prompt with `accept`; a missing response never unlocks. One predicate,
+three callers: `respondToOptIn` (open the conversation, #141),
+`startConversation` (authorization guard), and
+`getMessagingStateForUserMeetups` (per-meetup state surface). Its sibling
+`isOptInDeclineOutcome` names the #142 outcome (both responded, not both
+accepted). This names the **unlock** rule only — it is distinct from the
+read-vs-send **access** checks, which stay deliberately split per ADR-0004.
+
 ### Profile read model
 
 The query side of the Identity context:

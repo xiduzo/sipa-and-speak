@@ -4,6 +4,32 @@
  */
 
 /**
+ * The messaging unlock rule (#141): a meetup unlocks messaging when BOTH
+ * participants have responded to the opt-in prompt AND both accepted.
+ * A missing response (fewer than two rows, or `null`) never unlocks.
+ *
+ * This names the *unlock* rule only. It is distinct from the read-vs-send
+ * ACCESS checks (`checkReadAccess` / `checkConversationAccess`), which stay
+ * deliberately split per ADR-0004.
+ */
+export function isMutuallyOptedIn(
+  responses: ReadonlyArray<"accept" | "decline" | null>,
+): boolean {
+  return responses.length === 2 && responses.every((r) => r === "accept");
+}
+
+/**
+ * #142 — The decline outcome: both participants have responded and at least
+ * one declined. Complements `isMutuallyOptedIn` — once two responses exist,
+ * exactly one of the two predicates holds.
+ */
+export function isOptInDeclineOutcome(
+  responses: ReadonlyArray<"accept" | "decline" | null>,
+): boolean {
+  return responses.length === 2 && !isMutuallyOptedIn(responses);
+}
+
+/**
  * #149 — Computes the new lastReadAt timestamp for a mark-as-read operation.
  * lastReadAt can only move forward — returns the later of existing and now.
  */

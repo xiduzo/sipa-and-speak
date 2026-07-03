@@ -2,10 +2,13 @@ import { eq, or } from "drizzle-orm";
 import { db } from "@sip-and-speak/db";
 import { conversation, messagingOptIn } from "@sip-and-speak/db/schema/conversation";
 import { meetup } from "@sip-and-speak/db/schema/scheduling";
+import { isMutuallyOptedIn } from "./messaging-utils";
 
 export interface MeetupMessagingState {
   mine: "accept" | "decline" | null;
   partner: "accept" | "decline" | null;
+  /** The messaging unlock rule (#141) applied to (mine, partner) — see `isMutuallyOptedIn`. */
+  mutuallyOptedIn: boolean;
   conversationId: string | null;
 }
 
@@ -35,8 +38,15 @@ export async function getMessagingStateForUserMeetups(
 
   const result = new Map<string, MeetupMessagingState>();
 
+  const emptyEntry = (): MeetupMessagingState => ({
+    mine: null,
+    partner: null,
+    mutuallyOptedIn: false,
+    conversationId: null,
+  });
+
   for (const row of optIns) {
-    const entry = result.get(row.meetupId) ?? { mine: null, partner: null, conversationId: null };
+    const entry = result.get(row.meetupId) ?? emptyEntry();
     if (row.studentId === userId) entry.mine = row.response;
     else entry.partner = row.response;
     result.set(row.meetupId, entry);
@@ -44,9 +54,13 @@ export async function getMessagingStateForUserMeetups(
 
   for (const c of conversations) {
     if (c.meetupId === null) continue;
-    const entry = result.get(c.meetupId) ?? { mine: null, partner: null, conversationId: null };
+    const entry = result.get(c.meetupId) ?? emptyEntry();
     entry.conversationId = c.id;
     result.set(c.meetupId, entry);
+  }
+
+  for (const entry of result.values()) {
+    entry.mutuallyOptedIn = isMutuallyOptedIn([entry.mine, entry.partner]);
   }
 
   return result;
