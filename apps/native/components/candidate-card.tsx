@@ -2,10 +2,11 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Button, Spinner } from "heroui-native";
 import { useState } from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { trpc } from "@/utils/trpc";
-import { interestLabel } from "@/utils/interest-labels";
+import { Avatar } from "@/components/avatar";
+import { profileSections } from "@/utils/profile-presentation";
 import { getLanguageFlag } from "@/utils/language-flags";
 
 const GOLD = "#F2C94C";
@@ -40,6 +41,12 @@ export function CandidateCard({
     },
   });
 
+  const sections = profileSections({
+    spokenLanguages,
+    learningLanguages,
+    interests,
+  });
+
   function handlePress() {
     router.push(`/partner/${userId}` as never);
   }
@@ -51,51 +58,46 @@ export function CandidateCard({
       className="bg-card border border-border rounded-2xl p-4 mb-3 active:opacity-70"
     >
       <View className="flex-row items-center gap-3 mb-3">
-        {image ? (
-          <Image
-            testID="candidate-photo"
-            source={{ uri: image }}
-            className="w-14 h-14 rounded-full"
-          />
-        ) : (
-          <View
-            testID="candidate-photo-placeholder"
-            className="w-14 h-14 rounded-full bg-muted items-center justify-center"
-          >
-            <Text className="text-muted-foreground text-xl font-semibold">
-              {name.charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )}
+        <Avatar
+          name={name}
+          image={image}
+          size={56}
+          single
+          tone={null}
+          className="bg-muted"
+          textClassName="text-muted-foreground text-xl font-semibold"
+          imageTestID="candidate-photo"
+          placeholderTestID="candidate-photo-placeholder"
+        />
         <Text testID="candidate-name" className="text-foreground text-lg font-semibold flex-1">
           {name}
         </Text>
       </View>
 
-      {spokenLanguages.length > 0 && (
+      {sections.speaks.items.length > 0 && (
         <View className="mb-2">
           <Text className="text-muted-foreground text-xs uppercase font-medium mb-1">
-            Speaks
+            {sections.speaks.title}
           </Text>
           <View className="flex-row flex-wrap gap-1" testID="candidate-offered-languages">
-            {spokenLanguages.map((l) => (
-              <View key={l.language} className="bg-primary/10 px-2 py-0.5 rounded-full">
-                <Text className="text-primary text-xs">{l.language}</Text>
+            {sections.speaks.items.map((item) => (
+              <View key={item.value} className="bg-primary/10 px-2 py-0.5 rounded-full">
+                <Text className="text-primary text-xs">{item.label}</Text>
               </View>
             ))}
           </View>
         </View>
       )}
 
-      {learningLanguages.length > 0 && (
+      {sections.learning.items.length > 0 && (
         <View className="mb-2">
           <Text className="text-muted-foreground text-xs uppercase font-medium mb-1">
-            Learning
+            {sections.learning.title}
           </Text>
           <View className="flex-row flex-wrap gap-1" testID="candidate-targeted-languages">
-            {learningLanguages.map((lang) => (
-              <View key={lang} className="bg-secondary/10 px-2 py-0.5 rounded-full">
-                <Text className="text-secondary-foreground text-xs">{lang}</Text>
+            {sections.learning.items.map((item) => (
+              <View key={item.value} className="bg-secondary/10 px-2 py-0.5 rounded-full">
+                <Text className="text-secondary-foreground text-xs">{item.label}</Text>
               </View>
             ))}
           </View>
@@ -119,15 +121,15 @@ export function CandidateCard({
         </View>
       )}
 
-      {interests.length > 0 && (
+      {sections.topics.items.length > 0 && (
         <View className="mb-3">
           <Text className="text-muted-foreground text-xs uppercase font-medium mb-1">
-            Topics
+            {sections.topics.title}
           </Text>
           <View className="flex-row flex-wrap gap-1" testID="candidate-conversation-topics">
-            {interests.map((topic) => (
-              <View key={topic} className="bg-muted px-2 py-0.5 rounded-full">
-                <Text className="text-muted-foreground text-xs">{interestLabel(topic)}</Text>
+            {sections.topics.items.map((item) => (
+              <View key={item.value} className="bg-muted px-2 py-0.5 rounded-full">
+                <Text className="text-muted-foreground text-xs">{item.label}</Text>
               </View>
             ))}
           </View>

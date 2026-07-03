@@ -8,21 +8,20 @@ import { MeetupFlowModal, type MeetupFlowMode } from "@/components/meetup-flow-m
 import { CARD, CARD_BLUE, GOLD } from "@/components/home/tokens";
 import { formatDayTime, toDate } from "@/lib/dates";
 import { trpc, queryClient } from "@/utils/trpc";
+import { meetupCardStatus, type PillTone } from "@/utils/meetup-card-status";
 
 const DARK = "#1A1A1A";
 const MUTED = "#8A7570";
 const OUTLINE = "#1A1A1A";
 
-type Tone = "gold" | "mint" | "muted" | "rose";
-
-const TONE_BG: Record<Tone, string> = {
+const TONE_BG: Record<PillTone, string> = {
   gold: GOLD,
   mint: CARD_BLUE,
   muted: CARD,
   rose: "#F1D9D2",
 };
 
-function StatusPill({ label, tone, testID }: { label: string; tone: Tone; testID?: string }) {
+function StatusPill({ label, tone, testID }: { label: string; tone: PillTone; testID?: string }) {
   return (
     <View
       testID={testID}
@@ -405,32 +404,7 @@ export default function ConfirmedMeetupsScreen() {
             </Text>
 
             {meetups.map((m) => {
-              const partnerProposedReschedule = m.reschedulePending && !m.rescheduleIsFromMe;
-
-              let pillLabel: string;
-              let pillTone: Tone;
-              if (m.isPast && m.hasReported) {
-                pillLabel = m.myAttendance ? "Met up" : "Missed";
-                pillTone = m.myAttendance ? "mint" : "muted";
-              } else if (m.isPast) {
-                pillLabel = "Just now";
-                pillTone = "mint";
-              } else if (partnerProposedReschedule) {
-                pillLabel = "New time";
-                pillTone = "mint";
-              } else if (m.reschedulePending) {
-                pillLabel = "Pending";
-                pillTone = "muted";
-              } else {
-                pillLabel = "Confirmed";
-                pillTone = "gold";
-              }
-
-              const rescheduleLabel = m.reschedulePending
-                ? m.rescheduleIsFromMe
-                  ? "Reschedule pending…"
-                  : "Answer"
-                : "Reschedule";
+              const status = meetupCardStatus(m);
 
               return (
                 <CardShell key={m.meetupId} testID="meetup-card">
@@ -439,7 +413,7 @@ export default function ConfirmedMeetupsScreen() {
                     dateTimeLabel={formatDayTime(m.scheduledAt)}
                     venueName={m.venue.name}
                     rawDateTime={toDate(m.scheduledAt)?.toISOString() ?? ""}
-                    pill={<StatusPill label={pillLabel} tone={pillTone} />}
+                    pill={<StatusPill label={status.pillLabel} tone={status.pillTone} />}
                   />
 
                   {/* Future meetup actions */}
@@ -447,8 +421,8 @@ export default function ConfirmedMeetupsScreen() {
                     <View className="flex-row" style={{ gap: 10 }}>
                       <PrimaryPill
                         testID="reschedule-meetup-btn"
-                        label={rescheduleLabel}
-                        disabled={m.rescheduleIsFromMe && m.reschedulePending}
+                        label={status.rescheduleLabel}
+                        disabled={status.rescheduleDisabled}
                         onPress={() =>
                           setMeetupModal({
                             type: "reschedule",

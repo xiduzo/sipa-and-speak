@@ -1,92 +1,29 @@
-import { FlatList, Image, Pressable, Text, View } from "react-native";
+import { FlatList, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 
 import { formatChatTimestamp } from "@/lib/dates";
 import { trpc } from "@/utils/trpc";
+import { Avatar } from "@/components/avatar";
 import { Container } from "@/components/container";
 import { CARD, GOLD } from "@/components/home/tokens";
+import {
+  type ChatEntry,
+  chatListCounts,
+  conversationSubtitle,
+} from "@/utils/chat-list";
 
 const DARK = "#1A1A1A";
 const MUTED = "#8A7570";
 const LOCKED_TINT = "#A8635A";
 const DIVIDER = "#EFE7DD";
 
-const AVATAR_PALETTE = [
-  "#E8B5AA", // rose
-  "#B5CFC6", // sage
-  "#D4B59E", // peach
-  "#D6B7C2", // mauve
-  "#E6D4B8", // sand
-  "#C9D5C0", // moss
-  "#E2C5B0", // clay
-];
-
-function avatarTone(seed: string): string {
-  let h = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    h = (h * 31 + seed.charCodeAt(i)) % 4096;
-  }
-  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
-}
-
-function initials(name: string): string {
-  const trimmed = name.trim();
-  if (!trimmed) return "?";
-  const parts = trimmed.split(/\s+/);
-  if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase();
-  return (parts[0]!.charAt(0) + parts[parts.length - 1]!.charAt(0)).toUpperCase();
-}
-
 function formatChatTime(input: string | Date): string {
   return formatChatTimestamp(input);
 }
 
-type ChatEntry =
-  | {
-      kind: "open";
-      id: string;
-      conversationId: string;
-      meetupId: string | null;
-      partner: { id: string; name: string; image: string | null } | null;
-      lastMessage: { content: string; createdAt: string | Date } | null;
-      hasUnread: boolean;
-    }
-  | {
-      kind: "locked";
-      id: string;
-      meetupId: string;
-      partner: { id: string; name: string; image: string | null };
-      venue: { id: string; name: string; photoUrl: string | null };
-      meetupAt: string;
-      phase:
-        | "scheduled"
-        | "awaiting_attendance"
-        | "awaiting_partner_attendance"
-        | "awaiting_my_optin"
-        | "awaiting_partner_optin"
-        | "declined";
-    };
-
-function lockedSubtitle(entry: Extract<ChatEntry, { kind: "locked" }>): string {
-  switch (entry.phase) {
-    case "scheduled":
-      return "unlocks after you first meet up";
-    case "awaiting_attendance":
-      return "did you meet?";
-    case "awaiting_partner_attendance":
-      return `waiting for ${entry.partner.name.split(" ")[0]} to confirm you met`;
-    case "awaiting_my_optin":
-      return "tap to keep in touch";
-    case "awaiting_partner_optin":
-      return `waiting for ${entry.partner.name.split(" ")[0]} to enable chatting`;
-    case "declined":
-      return "chat won't open";
-  }
-}
-
-function Avatar({
+function ChatAvatar({
   name,
   image,
   locked,
@@ -95,32 +32,16 @@ function Avatar({
   image: string | null;
   locked?: boolean;
 }) {
-  const tone = avatarTone(name);
   return (
     <View style={{ width: 52, height: 52, marginRight: 14 }}>
-      <View
-        className="items-center justify-center rounded-full"
-        style={{
-          width: 52,
-          height: 52,
-          backgroundColor: tone,
-          opacity: locked ? 0.85 : 1,
-        }}
-      >
-        {image ? (
-          <Image
-            source={{ uri: image }}
-            style={{ width: 52, height: 52, borderRadius: 26 }}
-          />
-        ) : (
-          <Text
-            className="font-jakarta"
-            style={{ fontSize: 20, color: DARK }}
-          >
-            {initials(name)}
-          </Text>
-        )}
-      </View>
+      <Avatar
+        name={name}
+        image={image}
+        size={52}
+        fontSize={20}
+        color={DARK}
+        opacity={locked ? 0.85 : 1}
+      />
       {locked && (
         <View
           className="items-center justify-center rounded-full"
@@ -204,7 +125,7 @@ function OpenRow({
         opacity: pressed ? 0.7 : 1,
       })}
     >
-      <Avatar name={name} image={entry.partner?.image ?? null} />
+      <ChatAvatar name={name} image={entry.partner?.image ?? null} />
       <View style={{ flex: 1, marginRight: 10 }}>
         <Text
           className="font-jakarta"
@@ -293,7 +214,7 @@ function LockedRow({
         opacity: pressed ? 0.7 : 1,
       })}
     >
-      <Avatar name={entry.partner.name} image={entry.partner.image} locked />
+      <ChatAvatar name={entry.partner.name} image={entry.partner.image} locked />
       <View style={{ flex: 1 }}>
         <Text
           className="font-jakarta"
@@ -313,7 +234,7 @@ function LockedRow({
           }}
           numberOfLines={1}
         >
-          {lockedSubtitle(entry)}
+          {conversationSubtitle(entry.phase, entry.partner.name)}
         </Text>
       </View>
     </Pressable>
@@ -353,8 +274,7 @@ export default function ChatsScreen() {
   }
 
   const list = entries as ChatEntry[];
-  const openCount = list.filter((e) => e.kind === "open").length;
-  const lockedCount = list.filter((e) => e.kind === "locked").length;
+  const { openCount, lockedCount } = chatListCounts(list);
 
   return (
     <Container isScrollable={false}>

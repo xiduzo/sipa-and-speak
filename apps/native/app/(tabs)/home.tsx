@@ -16,6 +16,7 @@ import { SecondaryCard } from "@/components/home/secondary-card";
 import { HeroCarousel } from "@/components/home/hero-carousel";
 import { resolveHomeState, type HomeState } from "@/components/home/home-state";
 import { GOLD } from "@/components/home/tokens";
+import { firstInitial } from "@/utils/profile-presentation";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -35,7 +36,7 @@ export default function HomeScreen() {
   const pendingQuery = useQuery(trpc.meetup.list.queryOptions({ status: "pending" }));
 
   const name = profileQuery.data?.identity?.name ?? "";
-  const initial = (name || "?").charAt(0).toUpperCase();
+  const initial = firstInitial(name);
 
   const acceptRescheduleMutation = useMutation(trpc.meetup.acceptReschedule.mutationOptions({
     onSuccess: () => {

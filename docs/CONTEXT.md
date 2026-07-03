@@ -187,3 +187,42 @@ The client meetup flow is split into three layers so each is testable on its own
 Server-driven rules (`canCounterPropose`, round limits, available slots) stay
 server-owned; the hooks only orchestrate the client calls and the local
 date/slot math. Mirrors `onboarding-flow.ts`.
+
+### Profile presentation module
+
+Client-side, `apps/native/utils/profile-presentation.ts` + the single
+`apps/native/components/avatar.tsx`. Owns how a person is *shown*:
+
+- `avatarTone(seed)` / `initials(name)` / `firstInitial(name)` — the
+  deterministic pastel tone + initials derivation that was copy-pasted across
+  the Matches, Chats, Home, partner-profile and card surfaces.
+- `profileSections(profile)` — the Speaks/Learning/Topics view data
+  (flag emoji, human label, proficiency detail, stable key) for
+  `getPartnerProfile`-shaped data. Interest slugs are mapped to labels here,
+  once; screens own only chip styling. Consumed by `partner/[id]`,
+  `candidate-card`, and `match-card`.
+- `Avatar` — one photo-or-initials circle; per-screen size/palette/testID
+  differences are props, not forks.
+
+The web partner page (`apps/web/src/routes/partner/$id.tsx`) shows the same
+labels via `apps/web/src/utils/interest-labels.ts` — a deliberate tiny
+duplicate of the native lookup, since no runtime package is shared between the
+two clients (`@sip-and-speak/api` is only type-imported client-side).
+
+### Chats & Meetups list projections
+
+Pure row → view-data projections, extracted from JSX (mirrors
+`components/home/home-state.ts` and the meetup-flow view-model split):
+
+- `apps/native/utils/meetup-card-status.ts` — `meetupCardStatus(row)` turns a
+  confirmed-meetup row (`isPast`/`hasReported`/`myAttendance`/
+  `reschedulePending`/`rescheduleIsFromMe`) into the card's status pill
+  (label + tone) and reschedule affordances (label, disabled,
+  partner-proposed flag). Used by the Meetups tab and `hero-confirmed`.
+- `apps/native/utils/chat-list.ts` — the `ChatEntry` discriminated union as
+  served by `chat.listEntries`, `conversationSubtitle(phase, partnerName)`
+  (the six locked-conversation phases → subtitle copy), and
+  `chatListCounts(entries)`. Used by the Chats tab and the locked-chat screen.
+
+Both screens are thin JSX over these projections; the branch logic is
+unit-tested without rendering.

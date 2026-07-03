@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
+import { interestLabel } from "@/utils/interest-labels";
 import { trpc } from "@/utils/trpc";
 
 export const Route = createFileRoute("/partner/$id")({
@@ -109,7 +110,7 @@ function RouteComponent() {
           <div className="flex flex-wrap gap-2" data-testid="profile-topics">
             {profile.interests.map((topic) => (
               <span key={topic} className="bg-muted text-muted-foreground text-sm px-3 py-1 rounded-full">
-                {topic}
+                {interestLabel(topic)}
               </span>
             ))}
           </div>
