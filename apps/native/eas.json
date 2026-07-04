@@ -28,6 +28,14 @@
       "ios": {
         "ascAppId": "6762743023"
       }
+    },
+    "openTesting": {
+      "android": {
+        "track": "beta"
+      },
+      "ios": {
+        "ascAppId": "6762743023"
+      }
     }
   }
 }
