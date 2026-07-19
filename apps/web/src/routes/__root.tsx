@@ -50,6 +50,7 @@ const PUBLIC_ROUTES = new Set([
   "/privacy",
   "/terms",
   "/community-code",
+  "/child-safety",
   "/delete-account",
 ]);
 

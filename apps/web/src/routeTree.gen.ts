@@ -17,6 +17,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CommunityCodeRouteImport } from './routes/community-code'
+import { Route as ChildSafetyRouteImport } from './routes/child-safety'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as PartnerIdRouteImport } from './routes/partner/$id'
@@ -67,6 +68,11 @@ const CommunityCodeRoute = CommunityCodeRouteImport.update({
   path: '/community-code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChildSafetyRoute = ChildSafetyRouteImport.update({
+  id: '/child-safety',
+  path: '/child-safety',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -115,6 +121,7 @@ const ModeratorFlagsFlagIdRoute = ModeratorFlagsFlagIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/child-safety': typeof ChildSafetyRoute
   '/community-code': typeof CommunityCodeRoute
   '/dashboard': typeof DashboardRoute
   '/delete-account': typeof DeleteAccountRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/child-safety': typeof ChildSafetyRoute
   '/community-code': typeof CommunityCodeRoute
   '/dashboard': typeof DashboardRoute
   '/delete-account': typeof DeleteAccountRoute
@@ -154,6 +162,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/child-safety': typeof ChildSafetyRoute
   '/community-code': typeof CommunityCodeRoute
   '/dashboard': typeof DashboardRoute
   '/delete-account': typeof DeleteAccountRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/child-safety'
     | '/community-code'
     | '/dashboard'
     | '/delete-account'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/child-safety'
     | '/community-code'
     | '/dashboard'
     | '/delete-account'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/child-safety'
     | '/community-code'
     | '/dashboard'
     | '/delete-account'
@@ -233,6 +245,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChildSafetyRoute: typeof ChildSafetyRoute
   CommunityCodeRoute: typeof CommunityCodeRoute
   DashboardRoute: typeof DashboardRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
@@ -306,6 +319,13 @@ declare module '@tanstack/react-router' {
       path: '/community-code'
       fullPath: '/community-code'
       preLoaderRoute: typeof CommunityCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/child-safety': {
+      id: '/child-safety'
+      path: '/child-safety'
+      fullPath: '/child-safety'
+      preLoaderRoute: typeof ChildSafetyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -388,6 +408,7 @@ const ModeratorFlagsRouteWithChildren = ModeratorFlagsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChildSafetyRoute: ChildSafetyRoute,
   CommunityCodeRoute: CommunityCodeRoute,
   DashboardRoute: DashboardRoute,
   DeleteAccountRoute: DeleteAccountRoute,

@@ -91,6 +91,11 @@ export function SiteFooter() {
                 </a>
               </li>
               <li>
+                <a className={LINK} href="/child-safety">
+                  Child Safety Standards
+                </a>
+              </li>
+              <li>
                 <a className={LINK} href="/delete-account">
                   Delete your account
                 </a>
