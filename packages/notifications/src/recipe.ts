@@ -153,10 +153,16 @@ export async function dispatch(recipes: Recipe[]): Promise<void> {
   const tokensByRecipient = await getTokenStore().load(recipientIds);
 
   const { messages, tokenIds } = toDeliveryMessages(recipes, tokensByRecipient);
+  const untargeted = recipientIds.filter((id) => (tokensByRecipient.get(id) ?? []).length === 0);
+  if (untargeted.length > 0) console.info("[push] no device token for recipients", untargeted);
   if (messages.length === 0) return;
 
   try {
     const tickets = await getDelivery().send(messages);
+    console.info("[push] sent", {
+      messages: messages.length,
+      errors: tickets.filter((t) => t.status === "error").map((t) => t.details?.error ?? t.message),
+    });
     const stale = staleTokenIds(tickets, tokenIds);
     if (stale.length > 0) await getTokenStore().removeStale(stale);
   } catch (err) {
